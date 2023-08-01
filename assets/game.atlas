@@ -1,0 +1,159 @@
+
+game.png
+size: 1024, 128
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+GameScreen/textures/bucket
+  rotate: false
+  xy: 2, 52
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+GameScreen/textures/drop
+  rotate: false
+  xy: 68, 52
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: -1
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 2, 2
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 0
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 134, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 1
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 52, 2
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 2
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 184, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 3
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 234, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 4
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 284, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 5
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 334, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 6
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 384, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 7
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 434, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 8
+GameScreen/textures/playerIdleAnimation48x48
+  rotate: false
+  xy: 484, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 9
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 534, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 0
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 584, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 1
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 634, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 2
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 684, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 3
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 734, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 4
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 784, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 5
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 834, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 6
+GameScreen/textures/playerWalkAnimation48x48
+  rotate: false
+  xy: 884, 68
+  size: 48, 48
+  orig: 48, 48
+  offset: 0, 0
+  index: 7
+
+game2.png
+size: 32, 32
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+GameScreen/textures/tilesets/worldTileset
+  rotate: false
+  xy: 2, 2
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: 0
