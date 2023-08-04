@@ -1,4 +1,4 @@
-package com.mygdx.drop.game;
+package com.mygdx.drop;
 
 import java.util.Iterator;
 
@@ -37,102 +37,81 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Constants;
-import com.mygdx.drop.Debug;
-import com.mygdx.drop.Drop;
+import com.mygdx.drop.game.Player;
+import com.mygdx.drop.game.RainbowTile;
+import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.RainbowTile.Definition;
 
-public class GameScreen implements Screen {	
-	private static Drop game;
-	protected static GameScreen gameScreen;
-	
-	protected World world;
+public class GameScreen implements Screen {
+	private World world;
+	private Drop game;
 	private Player player;
 	private Viewport extendViewport;
-	
-	
+
 	public GameScreen(Drop game) {
 		this.game = game;
-		
-		assert gameScreen == null : "Multiple GameScreens exist at the same time!";
-		this.gameScreen = this;
-		
-		this.extendViewport = new ExtendViewport(24, 12);
-		this.world = new World(Constants.WORLD_WIDTH_TILES, Constants.WORLD_HEIGHT_TILES, new Vector2(0, -10));
+		this.extendViewport = new ExtendViewport(Drop.tlToMt(Constants.DEFAULT_FOV_WIDTH_tl), Drop.tlToMt(Constants.DEFAULT_FOV_HEIGHT_tl));
+		this.world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
 		initWorld();
 		game.assets.rainMusic.setLooping(true);
 	}
-	
+
 	@Override
-	public void show() {
-		game.assets.rainMusic.play();
-	}
+	public void show() { game.assets.rainMusic.play(); }
 
 	@Override
 	public void render(float delta) {
+		// TODO: implement zoom
 		updateCameraPosition();
 		ScreenUtils.clear(0, 0, 0.2f, 1);
 		// All camera manipulations must be done before calling this method
 		extendViewport.apply();
 		game.batch.setProjectionMatrix(extendViewport.getCamera().combined);
-		
+
 		world.render(extendViewport.getCamera());
 		game.batch.begin();
 		player.draw(extendViewport.getCamera());
 		game.batch.end();
-		
+
 		player.update(extendViewport.getCamera());
 		world.step();
 	}
 
 	@Override
-	public void resize(int width, int height) {
-		extendViewport.update(width, height);
-	}
+	public void resize(int width, int height) { extendViewport.update(width, height); }
 
 	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void pause() {}
 
 	@Override
-	public void resume() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void resume() {}
 
 	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-		
-	}
+	public void hide() {}
 
 	@Override
-	public void dispose() {
-		world.dispose();
-		this.gameScreen = null;
-	}
-	
+	public void dispose() { world.dispose(); }
+
 	private final void initWorld() {
-		player = new Player();
+		player = world.createEntity(new Player.Definition());
 		for (int i = 40; i < 60; i++) {
 			for (int j = 20; j < 23; j++) {
-				new RainbowTile(i, j);
+				world.createTile(new RainbowTile.Definition(i, j));
 			}
 		}
 	}
-	
+
 	private final void updateCameraPosition() {
 		// Make camera follow player and prevent it from going out of bounds
-		Vector2 playerPosition = player.self.getWorldCenter();
+		Vector2 playerPosition_mt = player.getPosition();
 		Camera camera = extendViewport.getCamera();
-		final float cameraYUpperBound = (Constants.WORLD_HEIGHT_MT - camera.viewportHeight)/2;
+		final float cameraYUpperBound = (Constants.WORLD_HEIGHT_mt - camera.viewportHeight) / 2;
 		final float cameraYLowerBound = -cameraYUpperBound;
-		final float cameraXUpperBound = (Constants.WORLD_WIDTH_MT - camera.viewportWidth)/2;
+		final float cameraXUpperBound = (Constants.WORLD_WIDTH_mt - camera.viewportWidth) / 2;
 		final float cameraXLowerBound = -cameraXUpperBound;
-		final float cameraX = MathUtils.clamp(playerPosition.x, cameraXLowerBound, cameraXUpperBound);
-		final float cameraY = MathUtils.clamp(playerPosition.y, cameraYLowerBound, cameraYUpperBound);
+		final float cameraX = MathUtils.clamp(playerPosition_mt.x, cameraXLowerBound, cameraXUpperBound);
+		final float cameraY = MathUtils.clamp(playerPosition_mt.y, cameraYLowerBound, cameraYUpperBound);
 		camera.position.set(cameraX, cameraY, 0);
 	}
-	
+
 }
