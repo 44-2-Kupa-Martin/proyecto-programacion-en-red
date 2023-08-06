@@ -15,6 +15,18 @@ buildscript {
     }
 }
 
+task zipProject(type: Zip) {
+	from "$rootProject.projectDir"
+
+    archiveFileName = "Drop.zip" 
+    destinationDir = file("$rootProject.projectDir/desktop/build/zips")
+
+    exclude "**/build/*" 
+    exclude "**/*.iml"   
+    exclude "**/.gradle/*"
+    exclude "**/*zip"
+}
+
 allprojects {
     apply plugin: "eclipse"
 
