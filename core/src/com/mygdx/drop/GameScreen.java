@@ -37,6 +37,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.mygdx.drop.game.DebugBox;
 import com.mygdx.drop.game.Player;
 import com.mygdx.drop.game.RainbowTile;
 import com.mygdx.drop.game.World;
@@ -46,13 +47,15 @@ public class GameScreen implements Screen {
 	private World world;
 	private Drop game;
 	private Player player;
+	private DebugBox box;
 	private Viewport extendViewport;
 
 	public GameScreen(Drop game) {
 		this.game = game;
 		this.extendViewport = new ExtendViewport(Drop.tlToMt(Constants.DEFAULT_FOV_WIDTH_tl), Drop.tlToMt(Constants.DEFAULT_FOV_HEIGHT_tl));
 		this.world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
-		initWorld();
+		this.box = world.createEntity(new DebugBox.Definition(0, 5, 5, 5));
+		this.player = world.createEntity(new Player.Definition(0,0));
 		game.assets.rainMusic.setLooping(true);
 	}
 
@@ -70,7 +73,7 @@ public class GameScreen implements Screen {
 
 		world.render(extendViewport.getCamera());
 		game.batch.begin();
-		player.draw(extendViewport.getCamera());
+		world.draw(extendViewport.getCamera());
 		game.batch.end();
 
 		player.update(extendViewport.getCamera());
@@ -92,22 +95,13 @@ public class GameScreen implements Screen {
 	@Override
 	public void dispose() { world.dispose(); }
 
-	private final void initWorld() {
-		player = world.createEntity(new Player.Definition());
-		for (int i = 40; i < 60; i++) {
-			for (int j = 20; j < 23; j++) {
-				world.createTile(new RainbowTile.Definition(i, j));
-			}
-		}
-	}
-
 	private final void updateCameraPosition() {
 		// Make camera follow player and prevent it from going out of bounds
 		Vector2 playerPosition_mt = player.getPosition();
 		Camera camera = extendViewport.getCamera();
-		final float cameraYUpperBound = (Constants.WORLD_HEIGHT_mt - camera.viewportHeight) / 2;
+		final float cameraYUpperBound = (world.worldHeight_mt - camera.viewportHeight) / 2;
 		final float cameraYLowerBound = -cameraYUpperBound;
-		final float cameraXUpperBound = (Constants.WORLD_WIDTH_mt - camera.viewportWidth) / 2;
+		final float cameraXUpperBound = (world.worldWidth_mt - camera.viewportWidth) / 2;
 		final float cameraXLowerBound = -cameraXUpperBound;
 		final float cameraX = MathUtils.clamp(playerPosition_mt.x, cameraXLowerBound, cameraXUpperBound);
 		final float cameraY = MathUtils.clamp(playerPosition_mt.y, cameraYLowerBound, cameraYUpperBound);

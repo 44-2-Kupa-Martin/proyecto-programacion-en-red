@@ -26,16 +26,25 @@ import com.mygdx.drop.Constants.LayerId;
 
 public class World implements Disposable {
 	protected static Drop game;
+	
+	public final float worldWidth_mt;
+	public final float worldHeight_mt;
 
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
 	protected TiledMap tiledMap;
 	protected final Array<Entity> entities;
 	protected final Array<Tile> tiles;
+	
 	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
-	private final float worldWidth_mt;
-	private final float worldHeight_mt;
 
+	/**
+	 * Creates the world.
+	 * 
+	 * @param width   World width in tiles
+	 * @param height  World height in tiles
+	 * @param gravity Gravity vector in SIU units
+	 */
 	public World(int width, int height, Vector2 gravity) {
 		assert Drop.game != null : "World created before game instance!";
 		if (game == null)
@@ -45,7 +54,6 @@ public class World implements Disposable {
 		this.worldHeight_mt = Drop.tlToMt(height);
 
 		this.box2dWorld = new com.badlogic.gdx.physics.box2d.World(gravity, false);
-		initBox2dWorld(Drop.tlToMt(width), Drop.tlToMt(height));
 
 		if (Constants.DEBUG) {
 			debug.debugRenderer = new Box2DDebugRenderer();
@@ -75,6 +83,8 @@ public class World implements Disposable {
 		this.mapRenderer = new OrthogonalTiledMapRenderer(tiledMap, Constants.PX_TO_MT_SCALAR, game.batch);
 		this.entities = new Array<Entity>();
 		this.tiles = new Array<Tile>();
+
+		initBox2dWorld(Drop.tlToMt(width), Drop.tlToMt(height));
 	}
 
 	public final void render(Camera camera) {
@@ -100,7 +110,7 @@ public class World implements Disposable {
 
 	public final void draw(Camera camera) {
 		for (Entity entity : entities) {
-			entity.draw(null);
+			entity.draw(camera);
 		}
 	}
 
@@ -119,6 +129,10 @@ public class World implements Disposable {
 	}
 
 	private final void initBox2dWorld(float width, float height) {
+		int worldWidth_tl = (int) Drop.mtToTl(worldWidth_mt);
+		int worldHeight_tl = (int) Drop.mtToTl(worldHeight_mt);
+
+		// TODO: make wall's dimension proportional to world's dimensions
 		float wallHalfWidth = Drop.tlToMt(500);
 		float wallHalfHeight = Drop.tlToMt(500);
 		PolygonShape rectangle = new PolygonShape();
@@ -161,22 +175,11 @@ public class World implements Disposable {
 		ceiling.setUserData(this);
 		floor.setUserData(this);
 
-		BodyDef ball = new BodyDef();
-		ball.position.set(0, 30);
-		ball.type = BodyType.DynamicBody;
-		CircleShape circle = new CircleShape();
-		circle.setRadius(10);
-		FixtureDef fixture = new FixtureDef();
-		fixture.density = 0.05f;
-		fixture.friction = 0.5f;
-		fixture.restitution = 0.8f;
-		fixture.shape = circle;
-		// Fuck automatic int promotion
-		fixture.filter.maskBits = (short) (Constants.Category.PLAYER.value | Constants.Category.WORLD.value);
-		fixture.filter.categoryBits = Constants.Category.PLAYER_COLLIDABLE.value;
-		Body ballBody = box2dWorld.createBody(ball);
-		ballBody.createFixture(fixture);
-		ballBody.setUserData(this);
+		for (int i = worldWidth_tl / 2 - 10; i < worldWidth_tl / 2 + 10; i++) {
+			for (int j = worldHeight_tl / 2 - 3; j < worldHeight_tl / 2; j++) {
+				tiles.add(new RainbowTile(this, i, j));
+			}
+		}
 	}
 
 	@Override

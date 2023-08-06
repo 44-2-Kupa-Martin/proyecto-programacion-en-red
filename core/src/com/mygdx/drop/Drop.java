@@ -45,17 +45,21 @@ public class Drop extends Game {
 		Drop.game = this;
 	}
 
-	//@f:n
 	// Utility functions for converting between units. Box2D uses the metric system and so does the
 	// game, regardless a notion of a tile is most useful. All variables in these units must have a
 	// suffix indicating the unit (meters = _mt, pixels = _px, tiles = _tl)
 	public static final float pxToMt(float pixels) { return pixels * Constants.PX_TO_MT_SCALAR; }
+
 	public static final float pxToTl(float pixels) { return pixels * Constants.PX_TO_TL_SCALAR; }
-	public static final float mtToPx(float meters) { return meters * Constants.MT_TO_PX_SCALAR; }
+
+	public static final int mtToPx(float meters) { return (int) (meters * Constants.MT_TO_PX_SCALAR); }
+
 	public static final float mtToTl(float meters) { return meters * Constants.MT_TO_TL_SCALAR; }
-	public static final float tlToPx(float tiles) { return tiles * Constants.TL_TO_PX_SCALAR; }
+
+	public static final int tlToPx(float tiles) { return (int) (tiles * Constants.TL_TO_PX_SCALAR); }
+
 	public static final float tlToMt(float tiles) { return tiles * Constants.TL_TO_MT_SCALAR; }
-	//@f:y
+
 	@Override
 	public void create() {
 		Box2D.init();

@@ -16,37 +16,27 @@ import com.mygdx.drop.GameScreen;
 
 /**
  * This class glues together the physics api provided by Box2D and the rendering api provided by
- * SpriteBatch into a unified api.
+ * SpriteBatch into a unified api. All entities are dynamic bodies.
  */
 public abstract class Entity implements Disposable {
 	// Static because game is a singleton
 	protected static Drop game;
 
+	protected final World world;
 	protected final Body self;
-	protected float width_mt;
-	protected float height_mt;
 
 	/**
-	 * 
-	 * @param world  A reference to the {@link World} object that will hold the entity
-	 * @param width  Measured in meters
-	 * @param height Measured in meters
-	 * @param x      Center of mass's x component measured in meters
-	 * @param y      Center of mass's y component measured in meters
+	 * @param world          The {@link World} that holds the entity.
+	 * @param bodyDefinition The body definition used to create the body, all attributes must be in SIU
+	 *                       units. The {@link BodyDef#type} attribute will be overridden to
+	 *                       {@link BodyType#DynamicBody}.
 	 */
-	protected Entity(World world, float width, float height, float x, float y) {
+	protected Entity(World world, BodyDef bodyDefinition) {
 		assert Drop.game != null : "Entity created before game instance!";
 		if (game == null)
 			game = Drop.game;
-
-		this.width_mt = width;
-		this.height_mt = height;
-
-		BodyDef bodyDefinition = new BodyDef();
 		bodyDefinition.type = BodyType.DynamicBody;
-		bodyDefinition.position.set(x, y);
-		bodyDefinition.fixedRotation = true;
-
+		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
 		self.setUserData(this);
 	}
@@ -63,7 +53,9 @@ public abstract class Entity implements Disposable {
 	public abstract void draw(Camera camera);
 
 	/** Returns the position of the player in meters (the same vector each time) */
-	public final Vector2 getPosition() { return new Vector2(self.getWorldCenter()); }
+	public final Vector2 getPosition() {
+		return new Vector2(self.getWorldCenter());
+	}
 
 	/** Measured in meters */
 	public final float getX() { return self.getWorldCenter().x; }
@@ -71,19 +63,13 @@ public abstract class Entity implements Disposable {
 	/** Measured in meters */
 	public final float getY() { return self.getWorldCenter().y; }
 
-	/** Measured in meters */
-	public float getWidth() { return width_mt; }
-
-	/** Measured in meters */
-	public float getHeight() { return height_mt; }
-
 	/**
 	 * Defines the minimum requirements for constructing an entity. This class' purpose is to provide an
-	 * api that accurately reflects the high level of coupling the {@link World} and {@code Entity}
+	 * api that accurately reflects the high level of coupling the {@link World} and {@link Entity}
 	 * classes have. By making it possible to create an entity only through a world object, it aims to
 	 * make clear that the {@code Entity} and {@code World} classes are "friendly."
 	 * 
-	 * @param <T> The entity the specific implementation defines. This must be a parameter of the class
+	 * @param <T> The entity defined by the specific subclass. This must be a parameter of the class
 	 *            itself instead of the {@link EntityDefinition#createEntity()} method (see <a href=
 	 *            "https://stackoverflow.com/questions/15095966/overriding-generic-abstract-methods-return-type-without-type-safety-warnings">reason</a>)
 	 * 

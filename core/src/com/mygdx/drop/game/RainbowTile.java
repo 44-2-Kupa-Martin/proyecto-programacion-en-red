@@ -5,10 +5,6 @@ import com.mygdx.drop.Constants;
 import com.mygdx.drop.Constants.LayerId;
 
 public class RainbowTile extends Tile {
-	static {
-		
-	}
-
 	public RainbowTile(World world, int x, int y) {
 		super(world, Constants.LayerId.WORLD, TileId.RAINBOW_TILE, x, y, RainbowTile.class);
 		Fixture fixture = self.getFixtureList().get(0);
