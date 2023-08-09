@@ -7,9 +7,11 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.ChainShape;
 import com.badlogic.gdx.physics.box2d.EdgeShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
@@ -57,10 +59,12 @@ public abstract class Tile implements Disposable {
 		this.tileId = tileId;
 		this.x_tl = x;
 		this.y_tl = y;
-
+		
+		
+		// TODO: implement a defer boolean parameter to skip cell's intialization, so that it can be done in a initCell method
 		TiledMapTileLayer layer = (TiledMapTileLayer) world.tiledMap.getLayers().get(LayerId.WORLD.value);
 		layer.setCell(x, y, new Cell().setTile(world.tiledMap.getTileSets().getTileSet(layerId.value).getTile(tileId.value)));
-
+		
 		BodyDef bodyDefiniton = new BodyDef();
 		bodyDefiniton.type = BodyType.StaticBody;
 		bodyDefiniton.position.set(Drop.tlToMt(x) - world.worldWidth_mt / 2 + Drop.tlToMt(1) / 2,
@@ -72,12 +76,15 @@ public abstract class Tile implements Disposable {
 
 		FixtureDef fixtureDefinition = new FixtureDef();
 		fixtureDefinition.filter.categoryBits = (short) (Constants.Category.WORLD.value | Constants.Category.PLAYER_COLLIDABLE.value);
-		PolygonShape box = new PolygonShape();
+		ChainShape chain = new ChainShape();
+		
+		float halfWidth = Drop.tlToMt(1) / 2;
+		float halfHeight = halfWidth;
+		chain.createLoop(new float[]{-halfWidth, -halfHeight, halfWidth, -halfHeight, halfWidth, halfHeight, -halfWidth, halfHeight});
 
-		box.setAsBox(Drop.tlToMt(1) / 2, Drop.tlToMt(1) / 2);
-		fixtureDefinition.shape = box;
+		fixtureDefinition.shape = chain;
 		self.createFixture(fixtureDefinition);
-		box.dispose();
+		chain.dispose();
 	}
 
 	/**

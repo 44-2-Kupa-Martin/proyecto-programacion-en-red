@@ -39,7 +39,7 @@ public class DebugBox extends BoxEntity {
 			return fixture;
 		})).get());
 
-		this.texture = game.assets.bucketImage;
+		this.texture = game.assets.get(com.mygdx.drop.Assets.Texture.DebugBox_bucket);
 	}
 
 	@Override

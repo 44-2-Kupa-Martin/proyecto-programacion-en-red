@@ -14,6 +14,7 @@ public class DesktopLauncher {
 		config.setWindowedMode(800, 480);
 		config.setForegroundFPS(60);
 		config.useVsync(true);
+		generateAssets();
 		new Lwjgl3Application(new Drop(), config);
 	}
 	
@@ -21,7 +22,9 @@ public class DesktopLauncher {
 		Settings settings = new Settings();
 		settings.maxWidth = 4096;
 		settings.maxHeight = 4096;
-		settings.alias = false;
+		
+		
+		settings.alias = true;
 		TexturePacker.process(settings, "../assets", "../assets", "game");
 	}
 }

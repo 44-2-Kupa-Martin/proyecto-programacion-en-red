@@ -60,23 +60,24 @@ public class World implements Disposable {
 			debug.bodies = new Array<Body>();
 		}
 
+		//TODO: move this to a World.loadTilesets() method to allow for asynchronous loading of assets while the world initializes
+		
 		// tiledMap initialization
 		this.tiledMap = new TiledMap();
 		TiledMapTileSets tilesets = tiledMap.getTileSets();
 		for (LayerId layerId : LayerId.values()) {
 			// init layers
 			TiledMapTileLayer layer = new TiledMapTileLayer(width, height, Constants.TL_TO_PX_SCALAR, Constants.TL_TO_PX_SCALAR);
-			layer.setName(layerId.getName());
+			layer.setName(layerId.name);
 			tiledMap.getLayers().add(layer);
 
 			// init tilesets
 			TiledMapTileSet tileset = new TiledMapTileSet();
-			Array<AtlasRegion> textures = game.assets.atlas.findRegions("GameScreen/textures/tilesets/" + layerId.getName() + "Tileset");
-			assert textures.size != 0 : "Failed to load assets";
-			for (int i = 0; i < textures.size; i++) {
-				tileset.putTile(i, new StaticTiledMapTile(textures.get(i)));
+			Array<AtlasRegion> tilesetTextures = game.assets.get(layerId.tileset); 
+			for (int i = 0; i < tilesetTextures.size; i++) {
+				tileset.putTile(i, new StaticTiledMapTile(tilesetTextures.get(i)));
 			}
-			tileset.setName(layerId.getName());
+			tileset.setName(layerId.name);
 			tilesets.addTileSet(tileset);
 		}
 
@@ -89,7 +90,7 @@ public class World implements Disposable {
 
 	public final void render(Camera camera) {
 		mapRenderer.setView(camera.combined, -worldWidth_mt / 2, -worldHeight_mt / 2, worldWidth_mt, worldHeight_mt);
-		mapRenderer.render();
+//		mapRenderer.render();
 
 		if (Constants.DEBUG) {
 			debug.debugRenderer.render(box2dWorld, camera.combined);
@@ -132,9 +133,8 @@ public class World implements Disposable {
 		int worldWidth_tl = (int) Drop.mtToTl(worldWidth_mt);
 		int worldHeight_tl = (int) Drop.mtToTl(worldHeight_mt);
 
-		// TODO: make wall's dimension proportional to world's dimensions
-		float wallHalfWidth = Drop.tlToMt(500);
-		float wallHalfHeight = Drop.tlToMt(500);
+		float wallHalfWidth = width * 3/2;
+		float wallHalfHeight = height * 3/2;
 		PolygonShape rectangle = new PolygonShape();
 		rectangle.setAsBox(wallHalfWidth, wallHalfHeight);
 

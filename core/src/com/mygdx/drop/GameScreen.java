@@ -37,6 +37,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.mygdx.drop.Assets.Music;
 import com.mygdx.drop.game.DebugBox;
 import com.mygdx.drop.game.Player;
 import com.mygdx.drop.game.RainbowTile;
@@ -53,14 +54,16 @@ public class GameScreen implements Screen {
 	public GameScreen(Drop game) {
 		this.game = game;
 		this.extendViewport = new ExtendViewport(Drop.tlToMt(Constants.DEFAULT_FOV_WIDTH_tl), Drop.tlToMt(Constants.DEFAULT_FOV_HEIGHT_tl));
+		//TODO: implement an event system so that classes that need certain assets can listen for when the resource is ready
+		game.assets.finishLoading();
 		this.world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
 		this.box = world.createEntity(new DebugBox.Definition(0, 5, 5, 5));
 		this.player = world.createEntity(new Player.Definition(0,0));
-		game.assets.rainMusic.setLooping(true);
+		game.assets.get(Music.GameScreen_rain).setLooping(true);
 	}
 
 	@Override
-	public void show() { game.assets.rainMusic.play(); }
+	public void show() { game.assets.get(Music.GameScreen_rain).play(); }
 
 	@Override
 	public void render(float delta) {

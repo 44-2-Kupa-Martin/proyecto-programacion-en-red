@@ -4,6 +4,7 @@ import java.util.Iterator;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.mygdx.drop.Assets.Tileset;
 import com.mygdx.drop.game.World;
 
 @SuppressWarnings("unused")
@@ -12,7 +13,7 @@ public final class Constants {
 	 * Whether to include debug code. All debug code should be within an if statement checking for this
 	 * flag (except logging, which is controlled by the LOG_LEVEL)
 	 */
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = Boolean.parseBoolean(System.getProperty("debug"));
 
 	/** Determines what gets logged */
 	public static final int LOG_LEVEL = DEBUG ? Application.LOG_DEBUG : Application.LOG_NONE;
@@ -70,24 +71,23 @@ public final class Constants {
 
 	/**
 	 * Used for creating the layers of the {@link TiledMap} (see {@link World#World()}) Each layer has
-	 * its own tileset, both the layer and the tileset are identified with this enum. The order of
-	 * declaration defines the order in which the layers are rendered.
+	 * its own tileset. The order of declaration defines the order in which the layers are rendered.
 	 */
 	public static enum LayerId {
-		WORLD("world");
+		WORLD("world", Tileset.World_world);
 
 		public final int value;
-		private final String name;
+		public final String name;
+		public final Tileset tileset;
 
-		private LayerId(String name) {
+		private LayerId(String name, Tileset tileset) {
 			this.value = ordinal();
 			this.name = name;
+			this.tileset = tileset;
 		}
 
 		@Override
-		public final String toString() { return name; }
-
-		public final String getName() { return name; }
+		public final String toString() { return name + " layer"; }
 
 	}
 
