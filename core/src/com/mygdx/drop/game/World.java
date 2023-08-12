@@ -1,7 +1,9 @@
 package com.mygdx.drop.game;
 
 import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
+import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
@@ -88,9 +90,14 @@ public class World implements Disposable {
 		initBox2dWorld(Drop.tlToMt(width), Drop.tlToMt(height));
 	}
 
-	public final void render(Camera camera) {
-		mapRenderer.setView(camera.combined, -worldWidth_mt / 2, -worldHeight_mt / 2, worldWidth_mt, worldHeight_mt);
-//		mapRenderer.render();
+	public final void render(OrthographicCamera camera) {
+		MapLayer layer = tiledMap.getLayers().get(Constants.LayerId.WORLD.value);
+		float offsetX = Drop.mtToPx(camera.viewportWidth/2 - camera.position.x - worldWidth_mt/2);
+		float offsetY = -Drop.mtToPx(camera.viewportHeight/2 - camera.position.y - worldHeight_mt/2);
+		layer.setOffsetX(offsetX);
+		layer.setOffsetY(offsetY);
+		mapRenderer.setView(camera);
+		mapRenderer.render();
 
 		if (Constants.DEBUG) {
 			debug.debugRenderer.render(box2dWorld, camera.combined);
@@ -107,12 +114,13 @@ public class World implements Disposable {
 						: "Body's userData references an unknown object";
 			}
 		}
-	}
-
-	public final void draw(Camera camera) {
+		game.batch.begin();
 		for (Entity entity : entities) {
 			entity.draw(camera);
 		}
+		game.batch.end();
+		
+		
 	}
 
 	public final void step() { box2dWorld.step(1 / 60f, 6, 2); }

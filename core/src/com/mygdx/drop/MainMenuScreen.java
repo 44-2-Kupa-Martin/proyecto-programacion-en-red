@@ -10,7 +10,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.mygdx.drop.Assets.Font;
+import com.mygdx.drop.Assets.FontId;
 
 public class MainMenuScreen implements Screen {
 	private final Drop game;
@@ -32,8 +32,8 @@ public class MainMenuScreen implements Screen {
 		game.batch.setProjectionMatrix(camera.combined);
 
 		game.batch.begin();
-		game.assets.get(Font.MainMenuScreen_arial).draw(game.batch, "Welcome to Drop!!! ", 100, 150);
-		game.assets.get(Font.MainMenuScreen_arial).draw(game.batch, "Tap anywhere to begin!", 100, 100);
+		game.assets.get(FontId.MainMenuScreen_arial).draw(game.batch, "Welcome to Drop!!! ", 100, 150);
+		game.assets.get(FontId.MainMenuScreen_arial).draw(game.batch, "Tap anywhere to begin!", 100, 100);
 		game.batch.end();
 
 		if (Gdx.input.isTouched()) {

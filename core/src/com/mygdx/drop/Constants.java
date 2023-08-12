@@ -4,7 +4,7 @@ import java.util.Iterator;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.mygdx.drop.Assets.Tileset;
+import com.mygdx.drop.Assets.TilesetId;
 import com.mygdx.drop.game.World;
 
 @SuppressWarnings("unused")
@@ -74,13 +74,13 @@ public final class Constants {
 	 * its own tileset. The order of declaration defines the order in which the layers are rendered.
 	 */
 	public static enum LayerId {
-		WORLD("world", Tileset.World_world);
+		WORLD("world", TilesetId.World_world);
 
 		public final int value;
 		public final String name;
-		public final Tileset tileset;
+		public final TilesetId tileset;
 
-		private LayerId(String name, Tileset tileset) {
+		private LayerId(String name, TilesetId tileset) {
 			this.value = ordinal();
 			this.name = name;
 			this.tileset = tileset;

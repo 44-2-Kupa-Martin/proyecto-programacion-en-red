@@ -132,6 +132,19 @@ animations/Player/walk
   index: 7
 
 game2.png
+size: 512, 256
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+skins/default/uiskin
+  rotate: false
+  xy: 2, 2
+  size: 256, 128
+  orig: 256, 128
+  offset: 0, 0
+  index: -1
+
+game3.png
 size: 128, 128
 format: RGBA8888
 filter: Nearest, Nearest
@@ -144,7 +157,20 @@ textures/DebugBox/bucket
   offset: 0, 0
   index: -1
 
-game3.png
+game4.png
+size: 1024, 512
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+textures/GoofyItem/goofy
+  rotate: false
+  xy: 2, 2
+  size: 866, 451
+  orig: 866, 451
+  offset: 0, 0
+  index: -1
+
+game5.png
 size: 32, 32
 format: RGBA8888
 filter: Nearest, Nearest

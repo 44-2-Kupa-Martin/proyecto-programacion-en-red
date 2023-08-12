@@ -21,6 +21,9 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.utils.Array;
 import com.mygdx.drop.Constants.LayerId;
+import com.mygdx.drop.game.DebugItem;
+import com.mygdx.drop.game.GoofyItem;
+import com.mygdx.drop.game.Item;
 import com.mygdx.drop.game.Tile;
 import com.mygdx.drop.game.World;
 
@@ -36,6 +39,7 @@ public class Drop extends Game {
 
 	public Assets assets;
 	public SpriteBatch batch;
+	public Item heldItem;
 	private static boolean constructed = false;
 
 	public Drop() {
@@ -66,9 +70,13 @@ public class Drop extends Game {
 
 		Gdx.app.setLogLevel(Constants.LOG_LEVEL);
 		this.assets = Assets.load();
+		//TODO: implement an event system so that classes that need certain assets can listen for when the resource is ready
+		assets.finishLoading();
 
 		this.batch = new SpriteBatch();
-
+		
+		this.heldItem = new GoofyItem();
+		
 		this.setScreen(new MainMenuScreen(this));
 	}
 

@@ -22,8 +22,6 @@ public class DesktopLauncher {
 		Settings settings = new Settings();
 		settings.maxWidth = 4096;
 		settings.maxHeight = 4096;
-		
-		
 		settings.alias = true;
 		TexturePacker.process(settings, "../assets", "../assets", "game");
 	}

@@ -1,7 +1,9 @@
 package com.mygdx.drop.game;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Supplier;
 
 import com.badlogic.gdx.Gdx;
@@ -25,12 +27,18 @@ import com.badlogic.gdx.physics.box2d.Shape.Type;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.etc.ObservableReference;
 
 public class Player extends BoxEntity {
 	private State previousState;
 	private State currentState;
 	private float animationTimer;
 	private EnumMap<State, Animation<TextureRegion>> animations;
+	private ObservableReference<Item>[] heldItems;
+	public List<ObservableReference<Item>> hotbar;
+	public List<ObservableReference<Item>> inventory;
+	public List<ObservableReference<Item>> armor;
+	public List<ObservableReference<Item>> accessory;
 
 	/**
 	 * @param x Measured in meters
@@ -52,6 +60,23 @@ public class Player extends BoxEntity {
 		this.currentState = State.IDLE;
 		this.animationTimer = 0;
 		this.animations = initAnimationsMap();
+		
+		@SuppressWarnings("unchecked")
+		ObservableReference<Item>[] heldItems = new ObservableReference[9 * 4 /* hotbar + inventory */ 
+		                                         + 4 /* armor */ 
+		                                         + 4 /* accesory */];
+		this.heldItems = heldItems;
+		
+		for (int i = 0; i < heldItems.length; i++) 
+			heldItems[i] = new ObservableReference<Item>((Item)null);
+		
+		
+		this.hotbar = Arrays.asList(heldItems).subList(0, 9);
+		this.inventory = Arrays.asList(heldItems).subList(0, 9*4);
+		this.armor = Arrays.asList(heldItems).subList(9*4, 9*4 + 4);
+		this.accessory = Arrays.asList(heldItems).subList(9*4 + 4, 9*4 + 4 + 4);
+		hotbar.get(0).set(new DebugItem());
+		hotbar.get(1).set(new DebugItem());
 	}
 
 	@Override
@@ -110,8 +135,8 @@ public class Player extends BoxEntity {
 
 	private final EnumMap<State, Animation<TextureRegion>> initAnimationsMap() {
 		EnumMap<State, Animation<TextureRegion>> animations = new EnumMap<>(State.class);
-		animations.put(State.IDLE, new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.Animation.Player_idle), PlayMode.LOOP));
-		animations.put(State.WALKING, new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.Animation.Player_walk), PlayMode.LOOP));
+		animations.put(State.IDLE, new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_idle), PlayMode.LOOP));
+		animations.put(State.WALKING, new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_walk), PlayMode.LOOP));
 		return animations;
 	}
 
