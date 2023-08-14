@@ -66,14 +66,14 @@ animations/Player/idle
   size: 48, 48
   orig: 48, 48
   offset: 0, 0
-  index: 9
+  index: 8
 animations/Player/idle
   rotate: false
   xy: 152, 2
   size: 48, 48
   orig: 48, 48
   offset: 0, 0
-  index: 8
+  index: 9
 animations/Player/walk
   rotate: false
   xy: 202, 2
