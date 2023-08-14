@@ -52,7 +52,6 @@ public class Slot extends Container<Image> implements PropertyChangeListener {
         addListener(new ClickListener() {
         	@Override
         	public void clicked(InputEvent event, float x, float y) { 
-        		super.clicked(event, x, y);
         		boolean slotHasItem = heldItem != null;
         		boolean cursorHasItem = Drop.game.heldItem != null;
         		if (!slotHasItem && !cursorHasItem)

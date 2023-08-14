@@ -1,5 +1,7 @@
 package com.mygdx.drop.game;
 
+import java.beans.PropertyChangeSupport;
+
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -8,6 +10,10 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
@@ -24,6 +30,7 @@ public abstract class Entity implements Disposable {
 
 	protected final World world;
 	protected final Body self;
+	
 
 	/**
 	 * @param world          The {@link World} that holds the entity.
@@ -39,6 +46,7 @@ public abstract class Entity implements Disposable {
 		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
 		self.setUserData(this);
+		
 	}
 
 	/**
@@ -62,7 +70,11 @@ public abstract class Entity implements Disposable {
 
 	/** Measured in meters */
 	public final float getY() { return self.getWorldCenter().y; }
+	
+	public final Array<Fixture> getFixtures() { return self.getFixtureList(); }
 
+	public void clicked() {}
+	
 	/**
 	 * Defines the minimum requirements for constructing an entity. This class' purpose is to provide an
 	 * api that accurately reflects the high level of coupling the {@link World} and {@link Entity}

@@ -1,5 +1,8 @@
 package com.mygdx.drop.game;
 
+import java.beans.PropertyChangeSupport;
+
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
@@ -15,18 +18,20 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.Constants.Category;
 import com.mygdx.drop.Constants.LayerId;
 
-public class World implements Disposable {
+public class World implements Disposable, InputProcessor {
 	protected static Drop game;
 	
 	public final float worldWidth_mt;
@@ -39,6 +44,9 @@ public class World implements Disposable {
 	
 	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
+	
+
+	private final Viewport viewport;
 
 	/**
 	 * Creates the world.
@@ -47,11 +55,13 @@ public class World implements Disposable {
 	 * @param height  World height in tiles
 	 * @param gravity Gravity vector in SIU units
 	 */
-	public World(int width, int height, Vector2 gravity) {
+	public World(int width, int height, Vector2 gravity, Viewport viewport) {
 		assert Drop.game != null : "World created before game instance!";
 		if (game == null)
 			game = Drop.game;
-
+		
+		this.viewport = viewport;
+		
 		this.worldWidth_mt = Drop.tlToMt(width);
 		this.worldHeight_mt = Drop.tlToMt(height);
 
@@ -190,11 +200,63 @@ public class World implements Disposable {
 		}
 	}
 
+	// Interfaces
+	
+	// Disposable
 	@Override
 	public void dispose() {
 		box2dWorld.dispose();
 		tiledMap.dispose();
 	}
+
+	// InputProcessor
+	@Override
+	public boolean keyDown(int keycode) { return false; }
+
+	@Override
+	public boolean keyUp(int keycode) { return false; }
+
+	@Override
+	public boolean keyTyped(char character) { return false; }
+
+	@Override
+	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+		System.out.println("x:" + screenX);
+		System.out.println("y:" + screenY);
+		System.out.println("pointer: " + pointer);
+		System.out.println("button: " + button);
+		boolean handled = false;
+		Vector2 worldCoordinates = viewport.unproject(new Vector2(screenX, screenY));
+		for (Entity entity : entities) {
+			Array<Fixture> fixtures = entity.getFixtures();
+			boolean hit = false;
+			for (Fixture fixture : fixtures) {
+				if (fixture.testPoint(worldCoordinates)) {
+					handled = true;
+					hit = true;
+					break;
+				}
+			}
+			if (hit) 
+				entity.clicked();
+		}
+		return handled; 
+	}
+
+	@Override
+	public boolean touchUp(int screenX, int screenY, int pointer, int button) { return false; }
+
+	@Override
+	public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
+
+	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
+
+	@Override
+	public boolean mouseMoved(int screenX, int screenY) { return false; }
+
+	@Override
+	public boolean scrolled(float amountX, float amountY) { return false; }
 
 	public static final class Debug extends com.mygdx.drop.Debug {
 		public Box2DDebugRenderer debugRenderer;
@@ -202,13 +264,12 @@ public class World implements Disposable {
 		// reference to their owner in their user data attribute
 		public Array<Body> bodies;
 		private static boolean constructed = false;
-
+		
 		@Override
 		protected boolean isConstructed() { return constructed; }
-
+		
 		@Override
 		protected void setConstructed(boolean value) { constructed = value; }
-
+		
 	}
-
 }

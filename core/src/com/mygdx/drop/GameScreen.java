@@ -4,6 +4,7 @@ import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL20;
@@ -71,9 +72,12 @@ public class GameScreen implements Screen {
 		this.gameCamera = new OrthographicCamera();
 		this.gameViewport = new ExtendViewport(Drop.tlToMt(Constants.DEFAULT_FOV_WIDTH_tl), Drop.tlToMt(Constants.DEFAULT_FOV_HEIGHT_tl), gameCamera);
 		this.hudViewport = new ScreenViewport();
+		InputMultiplexer multiplexer = new InputMultiplexer();
 		this.hudStage = new Stage(hudViewport, game.batch);
-		Gdx.input.setInputProcessor(hudStage);
-		this.world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
+		multiplexer.addProcessor(hudStage);
+		this.world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */, gameViewport);
+		multiplexer.addProcessor(world);
+		Gdx.input.setInputProcessor(multiplexer);
 		this.box = world.createEntity(new DebugBox.Definition(0, 5, 5, 5));
 		this.player = world.createEntity(new Player.Definition(0,0));
 		this.hud = new HUD(player, world);

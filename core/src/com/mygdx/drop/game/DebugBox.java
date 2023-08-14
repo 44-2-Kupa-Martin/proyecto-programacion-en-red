@@ -47,6 +47,8 @@ public class DebugBox extends BoxEntity {
 
 	@Override
 	public boolean update(Camera camera) { return false; }
+	
+	public void clicked() { System.out.println("clicked debug box"); };
 
 	@Override
 	public void draw(Camera camera) {
