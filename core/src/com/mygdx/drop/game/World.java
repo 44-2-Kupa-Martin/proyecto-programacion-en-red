@@ -2,6 +2,7 @@ package com.mygdx.drop.game;
 
 import java.beans.PropertyChangeSupport;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -22,14 +23,23 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Event;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.Stage.TouchFocus;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.Pools;
+import com.badlogic.gdx.utils.SnapshotArray;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.Constants.Category;
 import com.mygdx.drop.Constants.LayerId;
+import com.mygdx.drop.etc.InputEvent;
+import com.mygdx.drop.etc.InputEvent.Type;
 
 public class World implements Disposable, InputProcessor {
 	protected static Drop game;
@@ -44,9 +54,11 @@ public class World implements Disposable, InputProcessor {
 	
 	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
-	
+	private final Vector2 tempCoords = new Vector2();
 
 	private final Viewport viewport;
+	
+	
 
 	/**
 	 * Creates the world.
@@ -219,32 +231,81 @@ public class World implements Disposable, InputProcessor {
 	@Override
 	public boolean keyTyped(char character) { return false; }
 
+	/** Applies a touch down event to the stage and returns true if an actor in the scene {@link Event#handle() handled} the
+	 * event. */
 	@Override
-	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		System.out.println("x:" + screenX);
-		System.out.println("y:" + screenY);
-		System.out.println("pointer: " + pointer);
-		System.out.println("button: " + button);
-		boolean handled = false;
-		Vector2 worldCoordinates = viewport.unproject(new Vector2(screenX, screenY));
+	public boolean touchDown (int screenX, int screenY, int pointer, int button) {
+//		if (!isInsideViewport(screenX, screenY)) return false;
+//
+//		pointerTouched[pointer] = true;
+//		pointerScreenX[pointer] = screenX;
+//		pointerScreenY[pointer] = screenY;
+
+		
+		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
+
+		InputEvent event = new InputEvent(this);
+		event.setType(Type.touchDown);
+		event.world = this;
+		event.setWorldX(tempCoords.x);
+		event.setWorldY(tempCoords.y);
+		event.setPointer(pointer);
+		event.setButton(button);
+
+		Entity target = null;
 		for (Entity entity : entities) {
-			Array<Fixture> fixtures = entity.getFixtures();
-			boolean hit = false;
-			for (Fixture fixture : fixtures) {
-				if (fixture.testPoint(worldCoordinates)) {
-					handled = true;
-					hit = true;
-					break;
-				}
+			if (entity.hit(tempCoords.x, tempCoords.y)) {
+				target = entity;
+				break;
 			}
-			if (hit) 
-				entity.clicked();
 		}
-		return handled; 
+		
+		if (target != null) {
+			boolean cancelled = target.fire(event);
+			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
+		}
+			
+
+		boolean handled = event.isHandled();
+		return handled;
 	}
 
-	@Override
-	public boolean touchUp(int screenX, int screenY, int pointer, int button) { return false; }
+	/** Applies a touch up event to the stage and returns true if an actor in the scene {@link Event#handle() handled} the event.
+	 * Only {@link InputListener listeners} that returned true for touchDown will receive this event. */
+	public boolean touchUp (int screenX, int screenY, int pointer, int button) {
+//		pointerTouched[pointer] = false;
+//		pointerScreenX[pointer] = screenX;
+//		pointerScreenY[pointer] = screenY;
+//
+//		if (touchFocuses.size == 0) return false;
+
+		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
+
+		InputEvent event = new InputEvent(this);
+		event.setType(Type.touchUp);
+		event.world = this;
+		event.setWorldX(tempCoords.x);
+		event.setWorldY(tempCoords.y);
+		event.setPointer(pointer);
+		event.setButton(button);
+
+		Entity target = null;
+		for (Entity entity : entities) {
+			if (entity.hit(tempCoords.x, tempCoords.y)) {
+				target = entity;
+				break;
+			}
+		}
+		
+		if (target != null) {
+			boolean cancelled = target.fire(event);
+			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
+		}
+			
+
+		boolean handled = event.isHandled();
+		return handled;
+	}
 
 	@Override
 	public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
@@ -257,7 +318,7 @@ public class World implements Disposable, InputProcessor {
 
 	@Override
 	public boolean scrolled(float amountX, float amountY) { return false; }
-
+	
 	public static final class Debug extends com.mygdx.drop.Debug {
 		public Box2DDebugRenderer debugRenderer;
 		// This array is used to check whether all Box2D bodies have an owner. All bodies must hold a

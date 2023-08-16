@@ -19,6 +19,8 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.GameScreen;
+import com.mygdx.drop.etc.Event;
+import com.mygdx.drop.etc.EventListener;
 
 /**
  * This class glues together the physics api provided by Box2D and the rendering api provided by
@@ -30,6 +32,7 @@ public abstract class Entity implements Disposable {
 
 	protected final World world;
 	protected final Body self;
+	private Array<EventListener> listeners;
 	
 
 	/**
@@ -45,8 +48,8 @@ public abstract class Entity implements Disposable {
 		bodyDefinition.type = BodyType.DynamicBody;
 		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
+		this.listeners = new Array<>();
 		self.setUserData(this);
-		
 	}
 
 	/**
@@ -72,8 +75,30 @@ public abstract class Entity implements Disposable {
 	public final float getY() { return self.getWorldCenter().y; }
 	
 	public final Array<Fixture> getFixtures() { return self.getFixtureList(); }
-
-	public void clicked() {}
+	
+	public boolean fire(Event event) {
+		event.setTarget(this);
+		event.listenerOwner = this;
+		for (EventListener eventListener : listeners) {
+			if (eventListener.handle(event))
+				break;
+		}
+		event.listenerOwner = null;
+		return event.isCancelled();
+	}
+	
+	public final void addListener(EventListener listener) { listeners.add(listener); } 
+	public final void removeListener(EventListener listener) { listeners.removeValue(listener, false); }
+	
+	public final boolean hit(float worldX, float worldY) {
+		for (Fixture fixture : self.getFixtureList()) {
+			if (fixture.testPoint(worldX, worldY))
+				return true;
+		}
+		return false;
+	}
+	
+	public final Vector2 getRelativeCoordinates(Vector2 worldCoordinates) { return self.getLocalPoint(worldCoordinates); }
 	
 	/**
 	 * Defines the minimum requirements for constructing an entity. This class' purpose is to provide an

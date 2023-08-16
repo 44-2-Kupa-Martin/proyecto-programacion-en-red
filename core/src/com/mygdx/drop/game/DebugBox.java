@@ -14,6 +14,8 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.etc.ClickListener;
+import com.mygdx.drop.etc.InputEvent;
 
 public class DebugBox extends BoxEntity {
 	private final AtlasRegion texture;
@@ -40,6 +42,14 @@ public class DebugBox extends BoxEntity {
 		})).get());
 
 		this.texture = game.assets.get(com.mygdx.drop.Assets.TextureId.DebugBox_bucket);
+		
+		addListener(new ClickListener() {
+			@Override
+			public void clicked(InputEvent event, float x, float y) { 
+				super.clicked(event, x, y);
+				System.out.println("clicked debugbox");
+			}
+		});
 	}
 
 	@Override
