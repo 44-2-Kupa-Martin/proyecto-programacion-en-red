@@ -2,6 +2,8 @@ package com.mygdx.drop.game;
 
 import java.util.function.Supplier;
 
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -43,11 +45,25 @@ public class DebugBox extends BoxEntity {
 
 		this.texture = game.assets.get(com.mygdx.drop.Assets.TextureId.DebugBox_bucket);
 		
-		addListener(new ClickListener() {
+		addListener(new ClickListener(Input.Buttons.RIGHT) {
 			@Override
 			public void clicked(InputEvent event, float x, float y) { 
 				super.clicked(event, x, y);
 				System.out.println("clicked debugbox");
+			}
+			
+			@Override
+			public void enter(InputEvent event, float x, float y, int pointer, Entity fromEntity) {
+				// TODO Auto-generated method stub
+				super.enter(event, x, y, pointer, fromEntity);
+				System.out.println("entered");
+			}
+			
+			@Override
+			public void exit(InputEvent event, float x, float y, int pointer, Entity toEntity) {
+				// TODO Auto-generated method stub		
+				super.exit(event, x, y, pointer, toEntity);
+				System.out.println("exit");
 			}
 		});
 	}

@@ -4,6 +4,7 @@ import java.beans.PropertyChangeSupport;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
@@ -30,6 +31,7 @@ import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.Stage.TouchFocus;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.Null;
 import com.badlogic.gdx.utils.Pools;
 import com.badlogic.gdx.utils.SnapshotArray;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -58,6 +60,11 @@ public class World implements Disposable, InputProcessor {
 
 	private final Viewport viewport;
 	
+	private final Entity[] pointerOverEntities = new Entity[20];
+	private final boolean[] pointerTouched = new boolean[20];
+	private final int[] pointerScreenX = new int[20], pointerScreenY = new int[20];
+	private int mouseScreenX, mouseScreenY;
+	private @Null Entity mouseOverEntity;
 	
 
 	/**
@@ -145,7 +152,27 @@ public class World implements Disposable, InputProcessor {
 		
 	}
 
-	public final void step() { box2dWorld.step(1 / 60f, 6, 2); }
+	public final void step() {
+		// Update over actors. Done in act() because actors may change position, which can fire enter/exit without an input event.
+		for (int pointer = 0, n = pointerOverEntities.length; pointer < n; pointer++) {
+			Entity overLast = pointerOverEntities[pointer];
+			if (pointerTouched[pointer]) {
+				// Update the over actor for the pointer.
+				pointerOverEntities[pointer] = fireEnterAndExit(overLast, pointerScreenX[pointer], pointerScreenY[pointer], pointer);
+			} else if (overLast != null) {
+				// The pointer is gone, exit the over actor for the pointer, if any.
+				pointerOverEntities[pointer] = null;
+				fireExit(overLast, pointerScreenX[pointer], pointerScreenY[pointer], pointer);
+			}
+		}
+//		ApplicationType type = Gdx.app.getType();
+		
+		mouseOverEntity = fireEnterAndExit(mouseOverEntity, mouseScreenX, mouseScreenY, -1);
+
+
+		box2dWorld.step(1 / 60f, 6, 2);
+		
+	}
 
 	public final <T extends Tile, D extends Tile.TileDefinition<T>> T createTile(D tileDefinition) {
 		T tile = tileDefinition.createTile(this);
@@ -237,9 +264,9 @@ public class World implements Disposable, InputProcessor {
 	public boolean touchDown (int screenX, int screenY, int pointer, int button) {
 //		if (!isInsideViewport(screenX, screenY)) return false;
 //
-//		pointerTouched[pointer] = true;
-//		pointerScreenX[pointer] = screenX;
-//		pointerScreenY[pointer] = screenY;
+		pointerTouched[pointer] = true;
+		pointerScreenX[pointer] = screenX;
+		pointerScreenY[pointer] = screenY;
 
 		
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
@@ -247,14 +274,14 @@ public class World implements Disposable, InputProcessor {
 		InputEvent event = new InputEvent(this);
 		event.setType(Type.touchDown);
 		event.world = this;
-		event.setWorldX(tempCoords.x);
-		event.setWorldY(tempCoords.y);
+		event.setWorldX(worldCoordinates.x);
+		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
 
 		Entity target = null;
 		for (Entity entity : entities) {
-			if (entity.hit(tempCoords.x, tempCoords.y)) {
+			if (entity.hit(worldCoordinates.x, worldCoordinates.y)) {
 				target = entity;
 				break;
 			}
@@ -273,9 +300,9 @@ public class World implements Disposable, InputProcessor {
 	/** Applies a touch up event to the stage and returns true if an actor in the scene {@link Event#handle() handled} the event.
 	 * Only {@link InputListener listeners} that returned true for touchDown will receive this event. */
 	public boolean touchUp (int screenX, int screenY, int pointer, int button) {
-//		pointerTouched[pointer] = false;
-//		pointerScreenX[pointer] = screenX;
-//		pointerScreenY[pointer] = screenY;
+		pointerTouched[pointer] = false;
+		pointerScreenX[pointer] = screenX;
+		pointerScreenY[pointer] = screenY;
 //
 //		if (touchFocuses.size == 0) return false;
 
@@ -284,8 +311,8 @@ public class World implements Disposable, InputProcessor {
 		InputEvent event = new InputEvent(this);
 		event.setType(Type.touchUp);
 		event.world = this;
-		event.setWorldX(tempCoords.x);
-		event.setWorldY(tempCoords.y);
+		event.setWorldX(worldCoordinates.x);
+		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
 
@@ -311,13 +338,75 @@ public class World implements Disposable, InputProcessor {
 	public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
 
 	@Override
-	public boolean touchDragged(int screenX, int screenY, int pointer) { return false; }
+	public boolean touchDragged(int screenX, int screenY, int pointer) { 
+		pointerScreenX[pointer] = screenX;
+		pointerScreenY[pointer] = screenY;
+		mouseScreenX = screenX;
+		mouseScreenY = screenY;
+		return false; 
+	}
 
 	@Override
-	public boolean mouseMoved(int screenX, int screenY) { return false; }
+	public boolean mouseMoved(int screenX, int screenY) { 
+		mouseScreenX = screenX;
+		mouseScreenY = screenY;
+		return false; 
+	}
 
 	@Override
 	public boolean scrolled(float amountX, float amountY) { return false; }
+	
+	private Entity fireEnterAndExit (Entity overLast, int screenX, int screenY, int pointer) {
+		// Find the actor under the point.
+		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
+		
+		Entity over = null;
+		for (Entity entity : entities) {
+			if (entity.hit(worldCoordinates.x, worldCoordinates.y)) {
+				over = entity;
+				break;
+			}
+		}
+		
+		if (over == overLast) return overLast;
+
+		// Exit overLast.
+		if (overLast != null) {
+			InputEvent event = new InputEvent(this);
+			event.setType(InputEvent.Type.exit);
+			event.world = (this);
+			event.setWorldX(worldCoordinates.x);
+			event.setWorldY(worldCoordinates.y);
+			event.setPointer(pointer);
+			event.setRelatedEntity(over);
+			overLast.fire(event);
+		}
+
+		// Enter over.
+		if (over != null) {
+			InputEvent event = new InputEvent(this);
+			event.setType(InputEvent.Type.enter);
+			event.world = (this);
+			event.setWorldX(worldCoordinates.x);
+			event.setWorldY(worldCoordinates.y);
+			event.setPointer(pointer);
+			event.setRelatedEntity(overLast);
+			over.fire(event);
+		}
+		return over;
+	}
+	
+	private void fireExit (Entity entity, int screenX, int screenY, int pointer) {
+		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
+		InputEvent event = new InputEvent(this);
+		event.setType(InputEvent.Type.exit);
+		event.world = (this);
+		event.setWorldX(worldCoordinates.x);
+		event.setWorldY(worldCoordinates.y);
+		event.setPointer(pointer);
+		event.setRelatedEntity(entity);
+		entity.fire(event);
+	}
 	
 	public static final class Debug extends com.mygdx.drop.Debug {
 		public Box2DDebugRenderer debugRenderer;
