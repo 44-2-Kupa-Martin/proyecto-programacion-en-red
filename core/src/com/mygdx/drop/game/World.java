@@ -1,6 +1,7 @@
 package com.mygdx.drop.game;
 
 import java.beans.PropertyChangeSupport;
+import java.util.Iterator;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
@@ -30,6 +31,7 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.Stage.TouchFocus;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Array.ArrayIterator;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Null;
 import com.badlogic.gdx.utils.Pools;
@@ -53,6 +55,7 @@ public class World implements Disposable, InputProcessor {
 	protected TiledMap tiledMap;
 	protected final Array<Entity> entities;
 	protected final Array<Tile> tiles;
+	protected final Array<Entity> toBeDestroyed;
 	
 	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
@@ -66,7 +69,6 @@ public class World implements Disposable, InputProcessor {
 	private int mouseScreenX, mouseScreenY;
 	private @Null Entity mouseOverEntity;
 	
-
 	/**
 	 * Creates the world.
 	 * 
@@ -114,6 +116,7 @@ public class World implements Disposable, InputProcessor {
 
 		this.mapRenderer = new OrthogonalTiledMapRenderer(tiledMap, Constants.PX_TO_MT_SCALAR, game.batch);
 		this.entities = new Array<Entity>();
+		this.toBeDestroyed = new Array<Entity>();
 		this.tiles = new Array<Tile>();
 
 		initBox2dWorld(Drop.tlToMt(width), Drop.tlToMt(height));
@@ -153,7 +156,7 @@ public class World implements Disposable, InputProcessor {
 	}
 
 	public final void step() {
-		box2dWorld.step(1 / 60f, 6, 2);
+		
 		// Update over actors. Done in act() because actors may change position, which can fire enter/exit without an input event.
 		for (int pointer = 0, n = pointerOverEntities.length; pointer < n; pointer++) {
 			Entity overLast = pointerOverEntities[pointer];
@@ -167,9 +170,15 @@ public class World implements Disposable, InputProcessor {
 			}
 		}
 		mouseOverEntity = fireEnterAndExit(mouseOverEntity, mouseScreenX, mouseScreenY, -1);
-
-
 		
+		box2dWorld.step(1 / 60f, 6, 2);
+
+		for (ArrayIterator<Entity> iterator = toBeDestroyed.iterator(); iterator.hasNext();) {
+			Entity entity = iterator.next();
+			entities.removeValue(entity, false);
+			box2dWorld.destroyBody(entity.self);
+			iterator.remove();
+		}
 	}
 
 	public final <T extends Tile, D extends Tile.TileDefinition<T>> T createTile(D tileDefinition) {

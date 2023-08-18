@@ -19,9 +19,14 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.CircleShape;
+import com.badlogic.gdx.physics.box2d.Contact;
+import com.badlogic.gdx.physics.box2d.ContactImpulse;
+import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
+import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.Shape.Type;
 import com.badlogic.gdx.utils.viewport.Viewport;
@@ -58,6 +63,53 @@ public class Player extends BoxEntity {
 			fixture.filter.maskBits = Constants.Category.PLAYER_COLLIDABLE.value;
 			return fixture;
 		})).get());
+		FixtureDef sensor = new FixtureDef();
+		sensor.isSensor = true;
+		sensor.filter.maskBits = Constants.Category.ITEM.value;
+		sensor.filter.categoryBits = Constants.Category.SENSOR.value;
+		CircleShape pickupRange = new CircleShape();
+		pickupRange.setRadius(1f);
+		sensor.shape = pickupRange;
+		self.createFixture(sensor);
+		pickupRange.dispose();
+		world.box2dWorld.setContactListener(new ContactListener() {
+			
+			@Override
+			public void preSolve(Contact contact, Manifold oldManifold) {}
+			
+			@Override
+			public void postSolve(Contact contact, ContactImpulse impulse) {}
+			
+			@Override
+			public void endContact(Contact contact) {}
+			
+			@Override
+			public void beginContact(Contact contact) {
+				Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
+				Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
+				boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
+				boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
+				boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
+				if (!playerInvolved) 
+					return;
+				boolean itemOwnsFixtureA = ownerFixtureA instanceof DroppedItem;
+				boolean itemOwnsFixtureB = ownerFixtureB instanceof DroppedItem;
+				boolean itemInvolved = itemOwnsFixtureA || itemOwnsFixtureB;
+				if (!itemInvolved)
+					return;
+				
+				Player player = (Player)(playerOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
+				DroppedItem item = (DroppedItem)(itemOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
+				Fixture playerRadar = playerOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
+				Fixture itemFixture = itemOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
+				
+				player.inventory.get(6).set(item.droppedItem);
+				item.dispose();
+			}
+			
+			
+		});
+		
 		this.previousState = State.IDLE;
 		this.currentState = State.IDLE;
 		this.animationTimer = 0;

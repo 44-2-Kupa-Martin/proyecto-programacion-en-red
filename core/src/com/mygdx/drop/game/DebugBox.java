@@ -41,7 +41,7 @@ public class DebugBox extends BoxEntity {
 		((Supplier<FixtureDef>) (() -> {
 			FixtureDef fixture = new FixtureDef();
 			fixture.density = 0.5f;
-			fixture.filter.categoryBits = (short) (Constants.Category.PLAYER_COLLIDABLE.value | Constants.Category.OTHER.value);
+			fixture.filter.categoryBits = (short) (Constants.Category.PLAYER_COLLIDABLE.value);
 			return fixture;
 		})).get());
 

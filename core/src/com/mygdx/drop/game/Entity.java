@@ -49,6 +49,11 @@ public abstract class Entity implements Disposable {
 		this.listeners = new Array<>();
 		self.setUserData(this);
 	}
+	
+	@Override
+	public void dispose() {
+		world.toBeDestroyed.add(this);
+	}
 
 	/**
 	 * Updates the entity's internal state.

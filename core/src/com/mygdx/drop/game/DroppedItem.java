@@ -6,12 +6,13 @@ import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 
 public class DroppedItem extends BoxEntity {
-	private final Item droppedItem;
+	public final Item droppedItem;
 	protected DroppedItem(World world, float x, float y, Item item) { 
 		super(world, Drop.tlToMt(1), Drop.tlToMt(1), 
 			((Supplier<BodyDef>)(()->{
@@ -23,7 +24,8 @@ public class DroppedItem extends BoxEntity {
 			})).get(), 
 			((Supplier<FixtureDef>)(()->{
 				FixtureDef fixture = new FixtureDef();
-				fixture.filter.categoryBits = Constants.Category.OTHER.value;
+				fixture.filter.categoryBits = Constants.Category.ITEM.value;
+				fixture.filter.maskBits = (short) (Constants.Category.WORLD.value | Constants.Category.SENSOR.value);
 				return fixture;
 			})).get()
 		);
@@ -31,7 +33,9 @@ public class DroppedItem extends BoxEntity {
 		self.applyLinearImpulse(new Vector2(3, 3) /* N-s */, getPosition(), true);
 	 }
 	@Override
-	public void dispose() {}
+	public void dispose() {
+		super.dispose();
+	}
 	@Override
 	public boolean update(Camera camera) { return false; }
 	@Override
