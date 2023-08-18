@@ -13,7 +13,7 @@ public class InputEvent extends Event {
 	private Type type;
 	private float worldX, worldY, scrollAmountX, scrollAmountY;
 	private int pointer, button, keyCode;
-	private @Null Entity relatedEntity; // If an enter/exit event, this field contain the entity being exited/entered
+	private @Null Entity relatedEntity; // If an enter/exit event, this field contains the entity being exited/entered
 	private char character;
 
 	/** The world x coordinate where the event occurred. Valid for: touchDown, touchDragged, touchUp, mouseMoved, enter, and

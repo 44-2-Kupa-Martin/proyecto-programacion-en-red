@@ -153,6 +153,7 @@ public class World implements Disposable, InputProcessor {
 	}
 
 	public final void step() {
+		box2dWorld.step(1 / 60f, 6, 2);
 		// Update over actors. Done in act() because actors may change position, which can fire enter/exit without an input event.
 		for (int pointer = 0, n = pointerOverEntities.length; pointer < n; pointer++) {
 			Entity overLast = pointerOverEntities[pointer];
@@ -165,12 +166,9 @@ public class World implements Disposable, InputProcessor {
 				fireExit(overLast, pointerScreenX[pointer], pointerScreenY[pointer], pointer);
 			}
 		}
-//		ApplicationType type = Gdx.app.getType();
-		
 		mouseOverEntity = fireEnterAndExit(mouseOverEntity, mouseScreenX, mouseScreenY, -1);
 
 
-		box2dWorld.step(1 / 60f, 6, 2);
 		
 	}
 
@@ -290,6 +288,11 @@ public class World implements Disposable, InputProcessor {
 		if (target != null) {
 			boolean cancelled = target.fire(event);
 			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
+		} else {
+			if (game.heldItem != null) {
+				createEntity(new DroppedItem.Definition(0, 5, game.heldItem));
+				game.heldItem = null;
+			}
 		}
 			
 
@@ -328,7 +331,6 @@ public class World implements Disposable, InputProcessor {
 			boolean cancelled = target.fire(event);
 			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
 		}
-			
 
 		boolean handled = event.isHandled();
 		return handled;

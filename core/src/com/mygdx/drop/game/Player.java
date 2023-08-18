@@ -48,12 +48,14 @@ public class Player extends BoxEntity {
 		super(world, Drop.tlToMt(2), Drop.tlToMt(3), ((Supplier<BodyDef>) (() -> {
 			BodyDef body = new BodyDef();
 			body.position.set(x, Drop.tlToMt(3) / 2 + y);
+			body.type = BodyType.DynamicBody;
 			body.fixedRotation = true;
 			return body;
 		})).get(), ((Supplier<FixtureDef>) (() -> {
 			FixtureDef fixture = new FixtureDef();
 			fixture.density = 1;
 			fixture.filter.categoryBits = Constants.Category.PLAYER.value;
+			fixture.filter.maskBits = Constants.Category.PLAYER_COLLIDABLE.value;
 			return fixture;
 		})).get());
 		this.previousState = State.IDLE;

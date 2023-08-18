@@ -76,6 +76,7 @@ public abstract class Tile implements Disposable {
 
 		FixtureDef fixtureDefinition = new FixtureDef();
 		fixtureDefinition.filter.categoryBits = (short) (Constants.Category.WORLD.value | Constants.Category.PLAYER_COLLIDABLE.value);
+		fixtureDefinition.filter.maskBits = (short) 0b1111111111111111;
 		ChainShape chain = new ChainShape();
 		
 		float halfWidth = Drop.tlToMt(1) / 2;

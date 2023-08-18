@@ -56,6 +56,7 @@ public final class Constants {
 		PLAYER,
 		/** The category of all bodies that collide with the player */
 		PLAYER_COLLIDABLE,
+		OTHER,
 		/** The category of all bodies that are part of the terrain */
 		WORLD;
 

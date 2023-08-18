@@ -76,7 +76,7 @@ public class Slot extends Container<Image> implements PropertyChangeListener {
 	}
 	
 	private final void refreshImage(Item newItem) {
-		TextureRegionDrawable drawable = newItem == null ? transparentPlaceholder : new TextureRegionDrawable(newItem.texture);
+		TextureRegionDrawable drawable = newItem == null ? transparentPlaceholder : new TextureRegionDrawable(newItem.getTexture());
 		getActor().setDrawable(drawable);
 	}
 

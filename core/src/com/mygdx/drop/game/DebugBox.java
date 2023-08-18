@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
@@ -33,13 +34,14 @@ public class DebugBox extends BoxEntity {
 		super(world, width, height, 
 		((Supplier<BodyDef>) (() -> {
 			BodyDef body = new BodyDef();
+			body.type = BodyType.DynamicBody;
 			body.position.set(x, y + height / 2);
 			return body;
 		})).get(), 
 		((Supplier<FixtureDef>) (() -> {
 			FixtureDef fixture = new FixtureDef();
 			fixture.density = 0.5f;
-			fixture.filter.categoryBits = Constants.Category.PLAYER_COLLIDABLE.value;
+			fixture.filter.categoryBits = (short) (Constants.Category.PLAYER_COLLIDABLE.value | Constants.Category.OTHER.value);
 			return fixture;
 		})).get());
 

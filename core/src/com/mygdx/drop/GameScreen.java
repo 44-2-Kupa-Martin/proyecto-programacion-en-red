@@ -145,6 +145,6 @@ public class GameScreen implements Screen {
 	private final void drawHeldItem() {
 		if (game.heldItem == null) 
 			return;
-		game.batch.draw(game.heldItem.texture, Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
+		game.batch.draw(game.heldItem.getTexture(), Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
 	}
 }

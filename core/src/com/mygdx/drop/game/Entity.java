@@ -38,14 +38,12 @@ public abstract class Entity implements Disposable {
 	/**
 	 * @param world          The {@link World} that holds the entity.
 	 * @param bodyDefinition The body definition used to create the body, all attributes must be in SIU
-	 *                       units. The {@link BodyDef#type} attribute will be overridden to
-	 *                       {@link BodyType#DynamicBody}.
+	 *                       units. 
 	 */
 	protected Entity(World world, BodyDef bodyDefinition) {
 		assert Drop.game != null : "Entity created before game instance!";
 		if (game == null)
 			game = Drop.game;
-		bodyDefinition.type = BodyType.DynamicBody;
 		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
 		this.listeners = new Array<>();
@@ -63,7 +61,7 @@ public abstract class Entity implements Disposable {
 	/** Draws the entity to the screen */
 	public abstract void draw(Camera camera);
 
-	/** Returns the position of the player in meters (the same vector each time) */
+	/** Returns the position of the entity's center of mass in meters (the same vector each time) */
 	public final Vector2 getPosition() {
 		return new Vector2(self.getWorldCenter());
 	}
