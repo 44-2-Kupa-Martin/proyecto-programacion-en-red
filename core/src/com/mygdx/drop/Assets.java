@@ -1,19 +1,8 @@
 package com.mygdx.drop;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.EnumMap;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-import com.badlogic.gdx.Files;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
-import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.TextureArray;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
@@ -204,7 +193,8 @@ public class Assets implements Disposable {
 	}
 
 	public enum SkinId {
-		Global_default("default/uiskin.json");
+		Global_default("Default/uiskin.json"),
+		Glassy_glassy("Glassy/skin/glassy-ui.json");
 		
 		public final String path;
 		private SkinId(String path) { this.path = "skins/" + path; }
