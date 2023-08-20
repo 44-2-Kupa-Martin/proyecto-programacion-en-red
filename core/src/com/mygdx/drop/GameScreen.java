@@ -1,61 +1,21 @@
 package com.mygdx.drop;
 
-import java.util.Iterator;
-
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
-import com.badlogic.gdx.maps.MapLayers;
-import com.badlogic.gdx.maps.MapObjects;
-import com.badlogic.gdx.maps.MapProperties;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TiledMapTile;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
-import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
-import com.badlogic.gdx.maps.tiled.TiledMapTile.BlendMode;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
-import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.Filter;
-import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Assets.FontId;
 import com.mygdx.drop.Assets.MusicId;
-import com.mygdx.drop.Assets.TextureId;
 import com.mygdx.drop.actors.HUD;
-import com.mygdx.drop.actors.Inventory;
-import com.mygdx.drop.game.DebugBox;
-import com.mygdx.drop.game.Player;
-import com.mygdx.drop.game.RainbowTile;
 import com.mygdx.drop.game.World;
-import com.mygdx.drop.game.RainbowTile.Definition;
+import com.mygdx.drop.game.dynamicentities.DebugBox;
+import com.mygdx.drop.game.dynamicentities.Player;
 
 public class GameScreen implements Screen {
 	private World world;
@@ -66,7 +26,6 @@ public class GameScreen implements Screen {
 	private ExtendViewport gameViewport;
 	private Stage hudStage;
 	private Player player;
-	private DebugBox box;
 	public GameScreen(Drop game) {
 		this.game = game;
 		this.gameCamera = new OrthographicCamera();
@@ -78,8 +37,8 @@ public class GameScreen implements Screen {
 		this.world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */, gameViewport);
 		multiplexer.addProcessor(world);
 		Gdx.input.setInputProcessor(multiplexer);
-		this.box = world.createEntity(new DebugBox.Definition(0, 5, 5, 5));
-		this.player = world.createEntity(new Player.Definition(0,0));
+		world.createEntity(new DebugBox.Definition(0, 5, 5, 5));
+		this.player = world.createEntity(new Player.Definition(0,3));
 		this.hud = new HUD(player, world);
 		hudStage.addActor(hud);
 		game.assets.get(MusicId.GameScreen_rain).setLooping(true);
@@ -107,7 +66,6 @@ public class GameScreen implements Screen {
 		drawHeldItem();
 		game.batch.end();
 		
-		player.update(gameCamera);
 		world.step();
 	}
 

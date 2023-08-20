@@ -1,8 +1,8 @@
 package com.mygdx.drop.etc;
 /**
- * Holds a reference to an object.
+ * Holds a reference to an object. Allows objects to pass a field "by reference"
  *
- * @param <T> The type of the object
+ * @param <T> The type of the object being referenced
  */
 public class Reference<T> {
 	private T object;

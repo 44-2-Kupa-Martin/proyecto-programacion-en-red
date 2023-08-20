@@ -1,31 +1,23 @@
 package com.mygdx.drop.game;
 
-import java.util.Iterator;
+import java.util.function.Supplier;
 
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
-import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.ChainShape;
-import com.badlogic.gdx.physics.box2d.EdgeShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.utils.Disposable;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Constants.LayerId;
-import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.Drop;
 
-public abstract class Tile implements Disposable {
+public abstract class Tile extends Entity {
 	protected static Drop game;
 
 	public final World world;
-	public final Body self;
 	public final int x_tl;
 	public final int y_tl;
 
@@ -41,6 +33,14 @@ public abstract class Tile implements Disposable {
 	 * @param y       Measured in tiles, origin is at the bottom left corner of the world
 	 */
 	public <T extends Tile> Tile(World world, LayerId layerId, TileId tileId, int x, int y, Class<T> subclass) {
+		super(world, ((Supplier<BodyDef>) (() -> {
+			BodyDef bodyDefiniton = new BodyDef();
+			bodyDefiniton.type = BodyType.StaticBody;
+			bodyDefiniton.position.set(Drop.tlToMt(x) - world.worldWidth_mt / 2 + Drop.tlToMt(1) / 2,
+					Drop.tlToMt(y) - world.worldHeight_mt / 2 + Drop.tlToMt(1) / 2);
+			bodyDefiniton.fixedRotation = true;
+			return bodyDefiniton;
+		})).get());
 		// TODO: remove subclass parameter, it is debug only
 		assert tileId != null : "tileId cannot be null!";
 		if (Constants.DEBUG) {
@@ -59,29 +59,20 @@ public abstract class Tile implements Disposable {
 		this.tileId = tileId;
 		this.x_tl = x;
 		this.y_tl = y;
-		
-		
-		// TODO: implement a defer boolean parameter to skip cell's intialization, so that it can be done in a initCell method
+
+		// TODO: implement a defer boolean parameter to skip cell's intialization, so that it can be done in
+		// a initCell method
 		TiledMapTileLayer layer = (TiledMapTileLayer) world.tiledMap.getLayers().get(LayerId.WORLD.value);
 		layer.setCell(x, y, new Cell().setTile(world.tiledMap.getTileSets().getTileSet(layerId.value).getTile(tileId.value)));
-		
-		BodyDef bodyDefiniton = new BodyDef();
-		bodyDefiniton.type = BodyType.StaticBody;
-		bodyDefiniton.position.set(Drop.tlToMt(x) - world.worldWidth_mt / 2 + Drop.tlToMt(1) / 2,
-				Drop.tlToMt(y) - world.worldHeight_mt / 2 + Drop.tlToMt(1) / 2);
-		bodyDefiniton.fixedRotation = true;
-
-		this.self = world.box2dWorld.createBody(bodyDefiniton);
-		self.setUserData(this);
 
 		FixtureDef fixtureDefinition = new FixtureDef();
 		fixtureDefinition.filter.categoryBits = (short) (Constants.Category.WORLD.value | Constants.Category.PLAYER_COLLIDABLE.value);
 		fixtureDefinition.filter.maskBits = (short) 0b1111111111111111;
 		ChainShape chain = new ChainShape();
-		
+
 		float halfWidth = Drop.tlToMt(1) / 2;
 		float halfHeight = halfWidth;
-		chain.createLoop(new float[]{-halfWidth, -halfHeight, halfWidth, -halfHeight, halfWidth, halfHeight, -halfWidth, halfHeight});
+		chain.createLoop(new float[] { -halfWidth, -halfHeight, halfWidth, -halfHeight, halfWidth, halfHeight, -halfWidth, halfHeight });
 
 		fixtureDefinition.shape = chain;
 		self.createFixture(fixtureDefinition);
@@ -89,25 +80,12 @@ public abstract class Tile implements Disposable {
 	}
 
 	/**
-	 * Defines the minimum requirements for constructing a tile. This class' purpose is to provide an
-	 * api that accurately reflects the high level of coupling the {@link World} and {@link Tile}
-	 * classes have. By making it possible to create a tile only through a world object, it aims to make
-	 * clear that the {@code Tile} and {@code World} classes are "friendly."
-	 * 
-	 * @param <T> The tile defined by the specific subclass. This must be a parameter of the class
-	 *            itself instead of the {@link TileDefinition#createTile()} method (see <a href=
-	 *            "https://stackoverflow.com/questions/15095966/overriding-generic-abstract-methods-return-type-without-type-safety-warnings">reason</a>)
+	 * Tile classes take the position as tiles from the bottom left corner of the world
+	 *
+	 * @see Entity.EntityDefinition
 	 */
-	public static abstract class TileDefinition<T extends Tile> {
-		public int x;
-		public int y;
-
-		protected TileDefinition(int x, int y) {
-			this.x = x;
-			this.y = y;
-		}
-
-		protected abstract T createTile(World world);
+	public static abstract class TileDefinition<T extends Tile> extends Entity.EntityDefinition<T> {
+		public TileDefinition(int x, int y) { super(x, y); }
 
 	}
 

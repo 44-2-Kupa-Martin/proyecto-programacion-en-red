@@ -4,7 +4,6 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker;
 import com.badlogic.gdx.tools.texturepacker.TexturePacker.Settings;
-import com.mygdx.drop.Drop;
 
 // Please note that on macOS your application needs to be started with the -XstartOnFirstThread JVM argument
 public class DesktopLauncher {
@@ -23,7 +22,8 @@ public class DesktopLauncher {
 		settings.maxWidth = 4096;
 		settings.maxHeight = 4096;
 		settings.alias = true;
-		TexturePacker.process(settings, "../assets", "../assets", "game");
+		//TODO: exclude skins directory
+		TexturePacker.processIfModified(settings, "../assets", "../assets", "game");
 	}
 }
 

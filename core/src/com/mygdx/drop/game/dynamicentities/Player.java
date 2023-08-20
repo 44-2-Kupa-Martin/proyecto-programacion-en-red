@@ -1,4 +1,4 @@
-package com.mygdx.drop.game;
+package com.mygdx.drop.game.dynamicentities;
 
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -32,9 +32,19 @@ import com.badlogic.gdx.physics.box2d.Shape.Type;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.ObservableReference;
+import com.mygdx.drop.etc.events.ContactEvent;
+import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
+import com.mygdx.drop.game.BoxEntity;
+import com.mygdx.drop.game.Entity;
+import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.items.DebugItem;
+import com.mygdx.drop.game.Entity.EntityDefinition;
+import com.mygdx.drop.game.Item;
 
-public class Player extends BoxEntity {
+public class Player extends BoxEntity implements Drawable {
+	private static boolean instantiated = false;
 	private State previousState;
 	private State currentState;
 	private float animationTimer;
@@ -72,43 +82,37 @@ public class Player extends BoxEntity {
 		sensor.shape = pickupRange;
 		self.createFixture(sensor);
 		pickupRange.dispose();
-		world.box2dWorld.setContactListener(new ContactListener() {
-			
-			@Override
-			public void preSolve(Contact contact, Manifold oldManifold) {}
-			
-			@Override
-			public void postSolve(Contact contact, ContactImpulse impulse) {}
-			
-			@Override
-			public void endContact(Contact contact) {}
-			
-			@Override
-			public void beginContact(Contact contact) {
-				Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
-				Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
-				boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
-				boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
-				boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
-				if (!playerInvolved) 
-					return;
-				boolean itemOwnsFixtureA = ownerFixtureA instanceof DroppedItem;
-				boolean itemOwnsFixtureB = ownerFixtureB instanceof DroppedItem;
-				boolean itemInvolved = itemOwnsFixtureA || itemOwnsFixtureB;
-				if (!itemInvolved)
-					return;
-				
-				Player player = (Player)(playerOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-				DroppedItem item = (DroppedItem)(itemOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-				Fixture playerRadar = playerOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
-				Fixture itemFixture = itemOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
-				
-				player.inventory.get(6).set(item.droppedItem);
-				item.dispose();
-			}
-			
-			
-		});
+		
+		if (!instantiated) {
+			instantiated = true;
+			world.asContactEventListener().addHandler(new ContactEventHandler() {
+				@Override
+				public boolean beginContact(World world, Contact contact) {
+					//TODO: prevent item duplication when two pickups occur at the same time
+					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
+					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
+					boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
+					boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
+					boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
+					if (!playerInvolved) 
+						return false;
+					boolean itemOwnsFixtureA = ownerFixtureA instanceof DroppedItem;
+					boolean itemOwnsFixtureB = ownerFixtureB instanceof DroppedItem;
+					boolean itemInvolved = itemOwnsFixtureA || itemOwnsFixtureB;
+					if (!itemInvolved)
+						return false;
+					
+					Player player = (Player)(playerOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
+					DroppedItem item = (DroppedItem)(itemOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
+					Fixture playerRadar = playerOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
+					Fixture itemFixture = itemOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
+					
+					player.inventory.get(6).set(item.droppedItem);
+					item.dispose();
+					return true; 
+				}
+			});
+		}
 		
 		this.previousState = State.IDLE;
 		this.currentState = State.IDLE;
@@ -134,23 +138,10 @@ public class Player extends BoxEntity {
 	}
 
 	@Override
-	public final boolean update(Camera camera) {
+	public final boolean update(Viewport viewport) {
+		super.update(viewport);
 		previousState = currentState;
 		currentState = State.IDLE;
-
-		// Rationale: Although the Entity class has a width and a height field, they are simply for
-		// convenience. What actually determines the width and height of the player is the shape associated
-		// with the fixtures within the body of the player (i.e within the self field). This is a check to
-		// ensure both values are in sync
-		if (Constants.DEBUG) {
-			assert self.getFixtureList().get(0).getShape().getType() == Type.Polygon : "Unexpected fixture type";
-			// As you can see, retrieving the width and height of the body is tremendously inconvenient
-			PolygonShape shapeData = (PolygonShape) self.getFixtureList().get(0).getShape();
-			Vector2 temp = new Vector2();
-			shapeData.getVertex(2, temp); // vertex 2 should correspond to the top-right corner of the rectangle
-			temp.scl(2); // the origin is at the middle of the body, hence the distances must be scaled by two
-			assert temp.x == getWidth() && temp.y == getHeight() : "Player's properties are desynced from those of its body's";
-		}
 
 		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
 			self.applyLinearImpulse(new Vector2(-1, 0), self.getWorldCenter(), true);
@@ -176,16 +167,13 @@ public class Player extends BoxEntity {
 	}
 
 	@Override
-	public final void draw(Camera camera) {
+	public final void draw(Viewport viewport) {
 		animationTimer += Gdx.graphics.getDeltaTime();
 		Vector2 coords = getDrawingCoordinates();
 		Animation<TextureRegion> currentAnimation = animations.get(currentState);
 		TextureRegion frame = currentAnimation.getKeyFrame(animationTimer);
 		game.batch.draw(frame, coords.x, coords.y, getWidth(), getHeight());
 	}
-
-	@Override
-	public void dispose() {}
 
 	private final EnumMap<State, Animation<TextureRegion>> initAnimationsMap() {
 		EnumMap<State, Animation<TextureRegion>> animations = new EnumMap<>(State.class);

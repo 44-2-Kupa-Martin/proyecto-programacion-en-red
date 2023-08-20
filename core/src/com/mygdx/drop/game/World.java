@@ -1,12 +1,7 @@
 package com.mygdx.drop.game;
 
-import java.beans.PropertyChangeSupport;
-import java.util.Iterator;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.Application.ApplicationType;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.maps.MapLayer;
@@ -18,44 +13,52 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
-import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.physics.box2d.Contact;
+import com.badlogic.gdx.physics.box2d.ContactImpulse;
+import com.badlogic.gdx.physics.box2d.ContactListener;
+import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
-import com.badlogic.gdx.scenes.scene2d.Stage.TouchFocus;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Array.ArrayIterator;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Null;
-import com.badlogic.gdx.utils.Pools;
-import com.badlogic.gdx.utils.SnapshotArray;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
-import com.mygdx.drop.Drop;
-import com.mygdx.drop.game.Entity.EntityDefinition;
-import com.mygdx.drop.Constants.Category;
 import com.mygdx.drop.Constants.LayerId;
-import com.mygdx.drop.etc.InputEvent;
-import com.mygdx.drop.etc.InputEvent.Type;
+import com.mygdx.drop.Drop;
+import com.mygdx.drop.etc.Drawable;
+import com.mygdx.drop.etc.EventListener;
+import com.mygdx.drop.etc.events.ContactEvent;
+import com.mygdx.drop.etc.events.InputEvent;
+import com.mygdx.drop.etc.events.InputEvent.Type;
+import com.mygdx.drop.etc.events.handlers.EventHandler;
+import com.mygdx.drop.game.Entity.EntityDefinition;
+import com.mygdx.drop.game.WorldBorder.Cardinality;
+import com.mygdx.drop.game.dynamicentities.DroppedItem;
+import com.mygdx.drop.game.tiles.RainbowTile;
 
+/**
+ * A wrapper for box2dworld. Handles the simulation and rendering of all {@link Entity entities} and {@link InputEvent input events}
+ */
 public class World implements Disposable, InputProcessor {
 	protected static Drop game;
 	
 	public final float worldWidth_mt;
+	public final int worldWidth_tl;
 	public final float worldHeight_mt;
+	public final int worldHeight_tl;
 
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
 	protected TiledMap tiledMap;
-	protected final Array<Entity> entities;
-	protected final Array<Tile> tiles;
+	/** There is a 1 to 1 correspondence between bodies and entities */
+	protected final Array<Body> bodies;
+	/** In an entity object implements {@link Drawable} it is placed here automatically (see {@link #createEntity(EntityDefinition)} */
+	protected final Array<Drawable> toBeDrawn;
+	/** Entities here are destroyed the next {@link #step()} call */
 	protected final Array<Entity> toBeDestroyed;
+	private final Array<EventHandler<ContactEvent>> contactEventHandlers;
 	
 	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
@@ -72,35 +75,68 @@ public class World implements Disposable, InputProcessor {
 	/**
 	 * Creates the world.
 	 * 
-	 * @param width   World width in tiles
-	 * @param height  World height in tiles
+	 * @param width_tl   World width in tiles
+	 * @param height_tl  World height in tiles
 	 * @param gravity Gravity vector in SIU units
 	 */
-	public World(int width, int height, Vector2 gravity, Viewport viewport) {
+	public World(int width_tl, int height_tl, Vector2 gravity, Viewport viewport) {
 		assert Drop.game != null : "World created before game instance!";
 		if (game == null)
 			game = Drop.game;
 		
 		this.viewport = viewport;
-		
-		this.worldWidth_mt = Drop.tlToMt(width);
-		this.worldHeight_mt = Drop.tlToMt(height);
+		this.worldWidth_tl = width_tl;
+		this.worldHeight_tl = height_tl;
+		this.worldWidth_mt = Drop.tlToMt(width_tl);
+		this.worldHeight_mt = Drop.tlToMt(height_tl);
 
 		this.box2dWorld = new com.badlogic.gdx.physics.box2d.World(gravity, false);
+		
+		// Pack and fire contact events
+		// TODO: perform hit detection and fire the events on the actors directly
+		box2dWorld.setContactListener(new ContactListener() {
+			@Override
+			public void preSolve(Contact contact, Manifold oldManifold) {
+				ContactEvent event = new ContactEvent(ContactEvent.Type.preSolve);
+				event.setContact(contact);
+				event.setManifold(oldManifold);
+				asContactEventListener().fire(event);
+			}
+			
+			@Override
+			public void postSolve(Contact contact, ContactImpulse impulse) {
+				ContactEvent event = new ContactEvent(ContactEvent.Type.postSolve);
+				event.setContact(contact);
+				event.setContactImpulse(impulse);
+				asContactEventListener().fire(event);
+			}
+			
+			@Override
+			public void endContact(Contact contact) {
+				ContactEvent event = new ContactEvent(ContactEvent.Type.endContact);
+				event.setContact(contact);
+				asContactEventListener().fire(event);
+			}
+			
+			@Override
+			public void beginContact(Contact contact) {
+				ContactEvent event = new ContactEvent(ContactEvent.Type.beginContact);
+				event.setContact(contact);
+				asContactEventListener().fire(event);
+			}	
+		});
 
 		if (Constants.DEBUG) {
 			debug.debugRenderer = new Box2DDebugRenderer();
-			debug.bodies = new Array<Body>();
 		}
 
 		//TODO: move this to a World.loadTilesets() method to allow for asynchronous loading of assets while the world initializes
-		
 		// tiledMap initialization
 		this.tiledMap = new TiledMap();
 		TiledMapTileSets tilesets = tiledMap.getTileSets();
 		for (LayerId layerId : LayerId.values()) {
 			// init layers
-			TiledMapTileLayer layer = new TiledMapTileLayer(width, height, Constants.TL_TO_PX_SCALAR, Constants.TL_TO_PX_SCALAR);
+			TiledMapTileLayer layer = new TiledMapTileLayer(width_tl, height_tl, Constants.TL_TO_PX_SCALAR, Constants.TL_TO_PX_SCALAR);
 			layer.setName(layerId.name);
 			tiledMap.getLayers().add(layer);
 
@@ -115,11 +151,23 @@ public class World implements Disposable, InputProcessor {
 		}
 
 		this.mapRenderer = new OrthogonalTiledMapRenderer(tiledMap, Constants.PX_TO_MT_SCALAR, game.batch);
-		this.entities = new Array<Entity>();
+		this.bodies = new Array<Body>();
+		this.toBeDrawn = new Array<Drawable>();
 		this.toBeDestroyed = new Array<Entity>();
-		this.tiles = new Array<Tile>();
+		this.contactEventHandlers = new Array<EventHandler<ContactEvent>>();
 
-		initBox2dWorld(Drop.tlToMt(width), Drop.tlToMt(height));
+		new WorldBorder(this, Cardinality.NORTH);
+		new WorldBorder(this, Cardinality.SOUTH);
+		new WorldBorder(this, Cardinality.EAST);
+		new WorldBorder(this, Cardinality.WEST);
+		RainbowTile.Definition tileDefiniton = new RainbowTile.Definition(0,0); 
+		for (int i = worldWidth_tl / 2 - 10; i < worldWidth_tl / 2 + 10; i++) {
+			for (int j = worldHeight_tl / 2 - 3; j < worldHeight_tl / 2; j++) {
+				tileDefiniton.x = i;
+				tileDefiniton.y = j;
+				createEntity(tileDefiniton);
+			}
+		}		
 	}
 
 	public final void render(OrthographicCamera camera) {
@@ -137,8 +185,8 @@ public class World implements Disposable, InputProcessor {
 
 		// Checking whether all bodies have an owner
 		if (Constants.DEBUG) {
-			box2dWorld.getBodies(debug.bodies);
-			for (Body body : debug.bodies) {
+			box2dWorld.getBodies(bodies);
+			for (Body body : bodies) {
 				assert body.getUserData() != null : "Body's userData doesnt reference an Entity instance (is null)";
 				// Generally dynamic bodies are entities and static bodies belong to the world (e.g the walls that
 				// keep the player in bounds)
@@ -146,9 +194,10 @@ public class World implements Disposable, InputProcessor {
 						: "Body's userData references an unknown object";
 			}
 		}
+		
 		game.batch.begin();
-		for (Entity entity : entities) {
-			entity.draw(camera);
+		for (Drawable drawable : toBeDrawn) {
+			drawable.draw(viewport);
 		}
 		game.batch.end();
 		
@@ -156,8 +205,22 @@ public class World implements Disposable, InputProcessor {
 	}
 
 	public final void step() {
+		for (ArrayIterator<Entity> iterator = toBeDestroyed.iterator(); iterator.hasNext();) {
+			Entity entity = iterator.next();
+			box2dWorld.destroyBody(entity.self);
+			iterator.remove();
+		}
+		box2dWorld.getBodies(bodies);
 		
-		// Update over actors. Done in act() because actors may change position, which can fire enter/exit without an input event.
+		//TODO: determine best values for box2dworld.step()
+		box2dWorld.step(1 / 60f, 6, 2);
+		
+		for (Body body : bodies) {
+			Entity entity = (Entity) body.getUserData();
+			entity.update(viewport);
+		}
+		
+		// Update over entities. Done in step() because entities may change position, which can fire enter/exit without an input event.
 		for (int pointer = 0, n = pointerOverEntities.length; pointer < n; pointer++) {
 			Entity overLast = pointerOverEntities[pointer];
 			if (pointerTouched[pointer]) {
@@ -170,83 +233,49 @@ public class World implements Disposable, InputProcessor {
 			}
 		}
 		mouseOverEntity = fireEnterAndExit(mouseOverEntity, mouseScreenX, mouseScreenY, -1);
-		
-		box2dWorld.step(1 / 60f, 6, 2);
-
-		for (ArrayIterator<Entity> iterator = toBeDestroyed.iterator(); iterator.hasNext();) {
-			Entity entity = iterator.next();
-			entities.removeValue(entity, false);
-			box2dWorld.destroyBody(entity.self);
-			iterator.remove();
-		}
 	}
-
-	public final <T extends Tile, D extends Tile.TileDefinition<T>> T createTile(D tileDefinition) {
-		T tile = tileDefinition.createTile(this);
-		this.tiles.add(tile);
-		return tile;
-	}
+	
 
 	public final <T extends Entity, D extends Entity.EntityDefinition<T>> T createEntity(D entityDefinition) {
 		T entity = entityDefinition.createEntity(this);
-		this.entities.add(entity);
+		if (entity instanceof Drawable) 
+			toBeDrawn.add((Drawable)entity);
+		// Update bodies array
+		box2dWorld.getBodies(bodies);
 		return entity;
 	}
-
-	private final void initBox2dWorld(float width, float height) {
-		int worldWidth_tl = (int) Drop.mtToTl(worldWidth_mt);
-		int worldHeight_tl = (int) Drop.mtToTl(worldHeight_mt);
-
-		float wallHalfWidth = width * 3/2;
-		float wallHalfHeight = height * 3/2;
-		PolygonShape rectangle = new PolygonShape();
-		rectangle.setAsBox(wallHalfWidth, wallHalfHeight);
-
-		FixtureDef wallFixture = new FixtureDef();
-		wallFixture.shape = rectangle;
-		wallFixture.density = Float.POSITIVE_INFINITY;
-		wallFixture.friction = 0;
-		wallFixture.restitution = 0;
-		wallFixture.filter.maskBits = Constants.Category.PLAYER.value; // Only allow collisions with the player category
-		wallFixture.filter.categoryBits = Constants.Category.PLAYER_COLLIDABLE.value; // The walls belong to the player collidable category
-
-		BodyDef wallDefinition = new BodyDef();
-		wallDefinition.type = BodyType.StaticBody;
-
-		// Left wall
-		wallDefinition.position.set(-width / 2 - wallHalfWidth, 0);
-		Body leftWall = box2dWorld.createBody(wallDefinition);
-		leftWall.createFixture(wallFixture);
-
-		// Right wall
-		wallDefinition.position.set(width / 2 + wallHalfWidth, 0);
-		Body rightWall = box2dWorld.createBody(wallDefinition);
-		rightWall.createFixture(wallFixture);
-
-		// Ceiling
-		wallDefinition.position.set(0, height / 2 + wallHalfHeight);
-		Body ceiling = box2dWorld.createBody(wallDefinition);
-		ceiling.createFixture(wallFixture);
-
-		// Floor
-		wallDefinition.position.set(0, -height / 2 - wallHalfHeight);
-		Body floor = box2dWorld.createBody(wallDefinition);
-		floor.createFixture(wallFixture);
-
-		// Indicate these bodies belong to the game itself, i.e not an entity
-		leftWall.setUserData(this);
-		rightWall.setUserData(this);
-		ceiling.setUserData(this);
-		floor.setUserData(this);
-
-		for (int i = worldWidth_tl / 2 - 10; i < worldWidth_tl / 2 + 10; i++) {
-			for (int j = worldHeight_tl / 2 - 3; j < worldHeight_tl / 2; j++) {
-				tiles.add(new RainbowTile(this, i, j));
-			}
-		}
+	
+	public final void destroyEntity(Entity entity) {
+		toBeDestroyed.add(entity);
+		if (entity instanceof Drawable) 
+			toBeDrawn.removeValue((Drawable)entity, false);
 	}
 
-	// Interfaces
+	// EventListerners
+	/**
+	 * Allows for registering contact event handlers
+	 */
+	public EventListener<ContactEvent> asContactEventListener() {
+		return new EventListener<ContactEvent>() {
+			
+			@Override
+			public boolean removeHandler(EventHandler<ContactEvent> handler) { return contactEventHandlers.removeValue(handler, false); }
+			
+			@Override
+			public boolean fire(ContactEvent event) {
+				event.setTarget(World.this);
+				for (EventHandler<ContactEvent> handler : contactEventHandlers) {
+					if (handler.handle(event))
+						break;
+				}
+				return event.isCancelled(); 
+			}
+			
+			@Override
+			public void addHandler(EventHandler<ContactEvent> handler) { contactEventHandlers.add(handler); }
+			
+		};
+	}
 	
 	// Disposable
 	@Override
@@ -256,6 +285,7 @@ public class World implements Disposable, InputProcessor {
 	}
 
 	// InputProcessor
+	//TODO: implement key events 
 	@Override
 	public boolean keyDown(int keycode) { return false; }
 
@@ -265,7 +295,7 @@ public class World implements Disposable, InputProcessor {
 	@Override
 	public boolean keyTyped(char character) { return false; }
 
-	/** Applies a touch down event to the stage and returns true if an actor in the scene {@link Event#handle() handled} the
+	/** Applies a touch down event to the world and returns true if an entity {@link Event#handle() handled} the
 	 * event. */
 	@Override
 	public boolean touchDown (int screenX, int screenY, int pointer, int button) {
@@ -280,14 +310,14 @@ public class World implements Disposable, InputProcessor {
 
 		InputEvent event = new InputEvent(this);
 		event.setType(Type.touchDown);
-		event.world = this;
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
 
 		Entity target = null;
-		for (Entity entity : entities) {
+		for (Body body : bodies) {
+			Entity entity = (Entity)body.getUserData();
 			if (entity.hit(worldCoordinates.x, worldCoordinates.y)) {
 				target = entity;
 				break;
@@ -295,10 +325,11 @@ public class World implements Disposable, InputProcessor {
 		}
 		
 		if (target != null) {
-			boolean cancelled = target.fire(event);
+			boolean cancelled = target.asInputEventListener().fire(event);
 			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
 		} else {
 			if (game.heldItem != null) {
+				//TODO: make a proper implementation of the drop mechanic
 				createEntity(new DroppedItem.Definition(0, 5, game.heldItem));
 				game.heldItem = null;
 			}
@@ -322,14 +353,14 @@ public class World implements Disposable, InputProcessor {
 
 		InputEvent event = new InputEvent(this);
 		event.setType(Type.touchUp);
-		event.world = this;
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
 
 		Entity target = null;
-		for (Entity entity : entities) {
+		for (Body body : bodies) {
+			Entity entity = (Entity)body.getUserData();
 			if (entity.hit(tempCoords.x, tempCoords.y)) {
 				target = entity;
 				break;
@@ -337,7 +368,7 @@ public class World implements Disposable, InputProcessor {
 		}
 		
 		if (target != null) {
-			boolean cancelled = target.fire(event);
+			boolean cancelled = target.asInputEventListener().fire(event);
 			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
 		}
 
@@ -372,7 +403,8 @@ public class World implements Disposable, InputProcessor {
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
 		
 		Entity over = null;
-		for (Entity entity : entities) {
+		for (Body body : bodies) {
+			Entity entity = (Entity)body.getUserData();
 			if (entity.hit(worldCoordinates.x, worldCoordinates.y)) {
 				over = entity;
 				break;
@@ -385,24 +417,22 @@ public class World implements Disposable, InputProcessor {
 		if (overLast != null) {
 			InputEvent event = new InputEvent(this);
 			event.setType(InputEvent.Type.exit);
-			event.world = (this);
 			event.setWorldX(worldCoordinates.x);
 			event.setWorldY(worldCoordinates.y);
 			event.setPointer(pointer);
 			event.setRelatedEntity(over);
-			overLast.fire(event);
+			overLast.asInputEventListener().fire(event);
 		}
 
 		// Enter over.
 		if (over != null) {
 			InputEvent event = new InputEvent(this);
 			event.setType(InputEvent.Type.enter);
-			event.world = (this);
 			event.setWorldX(worldCoordinates.x);
 			event.setWorldY(worldCoordinates.y);
 			event.setPointer(pointer);
 			event.setRelatedEntity(overLast);
-			over.fire(event);
+			over.asInputEventListener().fire(event);
 		}
 		return over;
 	}
@@ -411,19 +441,18 @@ public class World implements Disposable, InputProcessor {
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
 		InputEvent event = new InputEvent(this);
 		event.setType(InputEvent.Type.exit);
-		event.world = (this);
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setRelatedEntity(entity);
-		entity.fire(event);
+		entity.asInputEventListener().fire(event);
 	}
 	
+	// Classes
 	public static final class Debug extends com.mygdx.drop.Debug {
 		public Box2DDebugRenderer debugRenderer;
 		// This array is used to check whether all Box2D bodies have an owner. All bodies must hold a
 		// reference to their owner in their user data attribute
-		public Array<Body> bodies;
 		private static boolean constructed = false;
 		
 		@Override

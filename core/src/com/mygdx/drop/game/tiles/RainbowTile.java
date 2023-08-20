@@ -1,8 +1,10 @@
-package com.mygdx.drop.game;
+package com.mygdx.drop.game.tiles;
 
 import com.badlogic.gdx.physics.box2d.Fixture;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
-import com.mygdx.drop.Constants.LayerId;
+import com.mygdx.drop.game.Tile;
+import com.mygdx.drop.game.World;
 
 public class RainbowTile extends Tile {
 	public RainbowTile(World world, int x, int y) {
@@ -14,8 +16,7 @@ public class RainbowTile extends Tile {
 	}
 
 	@Override
-	public void dispose() {}
-
+	public boolean update(Viewport viewport) { return false; }
 	/**
 	 * See {@link Tile.TileDefinition}
 	 */
@@ -23,8 +24,8 @@ public class RainbowTile extends Tile {
 		public Definition(int x, int y) { super(x, y); }
 
 		@Override
-		protected RainbowTile createTile(World world) { return new RainbowTile(world, x, y); }
-
+		protected RainbowTile createEntity(World world) { return new RainbowTile(world, (int)x, (int)y); }
 	}
+
 
 }

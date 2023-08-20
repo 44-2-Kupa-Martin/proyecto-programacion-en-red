@@ -4,8 +4,8 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.physics.box2d.Box2D;
-import com.mygdx.drop.game.GoofyItem;
 import com.mygdx.drop.game.Item;
+import com.mygdx.drop.game.items.GoofyItem;
 
 /**
  * The entry point of the game (not of the application). As such, this class' public attributes act
@@ -17,6 +17,7 @@ public class Drop extends Game {
 
 	public Assets assets;
 	public SpriteBatch batch;
+	//TODO: the heldItem belongs to the player, move outside of global context and create accessors
 	public Item heldItem;
 	private static boolean constructed = false;
 

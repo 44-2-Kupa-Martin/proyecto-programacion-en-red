@@ -1,38 +1,28 @@
 package com.mygdx.drop.game;
 
-import java.beans.PropertyChangeSupport;
-
-import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
-import com.mygdx.drop.GameScreen;
-import com.mygdx.drop.etc.Event;
 import com.mygdx.drop.etc.EventListener;
+import com.mygdx.drop.etc.events.InputEvent;
+import com.mygdx.drop.etc.events.handlers.EventHandler;
 
 /**
- * This class glues together the physics api provided by Box2D and the rendering api provided by
- * SpriteBatch into a unified api. All entities are dynamic bodies.
+ * This class is a wrapper for box2d's {@link Body} class
  */
 public abstract class Entity implements Disposable {
+	//TODO: either make all game references static or non-static. Ensure consistency
 	// Static because game is a singleton
 	protected static Drop game;
 
 	protected final World world;
 	protected final Body self;
-	private Array<EventListener> listeners;
+	private Array<EventHandler<InputEvent>> inputEventHandlers;
 	
 
 	/**
@@ -46,25 +36,22 @@ public abstract class Entity implements Disposable {
 			game = Drop.game;
 		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
-		this.listeners = new Array<>();
+		this.inputEventHandlers = new Array<>();
 		self.setUserData(this);
 	}
 	
 	@Override
 	public void dispose() {
-		world.toBeDestroyed.add(this);
+		world.destroyEntity(this);
 	}
 
 	/**
 	 * Updates the entity's internal state.
 	 * 
-	 * @param camera Needed for projecting/unprojecting
-	 * @return A {@code boolean} that indicates if {@link Entity#dispose()} is to be called
+	 * @param viewport Needed for projecting/unprojecting
+	 * @return {@code true} if {@link Entity#dispose()} is to be called, {@code false} otherwise
 	 */
-	public abstract boolean update(Camera camera);
-
-	/** Draws the entity to the screen */
-	public abstract void draw(Camera camera);
+	public abstract boolean update(Viewport viewport);
 
 	/** Returns the position of the entity's center of mass in meters (the same vector each time) */
 	public final Vector2 getPosition() {
@@ -77,30 +64,52 @@ public abstract class Entity implements Disposable {
 	/** Measured in meters */
 	public final float getY() { return self.getWorldCenter().y; }
 	
-	public final Array<Fixture> getFixtures() { return self.getFixtureList(); }
+	/** Returns an Array containing the entity's fixtures. DO NOT modify the array */
+	public final Array<Fixture> getFixtures() { return self.getFixtureList(); } //TODO: make an immutable wrapper for the array class
 	
-	public boolean fire(Event event) {
-		event.setTarget(this);
-		event.listenerOwner = this;
-		for (EventListener eventListener : listeners) {
-			if (eventListener.handle(event))
-				break;
-		}
-		event.listenerOwner = null;
-		return event.isCancelled();
+	/**
+	 * Allows for registering input event handlers
+	 */
+	public final EventListener<InputEvent> asInputEventListener() {
+		return new EventListener<InputEvent>() {
+			
+			@Override
+			public boolean removeHandler(EventHandler<InputEvent> handler) { return inputEventHandlers.removeValue(handler, false); }
+			
+			@Override
+			public boolean fire(InputEvent event) {
+				event.setTarget(Entity.this);
+				for (EventHandler<InputEvent> eventHandler : inputEventHandlers) 
+					eventHandler.handle(event);
+	
+				return event.isCancelled();
+			}
+			
+			@Override
+			public void addHandler(EventHandler<InputEvent> handler) { inputEventHandlers.add(handler); }
+			
+		};
 	}
 	
-	public final void addListener(EventListener listener) { listeners.add(listener); } 
-	public final void removeListener(EventListener listener) { listeners.removeValue(listener, false); }
 	
-	public final boolean hit(float worldX, float worldY) {
+	/**
+	 * Tests if the given coordinates are within the entity
+	 * @param worldX_mt
+	 * @param worldY_mt
+	 * @return {@code true} if the entity was hit, {@code false} otherwise
+	 */
+	public final boolean hit(float worldX_mt, float worldY_mt) {
 		for (Fixture fixture : self.getFixtureList()) {
-			if (fixture.testPoint(worldX, worldY))
+			if (fixture.testPoint(worldX_mt, worldY_mt))
 				return true;
 		}
 		return false;
 	}
 	
+	/**
+	 * @param worldCoordinates An arbitrary point in the world. Measured in meters
+	 * @return The same point relative to this entity's center of mass. Measured in meters
+	 */
 	public final Vector2 getRelativeCoordinates(Vector2 worldCoordinates) { return self.getLocalPoint(worldCoordinates); }
 	
 	/**
@@ -110,7 +119,7 @@ public abstract class Entity implements Disposable {
 	 * make clear that the {@code Entity} and {@code World} classes are "friendly."
 	 * 
 	 * @param <T> The entity defined by the specific subclass. This must be a parameter of the class
-	 *            itself instead of the {@link EntityDefinition#createEntity()} method (see <a href=
+	 *            itself instead of the {@link EntityDefinition#createEntity(World)} method (see <a href=
 	 *            "https://stackoverflow.com/questions/15095966/overriding-generic-abstract-methods-return-type-without-type-safety-warnings">reason</a>)
 	 * 
 	 */
@@ -122,7 +131,12 @@ public abstract class Entity implements Disposable {
 			this.x = x;
 			this.y = y;
 		}
-
+		
+		/**
+		 * Creates an entity in the specified world
+		 * @param world The world where the entity will live
+		 * @return The entity
+		 */
 		protected abstract T createEntity(World world);
 
 	}
