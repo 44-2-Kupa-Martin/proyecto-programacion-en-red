@@ -23,6 +23,7 @@ public class MainMenuScreen implements Screen {
 		this.camera = new OrthographicCamera();
 		camera.setToOrtho(false, 800, 480);
 		this.stage = new Stage(new ScreenViewport());
+		
 	}
 
 	@Override
@@ -44,14 +45,26 @@ public class MainMenuScreen implements Screen {
 		
 		game.batch.end();
 		
-		//Add listeners to buttons
+		//Add a click listener to Play button
 		playButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
+            	
                 ((Game)Gdx.app.getApplicationListener()).setScreen(new GameScreen(game));
             }
         });
 		
+		//Add a click listener to Options button
+		
+		optionsButton.addListener(new ClickListener() {
+	        @Override
+	        public void clicked(InputEvent event, float x, float y) {
+	        	
+	        	game.setScreen(new OptionsScreen(game));
+	        }
+		});
+		
+		//Add a click listener to Exit button
 		exitButton.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -85,7 +98,7 @@ public class MainMenuScreen implements Screen {
 	@Override
 	public void resize(int width, int height) {
 		
-		// See below for what true means.
+		
 		stage.getViewport().update(width, height, true);
 		camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
         camera.update();
