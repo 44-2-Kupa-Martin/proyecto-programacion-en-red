@@ -56,7 +56,9 @@ public class Drop extends Game {
 		
 		this.heldItem = new GoofyItem();
 		
+		
 		this.setScreen(new MainMenuScreen(this));
+		
 	}
 
 	@Override

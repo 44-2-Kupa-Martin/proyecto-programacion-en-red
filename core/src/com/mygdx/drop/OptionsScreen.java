@@ -76,14 +76,14 @@ public class OptionsScreen implements Screen {
         table.setFillParent(true);
         
         
-        // Center the slider in the table
+        
         table.add("Master Volume: ");
         table.add(volumeSlider).width(200);
         table.row();
-        table.add(volumeLabel).colspan(2).center(); // Center the label
+        table.add(volumeLabel).colspan(2).center(); 
         table.row();
 
-        // Add the table to the stage
+        
         stage.addActor(table);
     }
 

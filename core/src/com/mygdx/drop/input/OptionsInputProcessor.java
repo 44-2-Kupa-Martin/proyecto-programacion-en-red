@@ -45,7 +45,7 @@ public class OptionsInputProcessor implements InputProcessor {
             float volume = volumeSlider.getValue();
             
             
-            // Handle the touch event here
+            
             return true; // Consume the event
         }
 		
