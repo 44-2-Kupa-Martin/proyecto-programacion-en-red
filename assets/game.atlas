@@ -45,14 +45,14 @@ animations/Player/idle
   size: 48, 48
   orig: 48, 48
   offset: 0, 0
-  index: 4
+  index: 3
 animations/Player/idle
   rotate: false
   xy: 102, 2
   size: 48, 48
   orig: 48, 48
   offset: 0, 0
-  index: 3
+  index: 4
 animations/Player/idle
   rotate: false
   xy: 152, 2

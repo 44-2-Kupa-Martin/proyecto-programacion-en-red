@@ -30,6 +30,7 @@ import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.Shape.Type;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.mygdx.drop.Assets.SoundId;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.Drawable;
@@ -48,12 +49,17 @@ public class Player extends BoxEntity implements Drawable {
 	private State previousState;
 	private State currentState;
 	private float animationTimer;
+	private float invincibilityTimer;
 	private EnumMap<State, Animation<TextureRegion>> animations;
 	private ObservableReference<Item>[] heldItems;
 	public List<ObservableReference<Item>> hotbar;
 	public List<ObservableReference<Item>> inventory;
 	public List<ObservableReference<Item>> armor;
 	public List<ObservableReference<Item>> accessory;
+	private float maxHealth;
+	private float health;
+	// TODO REMOVE
+	private TestEnemy enemy;
 
 	/**
 	 * @param x Measured in meters
@@ -111,13 +117,62 @@ public class Player extends BoxEntity implements Drawable {
 					item.dispose();
 					return true; 
 				}
+				
 			});
+			world.asContactEventListener().addHandler(new ContactEventHandler() {
+				@Override
+				public boolean beginContact(World world, Contact contact) {
+			
+					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
+					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
+					boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
+					boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
+					boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
+					if (!playerInvolved) 
+						return false;
+					boolean enemyOwnsFixtureA = ownerFixtureA instanceof TestEnemy;
+					boolean enemyOwnsFixtureB = ownerFixtureB instanceof TestEnemy;
+					boolean enemyInvolved = enemyOwnsFixtureA || enemyOwnsFixtureB;
+					if (!enemyInvolved)
+						return false;
+					
+					Player player = (Player)(playerOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
+					TestEnemy enemy = (TestEnemy)(enemyOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
+					
+					Player.this.enemy = enemy;
+					return true; 
+				}
+			
+				@Override
+				public boolean endContact(World world, Contact contact) { 
+					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
+					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
+					boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
+					boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
+					boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
+					if (!playerInvolved) 
+						return false;
+					boolean enemyOwnsFixtureA = ownerFixtureA instanceof TestEnemy;
+					boolean enemyOwnsFixtureB = ownerFixtureB instanceof TestEnemy;
+					boolean enemyInvolved = enemyOwnsFixtureA || enemyOwnsFixtureB;
+					if (!enemyInvolved)
+						return false;
+					
+					Player.this.enemy = null;
+					return true; 
+					
+				}
+			});
+			
 		}
 		
 		this.previousState = State.IDLE;
 		this.currentState = State.IDLE;
 		this.animationTimer = 0;
+		this.invincibilityTimer = 0;
 		this.animations = initAnimationsMap();
+		this.maxHealth = 100;
+		this.health = maxHealth;
 		
 		@SuppressWarnings("unchecked")
 		ObservableReference<Item>[] heldItems = new ObservableReference[9 * 4 /* hotbar + inventory */ 
@@ -140,6 +195,13 @@ public class Player extends BoxEntity implements Drawable {
 	@Override
 	public final boolean update(Viewport viewport) {
 		super.update(viewport);
+		if (this.invincibilityTimer > 0) 
+			invincibilityTimer -= Gdx.graphics.getDeltaTime();
+		
+		if (enemy != null) 
+			applyDamage(enemy.damage);
+		
+		System.out.println(health);
 		previousState = currentState;
 		currentState = State.IDLE;
 
@@ -173,6 +235,15 @@ public class Player extends BoxEntity implements Drawable {
 		Animation<TextureRegion> currentAnimation = animations.get(currentState);
 		TextureRegion frame = currentAnimation.getKeyFrame(animationTimer);
 		game.batch.draw(frame, coords.x, coords.y, getWidth(), getHeight());
+	}
+	
+	public final void applyDamage(float lostHp) {
+		assert lostHp >= 0;
+		if (invincibilityTimer > 0) 
+			return;
+		invincibilityTimer = 1;
+		game.assets.get(SoundId.Player_hurt).play(game.masterVolume);
+		this.health -= lostHp;
 	}
 
 	private final EnumMap<State, Animation<TextureRegion>> initAnimationsMap() {

@@ -146,7 +146,8 @@ public class Assets implements Disposable {
 	}
 
 	public enum SoundId {
-		GameScreen_drop("GameScreen/drop.wav");
+		GameScreen_drop("GameScreen/drop.wav"),
+		Player_hurt("Player/hurt.mp3");
 
 		public final String path;
 

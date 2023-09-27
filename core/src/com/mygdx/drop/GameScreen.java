@@ -16,6 +16,7 @@ import com.mygdx.drop.actors.HUD;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.DebugBox;
 import com.mygdx.drop.game.dynamicentities.Player;
+import com.mygdx.drop.game.dynamicentities.TestEnemy;
 
 public class GameScreen implements Screen {
 	private World world;
@@ -40,6 +41,7 @@ public class GameScreen implements Screen {
 		world.createEntity(new DebugBox.Definition(0, 5, 5, 5));
 		this.player = world.createEntity(new Player.Definition(0,3));
 		this.hud = new HUD(player, world);
+		world.createEntity(new TestEnemy.Definition(-5, 1, player));
 		hudStage.addActor(hud);
 		game.assets.get(MusicId.GameScreen_rain).setLooping(true);
 		game.assets.get(MusicId.GameScreen_rain).setVolume(game.masterVolume);
