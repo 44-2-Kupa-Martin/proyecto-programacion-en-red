@@ -18,7 +18,6 @@ import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Manifold;
-import com.badlogic.gdx.scenes.scene2d.Event;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Array.ArrayIterator;
@@ -31,6 +30,7 @@ import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.EventListener;
 import com.mygdx.drop.etc.events.ContactEvent;
+import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.etc.events.InputEvent.Type;
 import com.mygdx.drop.etc.events.handlers.EventHandler;
@@ -42,7 +42,7 @@ import com.mygdx.drop.game.tiles.RainbowTile;
 /**
  * A wrapper for box2dworld. Handles the simulation and rendering of all {@link Entity entities} and {@link InputEvent input events}
  */
-public class World implements Disposable, InputProcessor {
+public class World implements Disposable, InputProcessor, EventListener {
 	protected static Drop game;
 	
 	public final float worldWidth_mt;
@@ -52,13 +52,13 @@ public class World implements Disposable, InputProcessor {
 
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
 	protected TiledMap tiledMap;
-	/** There is a 1 to 1 correspondence between bodies and entities */
+	/** There is a 1 to 1 correspondence between bodies and entities. TODO consider whether it would be better to have an array on entities */
 	protected final Array<Body> bodies;
-	/** In an entity object implements {@link Drawable} it is placed here automatically (see {@link #createEntity(EntityDefinition)} */
+	/** If an entity object implements {@link Drawable} it is placed here automatically (see {@link #createEntity(EntityDefinition)} */
 	protected final Array<Drawable> toBeDrawn;
-	/** Entities here are destroyed the next {@link #step()} call */
+	/** Entities here are destroyed the next {@link #step()} call TODO this should be a queue not an array */
 	protected final Array<Entity> toBeDestroyed;
-	private final Array<EventHandler<ContactEvent>> contactEventHandlers;
+	private final Array<EventHandler> eventHandlers;
 	
 	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
@@ -97,32 +97,28 @@ public class World implements Disposable, InputProcessor {
 		box2dWorld.setContactListener(new ContactListener() {
 			@Override
 			public void preSolve(Contact contact, Manifold oldManifold) {
-				ContactEvent event = new ContactEvent(ContactEvent.Type.preSolve);
-				event.setContact(contact);
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.preSolve);
 				event.setManifold(oldManifold);
-				asContactEventListener().fire(event);
+				World.this.fire(event);
 			}
 			
 			@Override
 			public void postSolve(Contact contact, ContactImpulse impulse) {
-				ContactEvent event = new ContactEvent(ContactEvent.Type.postSolve);
-				event.setContact(contact);
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.postSolve);
 				event.setContactImpulse(impulse);
-				asContactEventListener().fire(event);
+				World.this.fire(event);
 			}
 			
 			@Override
 			public void endContact(Contact contact) {
-				ContactEvent event = new ContactEvent(ContactEvent.Type.endContact);
-				event.setContact(contact);
-				asContactEventListener().fire(event);
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.endContact);
+				World.this.fire(event);
 			}
 			
 			@Override
 			public void beginContact(Contact contact) {
-				ContactEvent event = new ContactEvent(ContactEvent.Type.beginContact);
-				event.setContact(contact);
-				asContactEventListener().fire(event);
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.beginContact);
+				World.this.fire(event);
 			}	
 		});
 
@@ -154,7 +150,7 @@ public class World implements Disposable, InputProcessor {
 		this.bodies = new Array<Body>();
 		this.toBeDrawn = new Array<Drawable>();
 		this.toBeDestroyed = new Array<Entity>();
-		this.contactEventHandlers = new Array<EventHandler<ContactEvent>>();
+		this.eventHandlers = new Array<EventHandler>();
 
 		new WorldBorder(this, Cardinality.NORTH);
 		new WorldBorder(this, Cardinality.SOUTH);
@@ -256,30 +252,21 @@ public class World implements Disposable, InputProcessor {
 	}
 
 	// EventListerners
-	/**
-	 * Allows for registering contact event handlers
-	 */
-	public EventListener<ContactEvent> asContactEventListener() {
-		return new EventListener<ContactEvent>() {
+	
+	@Override
+	public void addHandler(EventHandler handler) { eventHandlers.add(handler); }
+
+	@Override
+	public boolean removeHandler(EventHandler handler) { return eventHandlers.removeValue(handler, false); }
+
+	@Override
+	public boolean fire(Event event) {
+		for (EventHandler handler : eventHandlers) 
+			handler.handle(event);
 			
-			@Override
-			public boolean removeHandler(EventHandler<ContactEvent> handler) { return contactEventHandlers.removeValue(handler, false); }
-			
-			@Override
-			public boolean fire(ContactEvent event) {
-				event.setTarget(World.this);
-				for (EventHandler<ContactEvent> handler : contactEventHandlers) {
-					if (handler.handle(event))
-						break;
-				}
-				return event.isCancelled(); 
-			}
-			
-			@Override
-			public void addHandler(EventHandler<ContactEvent> handler) { contactEventHandlers.add(handler); }
-			
-		};
+		return event.isCancelled(); 
 	}
+	
 	
 	// Disposable
 	@Override
@@ -312,13 +299,6 @@ public class World implements Disposable, InputProcessor {
 		
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
 
-		InputEvent event = new InputEvent(this);
-		event.setType(Type.touchDown);
-		event.setWorldX(worldCoordinates.x);
-		event.setWorldY(worldCoordinates.y);
-		event.setPointer(pointer);
-		event.setButton(button);
-
 		Entity target = null;
 		for (Body body : bodies) {
 			Entity entity = (Entity)body.getUserData();
@@ -328,18 +308,26 @@ public class World implements Disposable, InputProcessor {
 			}
 		}
 		
-		if (target != null) {
-			boolean cancelled = target.asInputEventListener().fire(event);
-			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
-		} else {
+		if (target == null) {
 			if (game.heldItem != null) {
 				//TODO: make a proper implementation of the drop mechanic
 				createEntity(new DroppedItem.Definition(0, 5, game.heldItem));
 				game.heldItem = null;
+				return true;
 			}
+			return false;
 		}
-			
+		
+		InputEvent event = new InputEvent(this, target);
+		event.setType(Type.touchDown);
+		event.setWorldX(worldCoordinates.x);
+		event.setWorldY(worldCoordinates.y);
+		event.setPointer(pointer);
+		event.setButton(button);
 
+		boolean cancelled = target.fire(event);
+		Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
+		
 		boolean handled = event.isHandled();
 		return handled;
 	}
@@ -354,14 +342,7 @@ public class World implements Disposable, InputProcessor {
 //		if (touchFocuses.size == 0) return false;
 
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
-
-		InputEvent event = new InputEvent(this);
-		event.setType(Type.touchUp);
-		event.setWorldX(worldCoordinates.x);
-		event.setWorldY(worldCoordinates.y);
-		event.setPointer(pointer);
-		event.setButton(button);
-
+		
 		Entity target = null;
 		for (Body body : bodies) {
 			Entity entity = (Entity)body.getUserData();
@@ -371,10 +352,18 @@ public class World implements Disposable, InputProcessor {
 			}
 		}
 		
-		if (target != null) {
-			boolean cancelled = target.asInputEventListener().fire(event);
-			Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
-		}
+		if (target == null) 
+			return false;
+
+		InputEvent event = new InputEvent(this, target);
+		event.setType(Type.touchUp);
+		event.setWorldX(worldCoordinates.x);
+		event.setWorldY(worldCoordinates.y);
+		event.setPointer(pointer);
+		event.setButton(button);
+
+		boolean cancelled = target.fire(event);
+		Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
 
 		boolean handled = event.isHandled();
 		return handled;
@@ -419,37 +408,37 @@ public class World implements Disposable, InputProcessor {
 
 		// Exit overLast.
 		if (overLast != null) {
-			InputEvent event = new InputEvent(this);
+			InputEvent event = new InputEvent(this, overLast);
 			event.setType(InputEvent.Type.exit);
 			event.setWorldX(worldCoordinates.x);
 			event.setWorldY(worldCoordinates.y);
 			event.setPointer(pointer);
 			event.setRelatedEntity(over);
-			overLast.asInputEventListener().fire(event);
+			overLast.fire(event);
 		}
 
 		// Enter over.
 		if (over != null) {
-			InputEvent event = new InputEvent(this);
+			InputEvent event = new InputEvent(this, over);
 			event.setType(InputEvent.Type.enter);
 			event.setWorldX(worldCoordinates.x);
 			event.setWorldY(worldCoordinates.y);
 			event.setPointer(pointer);
 			event.setRelatedEntity(overLast);
-			over.asInputEventListener().fire(event);
+			over.fire(event);
 		}
 		return over;
 	}
 	
 	private void fireExit (Entity entity, int screenX, int screenY, int pointer) {
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
-		InputEvent event = new InputEvent(this);
+		InputEvent event = new InputEvent(this, entity);
 		event.setType(InputEvent.Type.exit);
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
-		event.setRelatedEntity(entity);
-		entity.asInputEventListener().fire(event);
+		event.setRelatedEntity(null);
+		entity.fire(event);
 	}
 	
 	// Classes

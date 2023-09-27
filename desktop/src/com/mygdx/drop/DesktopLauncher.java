@@ -13,7 +13,9 @@ public class DesktopLauncher {
 		config.setWindowedMode(800, 480);
 		config.setForegroundFPS(60);
 		config.useVsync(true);
-		generateAssets();
+		if (Constants.DEBUG) 
+			generateAssets();			
+		
 		new Lwjgl3Application(new Drop(), config);
 	}
 	

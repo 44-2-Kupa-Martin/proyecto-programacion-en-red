@@ -1,21 +1,16 @@
 package com.mygdx.drop.etc.events;
 
-import com.mygdx.drop.etc.EventListener;
-
 /**
  * The base class for an Event
  *
- * @param <TargetType> The type of the object where the event is to be {@link EventListener#fire(Event) fired}
  */
-public class Event<TargetType> {
-	private TargetType target;
+public class Event {
 	private boolean handled;
 	/** NOTE: this is never enforced */
+	//TODO enforce this
 	private boolean cancelled; // true means propagation was stopped and any action that this event would cause should not happen (to be implemented)
 
 	public Event() {}
-	public Event(TargetType target) { this.target = target; }
-
 	/**
 	 * Marks this event as handled.
 	 */
@@ -36,9 +31,4 @@ public class Event<TargetType> {
 
 	/** @see #cancel() */
 	public boolean isCancelled() { return cancelled; }
-
-	public TargetType getTarget() { return target; }
-
-	public void setTarget(TargetType target) { this.target = target; }
-
 }

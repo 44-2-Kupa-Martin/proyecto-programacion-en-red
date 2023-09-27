@@ -13,28 +13,28 @@ import com.mygdx.drop.game.World;
  * 
  * @see InputEventHandler
  */
-public class InputEvent extends Event<Entity> {
-	
-	public InputEvent(World world) {
-		this.world = world;
-	}
-	
-	public InputEvent(World world, Entity target) { 
-		super(target);
-		this.world = world;
-	}
-
-	private final World world;
+public class InputEvent extends Event {
+	public final World world;
+	public final Entity target;
 	private Type type;
 	private float worldX_mt, worldY_mt, scrollAmountX, scrollAmountY;
 	private int pointer, button, keyCode;
 	private @Null Entity relatedEntity; // If an enter/exit event, this field contains the entity being exited/entered
 	private char character;
 	
+	public InputEvent(World world, Entity target) {
+		assert world != null;
+		assert target != null;
+		this.target = target;
+		this.world = world;
+	}
+	
 	/**
 	 * The world where the InputEvent occurred
 	 */
 	public World getWorld() { return world; }
+	
+	public Entity getTarget() { return target; }
 	
 	/**
 	 * The world x coordinate (in meters) where the event occurred. Valid for: touchDown, touchDragged,

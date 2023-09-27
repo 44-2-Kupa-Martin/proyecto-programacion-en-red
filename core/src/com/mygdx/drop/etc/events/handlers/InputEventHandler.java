@@ -8,7 +8,7 @@ import com.mygdx.drop.game.Entity;
 /**
  * Unpacks and handles {@link InputEvent}s
  */
-public class InputEventHandler implements EventHandler<InputEvent> {
+public class InputEventHandler implements EventHandler {
 	static private final Vector2 tmpCoords = new Vector2();
 
 	/**
@@ -16,38 +16,42 @@ public class InputEventHandler implements EventHandler<InputEvent> {
 	 */
 	@SuppressWarnings("incomplete-switch")
 	@Override
-	public boolean handle(InputEvent event) {
-		assert event.getTarget() != null : "All events must have a target";
+	public boolean handle(Event event) {
+		if (!(event instanceof InputEvent)) 
+			return false;
+		InputEvent inputEvent = (InputEvent)event;
+		
+		assert inputEvent.getTarget() != null : "All input events must have a target";
 
-		switch (event.getType()) {
+		switch (inputEvent.getType()) {
 			case keyDown:
-				return keyDown(event, event.getKeyCode());
+				return keyDown(inputEvent, inputEvent.getKeyCode());
 			case keyUp:
-				return keyUp(event, event.getKeyCode());
+				return keyUp(inputEvent, inputEvent.getKeyCode());
 			case keyTyped:
-				return keyTyped(event, event.getCharacter());
+				return keyTyped(inputEvent, inputEvent.getCharacter());
 		}
 
-		tmpCoords.set(event.getTarget().getRelativeCoordinates(tmpCoords.set(event.getWorldX(), event.getWorldY())));
+		tmpCoords.set(inputEvent.getTarget().getRelativeCoordinates(tmpCoords.set(inputEvent.getWorldX(), inputEvent.getWorldY())));
 
-		switch (event.getType()) {
+		switch (inputEvent.getType()) {
 			case touchDown:
-				return touchDown(event, tmpCoords.x, tmpCoords.y, event.getPointer(), event.getButton());
+				return touchDown(inputEvent, tmpCoords.x, tmpCoords.y, inputEvent.getPointer(), inputEvent.getButton());
 			case touchUp:
-				touchUp(event, tmpCoords.x, tmpCoords.y, event.getPointer(), event.getButton());
+				touchUp(inputEvent, tmpCoords.x, tmpCoords.y, inputEvent.getPointer(), inputEvent.getButton());
 				return true;
 			case touchDragged:
-				touchDragged(event, tmpCoords.x, tmpCoords.y, event.getPointer());
+				touchDragged(inputEvent, tmpCoords.x, tmpCoords.y, inputEvent.getPointer());
 				return true;
 			case mouseMoved:
-				return mouseMoved(event, tmpCoords.x, tmpCoords.y);
+				return mouseMoved(inputEvent, tmpCoords.x, tmpCoords.y);
 			case scrolled:
-				return scrolled(event, tmpCoords.x, tmpCoords.y, event.getScrollAmountX(), event.getScrollAmountY());
+				return scrolled(inputEvent, tmpCoords.x, tmpCoords.y, inputEvent.getScrollAmountX(), inputEvent.getScrollAmountY());
 			case enter:
-				enter(event, tmpCoords.x, tmpCoords.y, event.getPointer(), event.getRelatedEntity());
+				enter(inputEvent, tmpCoords.x, tmpCoords.y, inputEvent.getPointer(), inputEvent.getRelatedEntity());
 				return false;
 			case exit:
-				exit(event, tmpCoords.x, tmpCoords.y, event.getPointer(), event.getRelatedEntity());
+				exit(inputEvent, tmpCoords.x, tmpCoords.y, inputEvent.getPointer(), inputEvent.getRelatedEntity());
 				return false;
 		}
 		return false;

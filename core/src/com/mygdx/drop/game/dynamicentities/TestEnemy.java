@@ -57,7 +57,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		if (!instantiated) {
 			instantiated = true;
 			
-			world.asContactEventListener().addHandler(new ContactEventHandler() {
+			world.addHandler(new ContactEventHandler() {
 				@Override
 				public boolean beginContact(World world, Contact contact) {
 					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();

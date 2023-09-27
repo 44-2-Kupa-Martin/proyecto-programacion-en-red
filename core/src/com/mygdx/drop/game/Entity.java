@@ -9,20 +9,21 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.EventListener;
+import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.etc.events.handlers.EventHandler;
 
 /**
  * This class is a wrapper for box2d's {@link Body} class
  */
-public abstract class Entity implements Disposable {
+public abstract class Entity implements Disposable, EventListener {
 	//TODO: either make all game references static or non-static. Ensure consistency
 	// Static because game is a singleton
 	protected static Drop game;
 
 	protected final World world;
 	protected final Body self;
-	private Array<EventHandler<InputEvent>> inputEventHandlers;
+	private Array<EventHandler> eventHandlers;
 	
 
 	/**
@@ -36,7 +37,7 @@ public abstract class Entity implements Disposable {
 			game = Drop.game;
 		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
-		this.inputEventHandlers = new Array<>();
+		this.eventHandlers = new Array<>();
 		self.setUserData(this);
 	}
 	
@@ -67,30 +68,19 @@ public abstract class Entity implements Disposable {
 	/** Returns an Array containing the entity's fixtures. DO NOT modify the array */
 	public final Array<Fixture> getFixtures() { return self.getFixtureList(); } //TODO: make an immutable wrapper for the array class
 	
-	/**
-	 * Allows for registering input event handlers
-	 */
-	public final EventListener<InputEvent> asInputEventListener() {
-		return new EventListener<InputEvent>() {
-			
-			@Override
-			public boolean removeHandler(EventHandler<InputEvent> handler) { return inputEventHandlers.removeValue(handler, false); }
-			
-			@Override
-			public boolean fire(InputEvent event) {
-				event.setTarget(Entity.this);
-				for (EventHandler<InputEvent> eventHandler : inputEventHandlers) 
-					eventHandler.handle(event);
+	@Override
+	public boolean removeHandler(EventHandler handler) { return eventHandlers.removeValue(handler, false); }
 	
-				return event.isCancelled();
-			}
-			
-			@Override
-			public void addHandler(EventHandler<InputEvent> handler) { inputEventHandlers.add(handler); }
-			
-		};
+	@Override
+	public boolean fire(Event event) {
+		for (EventHandler eventHandler : eventHandlers) 
+			eventHandler.handle(event);
+
+		return event.isCancelled();
 	}
 	
+	@Override
+	public void addHandler(EventHandler handler) { eventHandlers.add(handler); }
 	
 	/**
 	 * Tests if the given coordinates are within the entity

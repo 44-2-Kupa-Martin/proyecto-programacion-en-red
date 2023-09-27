@@ -33,9 +33,8 @@ class WorldBorder extends BoxEntity {
 					case WEST:
 						wallDefinition.position.set(-2 * world.worldWidth_mt, 0);
 						return wallDefinition;
-					default:
-						throw new RuntimeException("Unreachable");
 				}
+				throw new RuntimeException("Unreachable");
 			})).get(), 
 			((Supplier<FixtureDef>)(()->{
 				FixtureDef wallFixture = new FixtureDef();

@@ -4,31 +4,34 @@ import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.mygdx.drop.etc.events.ContactEvent;
+import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.game.World;
 
 /**
  * Unpacks {@link ContactEvent}s
  */
-public class ContactEventHandler implements EventHandler<ContactEvent> {
+public class ContactEventHandler implements EventHandler {
 
 	@Override
-	public boolean handle(ContactEvent event) { 
-		switch (event.eventType) {
+	public boolean handle(Event event) {
+		if (!(event instanceof ContactEvent)) 
+			return false;
+		ContactEvent contactEvent = (ContactEvent)event;
+		switch (contactEvent.eventType) {
 			case preSolve:
-				return preSolve(event.getTarget(), event.getContact(), event.getManifold());
+				return preSolve(contactEvent.getWorld(), contactEvent.getContact(), contactEvent.getManifold());
 				
 			case postSolve:
-				return postSolve(event.getTarget(), event.getContact(), event.getContactImpulse());
+				return postSolve(contactEvent.getWorld(), contactEvent.getContact(), contactEvent.getContactImpulse());
 				
 			case beginContact:
-				return beginContact(event.getTarget(), event.getContact());
+				return beginContact(contactEvent.getWorld(), contactEvent.getContact());
 
 			case endContact:
-				return endContact(event.getTarget(), event.getContact());
+				return endContact(contactEvent.getWorld(), contactEvent.getContact());
 			
-			default:
-				throw new RuntimeException("Unreachable");
 		}
+		throw new RuntimeException("Unreachable");
 	}
 	
 	public boolean preSolve(World world, Contact contact, Manifold oldManifold) { return false; }

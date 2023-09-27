@@ -13,6 +13,7 @@ import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
 import com.mygdx.drop.etc.events.handlers.EventHandler;
+import com.mygdx.drop.etc.events.handlers.PropertyChangeEventHandler;
 import com.mygdx.drop.game.Item;
 
 /**
@@ -43,14 +44,13 @@ public class Slot extends Container<Image> {
 		this.itemReference = reference;
 		setBackground(background);
 		
-		itemReference.asPropertyChangeEventListener().addHandler(new EventHandler<PropertyChangeEvent<Item>>() {
+		itemReference.addHandler(new PropertyChangeEventHandler<Item>(Item.class) {
 			@Override
-			public boolean handle(PropertyChangeEvent<Item> changeEvent) {
-				Item newItem = changeEvent.newValue;
-				TextureRegionDrawable drawable = newItem == null ? transparentPlaceholder : new TextureRegionDrawable(newItem.getTexture());
+			public boolean onChange(Object target, Item oldValue, Item newValue) {
+				TextureRegionDrawable drawable = newValue == null ? transparentPlaceholder : new TextureRegionDrawable(newValue.getTexture());
 				getActor().setDrawable(drawable);
 				return true;
-			} 
+			}
 		});
 		
 		// The placeholder background depends on the size, so it cannot be initialized statically

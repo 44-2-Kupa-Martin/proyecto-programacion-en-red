@@ -94,7 +94,7 @@ public class Player extends BoxEntity implements Drawable {
 		
 		if (!instantiated) {
 			instantiated = true;
-			world.asContactEventListener().addHandler(new ContactEventHandler() {
+			world.addHandler(new ContactEventHandler() {
 				@Override
 				public boolean beginContact(World world, Contact contact) {
 					//TODO: prevent item duplication when two pickups occur at the same time
@@ -122,7 +122,7 @@ public class Player extends BoxEntity implements Drawable {
 				}
 				
 			});
-			world.asContactEventListener().addHandler(new ContactEventHandler() {
+			world.addHandler(new ContactEventHandler() {
 				@Override
 				public boolean beginContact(World world, Contact contact) {
 			
