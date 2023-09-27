@@ -447,6 +447,32 @@ skins/Glassy/skin/glassy-ui
   index: -1
 
 game7.png
+size: 512, 512
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+textures/Arrow/arrow
+  rotate: false
+  xy: 2, 2
+  size: 360, 360
+  orig: 360, 360
+  offset: 0, 0
+  index: -1
+
+game8.png
+size: 512, 512
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+textures/BowItem/bow
+  rotate: false
+  xy: 2, 2
+  size: 377, 377
+  orig: 377, 377
+  offset: 0, 0
+  index: -1
+
+game9.png
 size: 128, 128
 format: RGBA8888
 filter: Nearest, Nearest
@@ -459,7 +485,7 @@ textures/DebugBox/bucket
   offset: 0, 0
   index: -1
 
-game8.png
+game10.png
 size: 1024, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -472,7 +498,7 @@ textures/GoofyItem/goofy
   offset: 0, 0
   index: -1
 
-game9.png
+game11.png
 size: 32, 32
 format: RGBA8888
 filter: Nearest, Nearest

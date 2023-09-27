@@ -250,6 +250,10 @@ public class World implements Disposable, InputProcessor {
 		if (entity instanceof Drawable) 
 			toBeDrawn.removeValue((Drawable)entity, false);
 	}
+	
+	public final Vector2 getLastClickPosition() {
+		return viewport.unproject(tempCoords.set(pointerScreenX[0], pointerScreenY[0]));
+	}
 
 	// EventListerners
 	/**

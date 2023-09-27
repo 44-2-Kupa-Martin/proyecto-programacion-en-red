@@ -25,10 +25,10 @@ public class HUD extends Table {
 		healthTable.top().left();
 		healthTable.padLeft(10f).padBottom(10f);
 		
-//		align(Align.topLeft);
-//		setFillParent(true);
+		align(Align.topLeft);
+		setFillParent(true);
 //
-//		add(new Inventory(player)).top().left();
+		add(new Inventory(player)).top().left();
 //		row();
 		
 		setDebug(Constants.DEBUG);

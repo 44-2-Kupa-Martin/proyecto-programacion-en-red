@@ -166,8 +166,9 @@ public class Assets implements Disposable {
 
 	public enum TextureId {
 		DebugBox_bucket("DebugBox/bucket"),
-		GoofyItem_goofy("GoofyItem/goofy");
-
+		GoofyItem_goofy("GoofyItem/goofy"),
+		BowItem_bow("BowItem/bow"),
+		Arrow_arrow("Arrow/arrow");
 		public final String path;
 
 		private TextureId(String path) { this.path = path == "" ? null : "textures/" + path; }
