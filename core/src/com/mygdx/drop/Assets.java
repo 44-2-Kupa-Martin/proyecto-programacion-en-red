@@ -166,7 +166,8 @@ public class Assets implements Disposable {
 
 	public enum TextureId {
 		DebugBox_bucket("DebugBox/bucket"),
-		GoofyItem_goofy("GoofyItem/goofy");
+		GoofyItem_goofy("GoofyItem/goofy"),
+		Background_mainMenu("Background/mainMenu2");
 
 		public final String path;
 

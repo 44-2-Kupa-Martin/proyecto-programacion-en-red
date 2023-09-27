@@ -45,14 +45,14 @@ animations/Player/idle
   size: 48, 48
   orig: 48, 48
   offset: 0, 0
-  index: 3
+  index: 4
 animations/Player/idle
   rotate: false
   xy: 102, 2
   size: 48, 48
   orig: 48, 48
   offset: 0, 0
-  index: 4
+  index: 3
 animations/Player/idle
   rotate: false
   xy: 152, 2
@@ -447,6 +447,26 @@ skins/Glassy/skin/glassy-ui
   index: -1
 
 game7.png
+size: 2048, 512
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+textures/Background/mainMenu
+  rotate: false
+  xy: 1004, 334
+  size: 299, 168
+  orig: 299, 168
+  offset: 0, 0
+  index: -1
+textures/Background/mainMenu2
+  rotate: false
+  xy: 2, 2
+  size: 1000, 500
+  orig: 1000, 500
+  offset: 0, 0
+  index: -1
+
+game8.png
 size: 128, 128
 format: RGBA8888
 filter: Nearest, Nearest
@@ -459,7 +479,7 @@ textures/DebugBox/bucket
   offset: 0, 0
   index: -1
 
-game8.png
+game9.png
 size: 1024, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -472,7 +492,7 @@ textures/GoofyItem/goofy
   offset: 0, 0
   index: -1
 
-game9.png
+game10.png
 size: 32, 32
 format: RGBA8888
 filter: Nearest, Nearest

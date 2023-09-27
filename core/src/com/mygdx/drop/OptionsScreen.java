@@ -47,13 +47,15 @@ public class OptionsScreen implements Screen {
         
         skin = game.assets.get(SkinId.Glassy_glassy);
         
-    	volumeSlider = new Slider(0.0f, 1.0f, 0.01f, false, skin); // Adjust min, max, and step size as needed
+    	volumeSlider = new Slider(0.0f, 1.0f, 0.01f, false, skin); // Adjust min, max, and step size
     	
         volumeSlider.setValue(1.0f); // Set the initial volume level
     	
         volumeLabel = new Label("Volume: 100%", skin);
         
-        backButton = new TextButton("Back to Main Menu", skin);
+        backButton = new TextButton("Back to Main Menu", skin, "small");
+        
+        backButton.setTransform(true);
         
         game.batch.end();
         
@@ -70,7 +72,7 @@ public class OptionsScreen implements Screen {
                 game.masterVolume= volume;
                 
                 volumeLabel.setText("Volume: " + (int)(volume * 100) + "%");
-             // TODO Also update the game's actual volume level here
+             
             }
         });
         
@@ -103,18 +105,20 @@ public class OptionsScreen implements Screen {
         table.row();
         table.add(volumeLabel).colspan(2).center(); 
         table.row();
-        table.add(backButton).align(Align.left); // You can adjust the padLeft value for spacing
+        table.add(backButton).align(Align.left); 
         table.row();
         
         stage.addActor(table);
         
         Table backButtonTable = new Table();
         
+        backButtonTable.setDebug(true);
+        
         backButtonTable.left().bottom();
         
         backButtonTable.padLeft(10f).padBottom(10f);
         
-        backButtonTable.add(backButton);
+        backButtonTable.add(backButton).width(200).height(100);
         
         stage.addActor(backButtonTable);
         
