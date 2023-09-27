@@ -60,7 +60,7 @@ public class Player extends BoxEntity implements Drawable {
 	public List<ObservableReference<Item>> armor;
 	public List<ObservableReference<Item>> accessory;
 	private float maxHealth;
-	private float health;
+	public float health;
 	// TODO REMOVE
 	private TestEnemy enemy;
 
