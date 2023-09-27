@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -40,6 +41,7 @@ import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.items.BowItem;
 import com.mygdx.drop.game.items.DebugItem;
 import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Item;
@@ -52,6 +54,7 @@ public class Player extends BoxEntity implements Drawable {
 	private float invincibilityTimer;
 	private EnumMap<State, Animation<TextureRegion>> animations;
 	private ObservableReference<Item>[] heldItems;
+	private ObservableReference<Item> itemOnHand;
 	public List<ObservableReference<Item>> hotbar;
 	public List<ObservableReference<Item>> inventory;
 	public List<ObservableReference<Item>> armor;
@@ -188,8 +191,10 @@ public class Player extends BoxEntity implements Drawable {
 		this.inventory = Arrays.asList(heldItems).subList(0, 9*4);
 		this.armor = Arrays.asList(heldItems).subList(9*4, 9*4 + 4);
 		this.accessory = Arrays.asList(heldItems).subList(9*4 + 4, 9*4 + 4 + 4);
-		hotbar.get(0).set(new DebugItem());
+		this.itemOnHand = hotbar.get(0);
+		hotbar.get(0).set(new BowItem(world, this));
 		hotbar.get(1).set(new DebugItem());
+		hotbar.get(2).set(new DebugItem());
 	}
 
 	@Override
@@ -201,9 +206,16 @@ public class Player extends BoxEntity implements Drawable {
 		if (enemy != null) 
 			applyDamage(enemy.damage);
 		
-		System.out.println(health);
+		if (this.health <= 0) 
+			dispose();
+		
 		previousState = currentState;
 		currentState = State.IDLE;
+		
+		// TODO change this to a click listener
+		if (Gdx.input.isButtonJustPressed(Buttons.LEFT) && itemOnHand.get() != null) {
+			itemOnHand.get().use();
+		}
 
 		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
 			self.applyLinearImpulse(new Vector2(-1, 0), self.getWorldCenter(), true);
