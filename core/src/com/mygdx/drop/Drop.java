@@ -14,12 +14,13 @@ import com.mygdx.drop.game.items.GoofyItem;
  */
 public class Drop extends Game {
 	public static Drop game;
-
+	
 	public Assets assets;
 	public SpriteBatch batch;
 	//TODO: the heldItem belongs to the player, move outside of global context and create accessors
 	public Item heldItem;
 	private static boolean constructed = false;
+	public float masterVolume = 1.0f;
 
 	public Drop() {
 		assert !constructed : "Game is constructed multiple times!";
@@ -47,6 +48,7 @@ public class Drop extends Game {
 	public void create() {
 		Box2D.init();
 
+		
 		Gdx.app.setLogLevel(Constants.LOG_LEVEL);
 		this.assets = Assets.load();
 		//TODO: implement an event system so that classes that need certain assets can listen for when the resource is ready
@@ -70,5 +72,7 @@ public class Drop extends Game {
 		assets.dispose();
 		batch.dispose();
 	}
-
+	
+	
+	
 }

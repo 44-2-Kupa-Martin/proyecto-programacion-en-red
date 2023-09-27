@@ -42,6 +42,7 @@ public class GameScreen implements Screen {
 		this.hud = new HUD(player, world);
 		hudStage.addActor(hud);
 		game.assets.get(MusicId.GameScreen_rain).setLooping(true);
+		game.assets.get(MusicId.GameScreen_rain).setVolume(game.masterVolume);
 	}
 
 	@Override

@@ -5,75 +5,96 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.mygdx.drop.Assets.SkinId;
-import com.mygdx.drop.input.OptionsInputProcessor;
-import com.badlogic.gdx.scenes.scene2d.ui.Slider;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Align;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
+import com.mygdx.drop.Assets.SkinId;
+
 
 public class OptionsScreen implements Screen {
 	private final Drop game;
     private Stage stage;
-    private OptionsInputProcessor optionsInputProcessor;
     private Slider volumeSlider;
     private final OrthographicCamera camera;
     private Label volumeLabel;
     private Skin skin;
+    private TextButton backButton;
+    
+    private Viewport viewport;
 
     public OptionsScreen(Drop game) {
+    	
     	this.game = game;
-        this.stage = new Stage(new ScreenViewport());
-        stage = new Stage(new ScreenViewport());
-		this.camera = new OrthographicCamera();
+    	this.camera = new OrthographicCamera();
+    	this.viewport = new ScreenViewport(camera);
+        this.stage = new Stage(viewport);
 		camera.setToOrtho(false, 800, 480);
 		
+		Gdx.input.setInputProcessor(stage);
 		
-        
+		
         game.batch.begin();
+        
         skin = game.assets.get(SkinId.Glassy_glassy);
-    	volumeSlider = new Slider(0.0f, 1.0f, 0.01f, false, game.assets.get(SkinId.Glassy_glassy)); // Adjust min, max, and step size as needed
+        
+    	volumeSlider = new Slider(0.0f, 1.0f, 0.01f, false, skin); // Adjust min, max, and step size as needed
+    	
         volumeSlider.setValue(1.0f); // Set the initial volume level
     	
-        try {
-            volumeLabel = new Label("Volume: 100%", game.assets.get(SkinId.Glassy_glassy));
-        } catch (Exception e) {
-            e.printStackTrace(); 
-            
-        }
-       
+        volumeLabel = new Label("Volume: 100%", skin);
+        
+        backButton = new TextButton("Back to Main Menu", skin);
+        
         game.batch.end();
         
-        
+        Gdx.app.setLogLevel(Constants.LOG_LEVEL);
         
         // Add a listener to the volumeSlider to handle changes
         volumeSlider.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 float volume = volumeSlider.getValue();
-                Gdx.app.log("Slider", "Slider value changed");
+                
                 // TODO Update the master volume level here (e.g., using AudioManager or similar)
+                
+                game.masterVolume= volume;
+                
                 volumeLabel.setText("Volume: " + (int)(volume * 100) + "%");
              // TODO Also update the game's actual volume level here
             }
         });
         
+     // Add a click listener to the "Back" button
+        backButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                game.setScreen(new MainMenuScreen(game));
+            }
+        });
+        
+        System.out.println(backButton.getHeight() + "Altura" + "    " + backButton.getWidth());
     }
 
     @Override
     public void show() {
-        
-    	optionsInputProcessor = new OptionsInputProcessor(volumeSlider);
+       
     	
-    	Gdx.input.setInputProcessor(optionsInputProcessor);
-    	
+        stage.addActor(volumeLabel);
     	
         Table table = new Table();
         table.setSkin(skin);
         table.setFillParent(true);
+        table.setTouchable(Touchable.enabled);
         
         
         
@@ -82,9 +103,21 @@ public class OptionsScreen implements Screen {
         table.row();
         table.add(volumeLabel).colspan(2).center(); 
         table.row();
-
+        table.add(backButton).align(Align.left); // You can adjust the padLeft value for spacing
+        table.row();
         
         stage.addActor(table);
+        
+        Table backButtonTable = new Table();
+        
+        backButtonTable.left().bottom();
+        
+        backButtonTable.padLeft(10f).padBottom(10f);
+        
+        backButtonTable.add(backButton);
+        
+        stage.addActor(backButtonTable);
+        
     }
 
     @Override
@@ -92,10 +125,12 @@ public class OptionsScreen implements Screen {
         
     	Gdx.gl.glClearColor(.1f, .12f, .16f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        stage.act();
+        
+        stage.act(delta);
         stage.draw();
     	
+        
+        
     }
 
     @Override
@@ -123,7 +158,8 @@ public class OptionsScreen implements Screen {
 
     @Override
     public void dispose() {
-        
+    	
+
         stage.dispose();
     }
 }

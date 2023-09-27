@@ -59,7 +59,7 @@ public class MainMenuScreen implements Screen {
 		optionsButton.addListener(new ClickListener() {
 	        @Override
 	        public void clicked(InputEvent event, float x, float y) {
-	        	
+	        	Gdx.app.log("click", "entre a opciones");
 	        	game.setScreen(new OptionsScreen(game));
 	        }
 		});
