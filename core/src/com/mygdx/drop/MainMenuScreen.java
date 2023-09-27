@@ -92,9 +92,9 @@ public class MainMenuScreen implements Screen {
 		 float buttonWidth = Gdx.graphics.getWidth() * 0.1f;
 		 float buttonHeight = buttonWidth * 0.25f;
 		 
-		 playButton.setSize(buttonWidth, buttonHeight);
-		 optionsButton.setSize(buttonWidth, buttonHeight);
-		 exitButton.setSize(buttonWidth, buttonHeight);
+//		 playButton.setSize(buttonWidth, buttonHeight);
+//		 optionsButton.setSize(buttonWidth, buttonHeight);
+//		 exitButton.setSize(buttonWidth, buttonHeight);
 		
 		//Add buttons and lable to table
 		 
