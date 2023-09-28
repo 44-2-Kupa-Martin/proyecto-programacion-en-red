@@ -19,23 +19,23 @@ public class ContactEventHandler implements EventHandler {
 		ContactEvent contactEvent = (ContactEvent)event;
 		switch (contactEvent.eventType) {
 			case preSolve:
-				return preSolve(contactEvent.getWorld(), contactEvent.getContact(), contactEvent.getManifold());
+				return preSolve(contactEvent);
 				
 			case postSolve:
-				return postSolve(contactEvent.getWorld(), contactEvent.getContact(), contactEvent.getContactImpulse());
+				return postSolve(contactEvent);
 				
 			case beginContact:
-				return beginContact(contactEvent.getWorld(), contactEvent.getContact());
+				return beginContact(contactEvent);
 
 			case endContact:
-				return endContact(contactEvent.getWorld(), contactEvent.getContact());
+				return endContact(contactEvent);
 			
 		}
 		throw new RuntimeException("Unreachable");
 	}
 	
-	public boolean preSolve(World world, Contact contact, Manifold oldManifold) { return false; }
-	public boolean postSolve(World world, Contact contact, ContactImpulse impulse) { return false; }
-	public boolean beginContact(World world, Contact contact) { return false; }
-	public boolean endContact(World world, Contact contact) { return false; }
+	public boolean preSolve(ContactEvent event) { return false; }
+	public boolean postSolve(ContactEvent event) { return false; }
+	public boolean beginContact(ContactEvent event) { return false; }
+	public boolean endContact(ContactEvent event) { return false; }
 }

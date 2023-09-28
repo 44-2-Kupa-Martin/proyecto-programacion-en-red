@@ -81,8 +81,13 @@ public class World implements Disposable, InputProcessor, EventListener {
 	 */
 	public World(int width_tl, int height_tl, Vector2 gravity, Viewport viewport) {
 		assert Drop.game != null : "World created before game instance!";
+		assert Drop.world == null : "Multiple worlds created at the same time!";
+		
+		Drop.world = this;
+		
 		if (game == null)
 			game = Drop.game;
+		
 		
 		this.viewport = viewport;
 		this.worldWidth_tl = width_tl;
@@ -110,16 +115,16 @@ public class World implements Disposable, InputProcessor, EventListener {
 			}
 			
 			@Override
-			public void endContact(Contact contact) {
-				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.endContact);
+			public void beginContact(Contact contact) {
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.beginContact);
 				World.this.fire(event);
 			}
 			
 			@Override
-			public void beginContact(Contact contact) {
-				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.beginContact);
+			public void endContact(Contact contact) {
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.endContact);
 				World.this.fire(event);
-			}	
+			}
 		});
 
 		if (Constants.DEBUG) {

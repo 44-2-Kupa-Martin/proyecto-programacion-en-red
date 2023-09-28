@@ -14,19 +14,54 @@ import com.mygdx.drop.Assets.SoundId;
 import com.mygdx.drop.Assets.TextureId;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.etc.Drawable;
+import com.mygdx.drop.etc.SimpleContactEventFilter;
+import com.mygdx.drop.etc.events.ContactEvent;
+import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
 
 public class TestEnemy extends BoxEntity implements Drawable {
+	static {
+		assert Drop.world != null : "TestEnemy created before world!";
+		
+		Drop.world.addHandler(new SimpleContactEventFilter<TestEnemy>(TestEnemy.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, TestEnemy objectA, Object objectB) {
+				objectA.fire(event);
+				return event.isHandled();
+			}
+			
+			@Override
+			public boolean endContact(ContactEvent event, TestEnemy objectA, Object objectB) {
+				objectA.fire(event);
+				return event.isHandled();
+			}
+		});
+		
+		Drop.world.addHandler(new ContactEventFilter<TestEnemy, Arrow>(TestEnemy.class, Arrow.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, TestEnemy objectA, Arrow objectB) {
+				objectA.arrow = objectB;
+				return event.isHandled(); 
+			}
+			
+			@Override
+			public boolean endContact(ContactEvent event, TestEnemy objectA, Arrow objectB) {
+				objectA.arrow = null;
+				return event.isHandled(); 
+			}
+		});
+	}
+	
 	public final float damage;
 	private final AtlasRegion texture;
 	private final float maxHealth;
 	private float health;
 	private float invincibilityTimer;
-	private static boolean instantiated;
 	//TODO REMOVE
 	private Arrow arrow;
 	//TODO REMOVE
@@ -53,54 +88,6 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		this.health = maxHealth;
 		this.texture = game.assets.get(TextureId.GoofyItem_goofy);
 		this.invincibilityTimer = 1;
-		
-		if (!instantiated) {
-			instantiated = true;
-			
-			world.addHandler(new ContactEventHandler() {
-				@Override
-				public boolean beginContact(World world, Contact contact) {
-					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
-					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
-					boolean arrowOwnsFixtureA = ownerFixtureA instanceof Arrow;
-					boolean arrowOwnsFixtureB = ownerFixtureB instanceof Arrow;
-					boolean arrowInvolved = arrowOwnsFixtureA || arrowOwnsFixtureB;
-					if (!arrowInvolved) 
-						return false;
-					boolean enemyOwnsFixtureA = ownerFixtureA instanceof TestEnemy;
-					boolean enemyOwnsFixtureB = ownerFixtureB instanceof TestEnemy;
-					boolean enemyInvolved = enemyOwnsFixtureA || enemyOwnsFixtureB;
-					if (!enemyInvolved)
-						return false;
-					
-					Arrow arrow = (Arrow)(arrowOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					TestEnemy enemy = (TestEnemy)(enemyOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					TestEnemy.this.arrow = arrow;
-					return true;
-				}
-				@Override
-				public boolean endContact(World world, Contact contact) {
-					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
-					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
-					boolean arrowOwnsFixtureA = ownerFixtureA instanceof Arrow;
-					boolean arrowOwnsFixtureB = ownerFixtureB instanceof Arrow;
-					boolean arrowInvolved = arrowOwnsFixtureA || arrowOwnsFixtureB;
-					if (!arrowInvolved) 
-						return false;
-					boolean enemyOwnsFixtureA = ownerFixtureA instanceof TestEnemy;
-					boolean enemyOwnsFixtureB = ownerFixtureB instanceof TestEnemy;
-					boolean enemyInvolved = enemyOwnsFixtureA || enemyOwnsFixtureB;
-					if (!enemyInvolved)
-						return false;
-					
-					Arrow arrow = (Arrow)(arrowOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					TestEnemy enemy = (TestEnemy)(enemyOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					TestEnemy.this.arrow = null;
-					return true; 
-				}
-			});
-			
-		}
 	}
 	
 	@Override

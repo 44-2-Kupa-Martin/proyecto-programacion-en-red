@@ -4,7 +4,9 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.physics.box2d.Box2D;
+import com.badlogic.gdx.utils.Null;
 import com.mygdx.drop.game.Item;
+import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.items.GoofyItem;
 
 /**
@@ -14,12 +16,14 @@ import com.mygdx.drop.game.items.GoofyItem;
  */
 public class Drop extends Game {
 	public static Drop game;
+	/** If a world exists, a reference will exist here. Is there a better way to do this? */
+	public static @Null World world;
+	private static boolean constructed = false;
 	
 	public Assets assets;
 	public SpriteBatch batch;
 	//TODO: the heldItem belongs to the player, move outside of global context and create accessors
 	public Item heldItem;
-	private static boolean constructed = false;
 	public float masterVolume = 1.0f;
 
 	public Drop() {

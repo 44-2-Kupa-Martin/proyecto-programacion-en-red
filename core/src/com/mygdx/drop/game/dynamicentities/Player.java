@@ -30,14 +30,18 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.Shape.Type;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets.SoundId;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.ObservableReference;
+import com.mygdx.drop.etc.SimpleContactEventFilter;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
+import com.mygdx.drop.etc.events.handlers.EventHandler;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
@@ -47,7 +51,44 @@ import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Item;
 
 public class Player extends BoxEntity implements Drawable {
-	private static boolean instantiated = false;
+	/** These handlers are shared across all instances of this class. They fire for all events in the world and as such are fit for class wide handlers */
+	static {
+		assert Drop.world != null : "Player created before world!";
+		
+		Drop.world.addHandler(new SimpleContactEventFilter<Player>(Player.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Player objectA, Object objectB) {
+				System.out.println("player colided");
+				objectA.fire(event);
+				return event.isHandled(); 
+			}
+		});
+		
+		Drop.world.addHandler(new ContactEventFilter<Player, DroppedItem>(Player.class, DroppedItem.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Player objectA, DroppedItem objectB) {
+				objectA.inventory.get(6).set(objectB.droppedItem);
+				objectB.dispose();
+				return event.isHandled(); 
+			}
+		});
+		
+		Drop.world.addHandler(new ContactEventFilter<Player, TestEnemy>(Player.class, TestEnemy.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Player objectA, TestEnemy objectB) {
+				objectA.enemy = objectB;
+				return event.isHandled(); 
+			}
+			
+			@Override
+			public boolean endContact(ContactEvent event, Player objectA, TestEnemy objectB) {
+				objectA.enemy = null;
+				return event.isHandled(); 
+			}
+		});
+	}
+	
+	
 	private State previousState;
 	private State currentState;
 	private float animationTimer;
@@ -91,83 +132,6 @@ public class Player extends BoxEntity implements Drawable {
 		sensor.shape = pickupRange;
 		self.createFixture(sensor);
 		pickupRange.dispose();
-		
-		if (!instantiated) {
-			instantiated = true;
-			world.addHandler(new ContactEventHandler() {
-				@Override
-				public boolean beginContact(World world, Contact contact) {
-					//TODO: prevent item duplication when two pickups occur at the same time
-					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
-					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
-					boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
-					boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
-					boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
-					if (!playerInvolved) 
-						return false;
-					boolean itemOwnsFixtureA = ownerFixtureA instanceof DroppedItem;
-					boolean itemOwnsFixtureB = ownerFixtureB instanceof DroppedItem;
-					boolean itemInvolved = itemOwnsFixtureA || itemOwnsFixtureB;
-					if (!itemInvolved)
-						return false;
-					
-					Player player = (Player)(playerOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					DroppedItem item = (DroppedItem)(itemOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					Fixture playerRadar = playerOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
-					Fixture itemFixture = itemOwnsFixtureA ? contact.getFixtureA() : contact.getFixtureB();
-					
-					player.inventory.get(6).set(item.droppedItem);
-					item.dispose();
-					return true; 
-				}
-				
-			});
-			world.addHandler(new ContactEventHandler() {
-				@Override
-				public boolean beginContact(World world, Contact contact) {
-			
-					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
-					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
-					boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
-					boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
-					boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
-					if (!playerInvolved) 
-						return false;
-					boolean enemyOwnsFixtureA = ownerFixtureA instanceof TestEnemy;
-					boolean enemyOwnsFixtureB = ownerFixtureB instanceof TestEnemy;
-					boolean enemyInvolved = enemyOwnsFixtureA || enemyOwnsFixtureB;
-					if (!enemyInvolved)
-						return false;
-					
-					Player player = (Player)(playerOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					TestEnemy enemy = (TestEnemy)(enemyOwnsFixtureA ? ownerFixtureA : ownerFixtureB);
-					
-					Player.this.enemy = enemy;
-					return true; 
-				}
-			
-				@Override
-				public boolean endContact(World world, Contact contact) { 
-					Object ownerFixtureA = contact.getFixtureA().getBody().getUserData();
-					Object ownerFixtureB = contact.getFixtureB().getBody().getUserData();
-					boolean playerOwnsFixtureA = ownerFixtureA instanceof Player;
-					boolean playerOwnsFixtureB = ownerFixtureB instanceof Player;
-					boolean playerInvolved = playerOwnsFixtureA || playerOwnsFixtureB;
-					if (!playerInvolved) 
-						return false;
-					boolean enemyOwnsFixtureA = ownerFixtureA instanceof TestEnemy;
-					boolean enemyOwnsFixtureB = ownerFixtureB instanceof TestEnemy;
-					boolean enemyInvolved = enemyOwnsFixtureA || enemyOwnsFixtureB;
-					if (!enemyInvolved)
-						return false;
-					
-					Player.this.enemy = null;
-					return true; 
-					
-				}
-			});
-			
-		}
 		
 		this.previousState = State.IDLE;
 		this.currentState = State.IDLE;
@@ -217,19 +181,19 @@ public class Player extends BoxEntity implements Drawable {
 			itemOnHand.get().use();
 		}
 
-		if (Gdx.input.isKeyPressed(Keys.LEFT)) {
+		if (Gdx.input.isKeyPressed(Keys.A)) {
 			self.applyLinearImpulse(new Vector2(-1, 0), self.getWorldCenter(), true);
 			currentState = State.WALKING;
 		}
-		if (Gdx.input.isKeyPressed(Keys.RIGHT)) {
+		if (Gdx.input.isKeyPressed(Keys.D)) {
 			self.applyLinearImpulse(new Vector2(1, 0), self.getWorldCenter(), true);
 			currentState = State.WALKING;
 		}
-		if (Gdx.input.isKeyPressed(Keys.UP)) {
+		if (Gdx.input.isKeyPressed(Keys.W)) {
 			self.applyLinearImpulse(new Vector2(0, 1), self.getWorldCenter(), true);
 			currentState = State.WALKING;
 		}
-		if (Gdx.input.isKeyPressed(Keys.DOWN)) {
+		if (Gdx.input.isKeyPressed(Keys.S)) {
 			self.applyLinearImpulse(new Vector2(0, -1), self.getWorldCenter(), true);
 			currentState = State.WALKING;
 		}
@@ -264,7 +228,7 @@ public class Player extends BoxEntity implements Drawable {
 		animations.put(State.WALKING, new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_walk), PlayMode.LOOP));
 		return animations;
 	}
-
+	public static final void test() {}
 	/**
 	 * The state of the player
 	 */
