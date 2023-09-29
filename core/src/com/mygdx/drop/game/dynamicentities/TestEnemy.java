@@ -25,63 +25,34 @@ import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
 
 public class TestEnemy extends BoxEntity implements Drawable {
-	static {
-		assert Drop.world != null : "TestEnemy created before world!";
-		
-		Drop.world.addHandler(new SimpleContactEventFilter<TestEnemy>(TestEnemy.class) {
-			@Override
-			public boolean beginContact(ContactEvent event, TestEnemy objectA, Object objectB) {
-				objectA.fire(event);
-				return event.isHandled();
-			}
-			
-			@Override
-			public boolean endContact(ContactEvent event, TestEnemy objectA, Object objectB) {
-				objectA.fire(event);
-				return event.isHandled();
-			}
-		});
-		
-		Drop.world.addHandler(new ContactEventFilter<TestEnemy, Arrow>(TestEnemy.class, Arrow.class) {
-			@Override
-			public boolean beginContact(ContactEvent event, TestEnemy objectA, Arrow objectB) {
-				objectA.arrow = objectB;
-				return event.isHandled(); 
-			}
-			
-			@Override
-			public boolean endContact(ContactEvent event, TestEnemy objectA, Arrow objectB) {
-				objectA.arrow = null;
-				return event.isHandled(); 
-			}
-		});
-	}
-	
+	private static boolean instantiated = false;
 	public final float damage;
 	private final AtlasRegion texture;
 	private final float maxHealth;
 	private float health;
 	private float invincibilityTimer;
-	//TODO REMOVE
+	// TODO REMOVE
 	private Arrow arrow;
-	//TODO REMOVE
+	// TODO REMOVE
 	private final Player player;
-	
-	protected TestEnemy(World world, float x_mt, float y_mt, Player player /*TODO: REMOVE!!*/) {
-		super(world, Drop.tlToMt(2), Drop.tlToMt(3),
-				((Supplier<BodyDef>) (() -> {
-					BodyDef body = new BodyDef();
-					body.position.set(x_mt, Drop.tlToMt(3) / 2 + y_mt);
-					body.type = BodyType.DynamicBody;
-					body.fixedRotation = true;
-					return body;
-				})).get(), ((Supplier<FixtureDef>) (() -> {
-					FixtureDef fixture = new FixtureDef();
-					fixture.density = 1;
-					fixture.filter.categoryBits = Constants.Category.PLAYER_COLLIDABLE.value;
-					return fixture;
-				})).get());
-		
+
+	protected TestEnemy(World world, float x_mt, float y_mt, Player player /* TODO: REMOVE!! */) {
+		super(world, Drop.tlToMt(2), Drop.tlToMt(3), ((Supplier<BodyDef>) (() -> {
+			BodyDef body = new BodyDef();
+			body.position.set(x_mt, Drop.tlToMt(3) / 2 + y_mt);
+			body.type = BodyType.DynamicBody;
+			body.fixedRotation = true;
+			return body;
+		})).get(), ((Supplier<FixtureDef>) (() -> {
+			FixtureDef fixture = new FixtureDef();
+			fixture.density = 1;
+			fixture.filter.categoryBits = Constants.Category.PLAYER_COLLIDABLE.value;
+			return fixture;
+		})).get());
+
+		if (!instantiated)
+			initializeClassListeners(world);
+
 		this.player = player;
 		this.damage = 15;
 		this.maxHealth = 15;
@@ -89,35 +60,69 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		this.texture = game.assets.get(TextureId.GoofyItem_goofy);
 		this.invincibilityTimer = 1;
 	}
-	
+
 	@Override
-	public boolean update(Viewport viewport) { 
+	public boolean update(Viewport viewport) {
 		super.update(viewport);
 		assert !Constants.MULTITHREADED;
 		self.setLinearVelocity(player.getPosition().sub(getPosition()).nor().scl(1.5f));
-		if (this.invincibilityTimer > 0) 
+		if (this.invincibilityTimer > 0)
 			invincibilityTimer -= Gdx.graphics.getDeltaTime();
-		if (this.arrow != null) 
+		if (this.arrow != null)
 			applyDamage(arrow.damage);
-		
-		if (this.health <= 0) 
+
+		if (this.health <= 0)
 			dispose();
 		return false;
 	}
-	
+
 	public void draw(Viewport viewport) {
 		Vector2 coords = getDrawingCoordinates();
 		game.batch.draw(texture, coords.x, coords.y, getWidth(), getHeight());
 	}
-	
+
 	public final void applyDamage(float lostHp) {
 		assert lostHp >= 0;
-		if (invincibilityTimer > 0) 
+		if (invincibilityTimer > 0)
 			return;
 		invincibilityTimer = 1;
 		this.health -= lostHp;
 	}
-	
+
+	private static final void initializeClassListeners(World world) {
+		assert !instantiated : "TestEnemy.initializeClassListeners called after first instantiation";
+		TestEnemy.instantiated = true;
+		world.addHandler(new SimpleContactEventFilter<TestEnemy>(TestEnemy.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Participants participants) {
+				participants.objectA.fire(event);
+				return event.isHandled();
+			}
+
+			@Override
+			public boolean endContact(ContactEvent event, Participants participants) {
+				participants.objectA.fire(event);
+				return event.isHandled();
+			}
+
+		});
+
+		world.addHandler(new ContactEventFilter<TestEnemy, Arrow>(TestEnemy.class, Arrow.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Participants participants) {
+				participants.objectA.arrow = participants.objectB;
+				return event.isHandled();
+			}
+
+			@Override
+			public boolean endContact(ContactEvent event, Participants participants) {
+				participants.objectA.arrow = null;
+				return event.isHandled();
+			}
+
+		});
+	}
+
 	/**
 	 * @see Entity.EntityDefinition
 	 */

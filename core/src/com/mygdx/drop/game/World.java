@@ -97,20 +97,17 @@ public class World implements Disposable, InputProcessor, EventListener {
 
 		this.box2dWorld = new com.badlogic.gdx.physics.box2d.World(gravity, false);
 		
-		// Pack and fire contact events
-		// TODO: perform hit detection and fire the events on the actors directly
+		// Pack and fire contact events. Note: it seems that box2d calls this listener from multiple threads, hence the need for ContactEvents to be semi-immutable
 		box2dWorld.setContactListener(new ContactListener() {
 			@Override
 			public void preSolve(Contact contact, Manifold oldManifold) {
-				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.preSolve);
-				event.setManifold(oldManifold);
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.preSolve, oldManifold);
 				World.this.fire(event);
 			}
 			
 			@Override
 			public void postSolve(Contact contact, ContactImpulse impulse) {
-				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.postSolve);
-				event.setContactImpulse(impulse);
+				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.postSolve, impulse);
 				World.this.fire(event);
 			}
 			
@@ -162,7 +159,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 		new WorldBorder(this, Cardinality.EAST);
 		new WorldBorder(this, Cardinality.WEST);
 		RainbowTile.Definition tileDefiniton = new RainbowTile.Definition(0,0); 
-		for (int i = worldWidth_tl / 2 - 10; i < worldWidth_tl / 2 + 10; i++) {
+		for (int i = worldWidth_tl / 2 - 15; i < worldWidth_tl / 2 + 15; i++) {
 			for (int j = worldHeight_tl / 2 - 3; j < worldHeight_tl / 2; j++) {
 				tileDefiniton.x = i;
 				tileDefiniton.y = j;

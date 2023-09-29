@@ -51,44 +51,8 @@ import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Item;
 
 public class Player extends BoxEntity implements Drawable {
-	/** These handlers are shared across all instances of this class. They fire for all events in the world and as such are fit for class wide handlers */
-	static {
-		assert Drop.world != null : "Player created before world!";
-		
-		Drop.world.addHandler(new SimpleContactEventFilter<Player>(Player.class) {
-			@Override
-			public boolean beginContact(ContactEvent event, Player objectA, Object objectB) {
-				System.out.println("player colided");
-				objectA.fire(event);
-				return event.isHandled(); 
-			}
-		});
-		
-		Drop.world.addHandler(new ContactEventFilter<Player, DroppedItem>(Player.class, DroppedItem.class) {
-			@Override
-			public boolean beginContact(ContactEvent event, Player objectA, DroppedItem objectB) {
-				objectA.inventory.get(6).set(objectB.droppedItem);
-				objectB.dispose();
-				return event.isHandled(); 
-			}
-		});
-		
-		Drop.world.addHandler(new ContactEventFilter<Player, TestEnemy>(Player.class, TestEnemy.class) {
-			@Override
-			public boolean beginContact(ContactEvent event, Player objectA, TestEnemy objectB) {
-				objectA.enemy = objectB;
-				return event.isHandled(); 
-			}
-			
-			@Override
-			public boolean endContact(ContactEvent event, Player objectA, TestEnemy objectB) {
-				objectA.enemy = null;
-				return event.isHandled(); 
-			}
-		});
-	}
-	
-	
+	private static boolean instantiated = false;
+
 	private State previousState;
 	private State currentState;
 	private float animationTimer;
@@ -123,6 +87,10 @@ public class Player extends BoxEntity implements Drawable {
 			fixture.filter.maskBits = Constants.Category.PLAYER_COLLIDABLE.value;
 			return fixture;
 		})).get());
+
+		if (!instantiated)
+			initializeClassListeners(world);
+
 		FixtureDef sensor = new FixtureDef();
 		sensor.isSensor = true;
 		sensor.filter.maskBits = Constants.Category.ITEM.value;
@@ -132,7 +100,7 @@ public class Player extends BoxEntity implements Drawable {
 		sensor.shape = pickupRange;
 		self.createFixture(sensor);
 		pickupRange.dispose();
-		
+
 		this.previousState = State.IDLE;
 		this.currentState = State.IDLE;
 		this.animationTimer = 0;
@@ -140,21 +108,20 @@ public class Player extends BoxEntity implements Drawable {
 		this.animations = initAnimationsMap();
 		this.maxHealth = 100;
 		this.health = maxHealth;
-		
+
 		@SuppressWarnings("unchecked")
-		ObservableReference<Item>[] heldItems = new ObservableReference[9 * 4 /* hotbar + inventory */ 
-		                                         + 4 /* armor */ 
-		                                         + 4 /* accesory */];
+		ObservableReference<Item>[] heldItems = new ObservableReference[9 * 4 /* hotbar + inventory */
+				+ 4 /* armor */
+				+ 4 /* accessories */];
 		this.heldItems = heldItems;
-		
-		for (int i = 0; i < heldItems.length; i++) 
-			heldItems[i] = new ObservableReference<Item>((Item)null);
-		
-		
+
+		for (int i = 0; i < heldItems.length; i++)
+			heldItems[i] = new ObservableReference<Item>((Item) null);
+
 		this.hotbar = Arrays.asList(heldItems).subList(0, 9);
-		this.inventory = Arrays.asList(heldItems).subList(0, 9*4);
-		this.armor = Arrays.asList(heldItems).subList(9*4, 9*4 + 4);
-		this.accessory = Arrays.asList(heldItems).subList(9*4 + 4, 9*4 + 4 + 4);
+		this.inventory = Arrays.asList(heldItems).subList(0, 9 * 4);
+		this.armor = Arrays.asList(heldItems).subList(9 * 4, 9 * 4 + 4);
+		this.accessory = Arrays.asList(heldItems).subList(9 * 4 + 4, 9 * 4 + 4 + 4);
 		this.itemOnHand = hotbar.get(0);
 		hotbar.get(0).set(new BowItem(world, this));
 		hotbar.get(1).set(new DebugItem());
@@ -164,18 +131,18 @@ public class Player extends BoxEntity implements Drawable {
 	@Override
 	public final boolean update(Viewport viewport) {
 		super.update(viewport);
-		if (this.invincibilityTimer > 0) 
+		if (this.invincibilityTimer > 0)
 			invincibilityTimer -= Gdx.graphics.getDeltaTime();
-		
-		if (enemy != null) 
+
+		if (enemy != null)
 			applyDamage(enemy.damage);
-		
-		if (this.health <= 0) 
+
+		if (this.health <= 0)
 			dispose();
-		
+
 		previousState = currentState;
 		currentState = State.IDLE;
-		
+
 		// TODO change this to a click listener
 		if (Gdx.input.isButtonJustPressed(Buttons.LEFT) && itemOnHand.get() != null) {
 			itemOnHand.get().use();
@@ -212,10 +179,10 @@ public class Player extends BoxEntity implements Drawable {
 		TextureRegion frame = currentAnimation.getKeyFrame(animationTimer);
 		game.batch.draw(frame, coords.x, coords.y, getWidth(), getHeight());
 	}
-	
+
 	public final void applyDamage(float lostHp) {
 		assert lostHp >= 0;
-		if (invincibilityTimer > 0) 
+		if (invincibilityTimer > 0)
 			return;
 		invincibilityTimer = 1;
 		game.assets.get(SoundId.Player_hurt).play(game.masterVolume);
@@ -224,16 +191,62 @@ public class Player extends BoxEntity implements Drawable {
 
 	private final EnumMap<State, Animation<TextureRegion>> initAnimationsMap() {
 		EnumMap<State, Animation<TextureRegion>> animations = new EnumMap<>(State.class);
-		animations.put(State.IDLE, new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_idle), PlayMode.LOOP));
-		animations.put(State.WALKING, new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_walk), PlayMode.LOOP));
+		animations.put(State.IDLE,
+				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_idle), PlayMode.LOOP));
+		animations.put(State.WALKING,
+				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_walk), PlayMode.LOOP));
 		return animations;
 	}
-	public static final void test() {}
+
+	private static final void initializeClassListeners(World world) {
+		assert !instantiated : "Player.initializeClassListeners called after first instantiation";
+		Player.instantiated = true;
+		/**
+		 * These handlers are shared across all instances of this class. They fire for all events in the
+		 * world and as such are fit for class wide handlers
+		 */
+		world.addHandler(new SimpleContactEventFilter<Player>(Player.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Participants participants) {
+				System.out.println("player colided");
+				participants.objectA.fire(event);
+				return event.isHandled();
+			}
+
+		});
+
+		world.addHandler(new ContactEventFilter<Player, DroppedItem>(Player.class, DroppedItem.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Participants participants) {
+				participants.objectA.inventory.get(6).set(participants.objectB.droppedItem);
+				participants.objectB.dispose();
+				return event.isHandled();
+			}
+
+		});
+
+		world.addHandler(new ContactEventFilter<Player, TestEnemy>(Player.class, TestEnemy.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, Participants participants) {
+				participants.objectA.enemy = participants.objectB;
+				return event.isHandled();
+			}
+
+			@Override
+			public boolean endContact(ContactEvent event, Participants participants) {
+				participants.objectA.enemy = null;
+				return event.isHandled();
+			}
+
+		});
+	}
+
 	/**
 	 * The state of the player
 	 */
 	enum State {
-		IDLE, WALKING;
+		IDLE,
+		WALKING;
 	}
 
 	/**
@@ -246,9 +259,7 @@ public class Player extends BoxEntity implements Drawable {
 		public Definition(float x, float y) { super(x, y); }
 
 		@Override
-		protected Player createEntity(World world) {
-			return new Player(world, x, y);
-		}
+		protected Player createEntity(World world) { return new Player(world, x, y); }
 
 	}
 
