@@ -64,7 +64,7 @@ public class MainMenuScreen implements Screen {
             @Override
             public void clicked(InputEvent event, float x, float y) {
             	
-                ((Game)Gdx.app.getApplicationListener()).setScreen(new GameScreen(game));
+                game.setScreen(new GameScreen(game));
             }
         });
 		

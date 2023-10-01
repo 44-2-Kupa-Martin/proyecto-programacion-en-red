@@ -19,8 +19,10 @@ import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Arrow;
 import com.mygdx.drop.game.dynamicentities.DebugBox;
+import com.mygdx.drop.game.dynamicentities.DroppedItem;
 import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.dynamicentities.TestEnemy;
+import com.mygdx.drop.game.items.DebugItem;
 
 public class GameScreen implements Screen {
 	private World world;
@@ -30,10 +32,11 @@ public class GameScreen implements Screen {
 	private ScreenViewport hudViewport;
 	private ExtendViewport gameViewport;
 	private Stage hudStage;
-	private Player player;
+	public static Player player;
 	public GameScreen(Drop game) {
 		this.game = game;
 		this.gameCamera = new OrthographicCamera();
+		gameCamera.zoom = game.zoom;
 		this.gameViewport = new ExtendViewport(Drop.tlToMt(Constants.DEFAULT_FOV_WIDTH_tl), Drop.tlToMt(Constants.DEFAULT_FOV_HEIGHT_tl), gameCamera);
 		this.hudViewport = new ScreenViewport();
 		InputMultiplexer multiplexer = new InputMultiplexer();
@@ -45,8 +48,11 @@ public class GameScreen implements Screen {
 //		world.createEntity(new DebugBox.Definition(0, 15, 5, 5));
 		this.player = world.createEntity(new Player.Definition(0,3));
 		this.hud = new HUD(player, world);
-		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, player));
-		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, player));
+//		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, player));
+//		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, player));
+		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
+		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
+		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
 		hudStage.addActor(hud);
 		game.assets.get(MusicId.GameScreen_rain).setLooping(true);
 		game.assets.get(MusicId.GameScreen_rain).setVolume(game.masterVolume);
@@ -57,7 +63,7 @@ public class GameScreen implements Screen {
 
 	@Override
 	public void render(float delta) {
-		// TODO: implement zoom
+		Gdx.app.debug("", "frame start");
 		updateCameraPosition();
 		ScreenUtils.clear(0, 0, 0.2f, 1);
 		// All camera manipulations must be done before calling this method
@@ -75,6 +81,7 @@ public class GameScreen implements Screen {
 		game.batch.end();
 		
 		world.step();
+		Gdx.app.debug("", "frame end");
 	}
 
 	@Override
@@ -109,8 +116,8 @@ public class GameScreen implements Screen {
 	}
 	
 	private final void drawHeldItem() {
-		if (game.heldItem == null) 
+		if (player.items.getCursorItem() == null) 
 			return;
-		game.batch.draw(game.heldItem.getTexture(), Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
+		game.batch.draw(player.items.getCursorItem().getTexture(), Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
 	}
 }

@@ -1,6 +1,7 @@
 package com.mygdx.drop.etc;
 
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Queue;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
 import com.mygdx.drop.etc.events.handlers.EventHandler;
@@ -11,7 +12,9 @@ import com.mygdx.drop.etc.events.handlers.EventHandler;
  * @see Reference
  */
 public class ObservableReference<T> extends Reference<T> implements EventListener {
-	public Array<EventHandler> handlers = new Array<>();
+	private Array<EventHandler> handlers = new Array<>();
+	private Queue<Event> eventQueue = new Queue<>();
+	private boolean firing = false;
 	public ObservableReference(T object) { super(object); }
 
 	@Override
@@ -31,9 +34,21 @@ public class ObservableReference<T> extends Reference<T> implements EventListene
 	public boolean removeHandler(EventHandler handler) { return handlers.removeValue(handler, false); }
 
 	@Override
-	public boolean fire(Event event) {
-		for (EventHandler eventHandler : handlers) 
-			eventHandler.handle(event);
-		return event.isCancelled(); 
+	public void fire(Event event) {
+		eventQueue.addLast(event);
+		if (firing) 
+			return;
+		
+		firing = true;
+		while (eventQueue.size != 0) {			
+			Event queuedEvent = eventQueue.removeFirst();
+			for (int i = 0; i < handlers.size; i++) {
+				EventHandler eventHandler = handlers.get(i);
+				eventHandler.handle(queuedEvent);
+				if (queuedEvent.isStopped()) 
+					break;
+			}
+		}
+		firing = false;
 	}
 }

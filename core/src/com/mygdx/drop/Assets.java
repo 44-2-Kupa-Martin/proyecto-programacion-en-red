@@ -2,6 +2,7 @@ package com.mygdx.drop;
 
 import java.util.EnumMap;
 
+import com.badlogic.gdx.assets.AssetDescriptor;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -14,9 +15,10 @@ import com.badlogic.gdx.utils.Disposable;
  */
 public class Assets implements Disposable {
 	private final String ATLAS = "game.atlas";
+	/** TODO look into {@link AssetDescriptor} */
 	private final AssetManager manager = new AssetManager();
 
-	// These maps are for assets which are not managed by the AssetManager
+	// These maps are for assets which are not managed by the AssetManager TODO refactor these into the enums
 	private EnumMap<FontId, BitmapFont> fonts = new EnumMap<>(FontId.class);
 	private EnumMap<SoundId, com.badlogic.gdx.audio.Sound> sounds;
 	private EnumMap<MusicId, com.badlogic.gdx.audio.Music> music;

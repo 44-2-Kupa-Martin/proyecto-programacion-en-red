@@ -2,6 +2,7 @@ package com.mygdx.drop.game.dynamicentities;
 
 import java.util.function.Supplier;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
@@ -10,13 +11,18 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.Drawable;
+import com.mygdx.drop.etc.events.CanPickupEvent;
+import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.Item;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.items.BowItem;
 
 public class DroppedItem extends BoxEntity implements Drawable {
-	public final Item droppedItem;
+	public final Item item;
+	private float pickupDelay;
+	private boolean eventFired;
 	
 	/**
 	 * Creates an entity that holds an {@link Item}
@@ -40,14 +46,33 @@ public class DroppedItem extends BoxEntity implements Drawable {
 				return fixture;
 			})).get()
 		);
-		this.droppedItem = item;
+		assert item != null;
+		this.item = item;
+		this.pickupDelay = 1.5f;
+		this.eventFired = false;
 		self.applyLinearImpulse(new Vector2(3, 3) /* N-s */, getPosition(), true);
 	 }
+	
+	public boolean canPickUp() { return this.pickupDelay <= 0; }
 
+	@Override
+	public boolean update(Viewport viewport) {
+		boolean toBeDisposed = super.update(viewport);;
+		if (pickupDelay > 0) {
+			pickupDelay -= Gdx.graphics.getDeltaTime();
+		} else if (!eventFired) {
+			CanPickupEvent event = new CanPickupEvent(this); 
+			fire(event);
+			this.eventFired = true;
+			toBeDisposed = event.wasPickedUp();
+		}
+		return toBeDisposed; 
+	}
+	
 	@Override
 	public void draw(Viewport viewport) {
 		Vector2 coords = getDrawingCoordinates();
-		game.batch.draw(droppedItem.getTexture(), coords.x, coords.y, getWidth(), getHeight());
+		game.batch.draw(item.getTexture(), coords.x, coords.y, getWidth(), getHeight());
 	}
 
 	/**

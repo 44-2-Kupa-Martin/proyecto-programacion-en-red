@@ -7,6 +7,7 @@ import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.utils.Null;
 import com.mygdx.drop.game.Item;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.items.GoofyItem;
 
 /**
@@ -19,13 +20,13 @@ public class Drop extends Game {
 	/** If a world exists, a reference will exist here. Is there a better way to do this? */
 	public static @Null World world;
 	private static boolean constructed = false;
-	
+
 	public Assets assets;
 	public SpriteBatch batch;
-	//TODO: the heldItem belongs to the player, move outside of global context and create accessors
-	public Item heldItem;
-	public float masterVolume = 1.0f;
+	public float masterVolume;
+	public float zoom = 1.0f;
 
+	/** Initialization done in {@link Drop#create()} */
 	public Drop() {
 		assert !constructed : "Game is constructed multiple times!";
 		constructed = true;
@@ -52,17 +53,13 @@ public class Drop extends Game {
 	public void create() {
 		Box2D.init();
 
-		
 		Gdx.app.setLogLevel(Constants.LOG_LEVEL);
 		this.assets = Assets.load();
-		//TODO: implement an event system so that classes that need certain assets can listen for when the resource is ready
 		assets.finishLoading();
 
 		this.batch = new SpriteBatch();
-		
-		this.heldItem = new GoofyItem();
-		
-		
+		this.masterVolume = 1.0f;
+		this.zoom = 1.0f;
 		this.setScreen(new MainMenuScreen(this));
 		
 	}

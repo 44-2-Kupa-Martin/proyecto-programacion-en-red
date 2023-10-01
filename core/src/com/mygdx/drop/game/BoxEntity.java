@@ -53,6 +53,8 @@ public abstract class BoxEntity extends Entity {
 	
 	@Override
 	public boolean update(Viewport viewport) {
+		boolean toBeDisposed = super.update(viewport);
+		
 		// Rationale: Although the BoxEntity class has a width and a height field, they are simply for
 		// convenience. What actually determines the width and height of the player is the shape associated
 		// with the fixtures within the body of the player (i.e within the self field). This is a check to
@@ -66,7 +68,7 @@ public abstract class BoxEntity extends Entity {
 			temp.scl(2); // the origin is at the middle of the body, hence the distances must be scaled by two
 			assert temp.x == getWidth() && temp.y == getHeight() : "Player's properties are desynced from those of its body's";
 		}
-		return false; 
+		return toBeDisposed; 
 	}
 	
 	/** The width measured in meters */

@@ -10,6 +10,4 @@ public interface Item {
 	 * @return {@code true} if the item should be consumed, {@code false} otherwise
 	 */
 	public boolean use();
-	
-	
 }

@@ -60,8 +60,6 @@ public abstract class Tile extends Entity {
 		this.x_tl = x;
 		this.y_tl = y;
 
-		// TODO: implement a defer boolean parameter to skip cell's intialization, so that it can be done in
-		// a initCell method
 		TiledMapTileLayer layer = (TiledMapTileLayer) world.tiledMap.getLayers().get(LayerId.WORLD.value);
 		layer.setCell(x, y, new Cell().setTile(world.tiledMap.getTileSets().getTileSet(layerId.value).getTile(tileId.value)));
 

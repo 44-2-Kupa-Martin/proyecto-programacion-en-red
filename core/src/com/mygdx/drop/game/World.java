@@ -23,10 +23,12 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Array.ArrayIterator;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Null;
+import com.badlogic.gdx.utils.Queue;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Constants.LayerId;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.GameScreen;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.EventListener;
 import com.mygdx.drop.etc.events.ContactEvent;
@@ -35,6 +37,7 @@ import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.etc.events.InputEvent.Type;
 import com.mygdx.drop.etc.events.handlers.EventHandler;
 import com.mygdx.drop.game.Entity.EntityDefinition;
+import com.mygdx.drop.game.Entity.Lifetime;
 import com.mygdx.drop.game.WorldBorder.Cardinality;
 import com.mygdx.drop.game.dynamicentities.DroppedItem;
 import com.mygdx.drop.game.tiles.RainbowTile;
@@ -59,6 +62,8 @@ public class World implements Disposable, InputProcessor, EventListener {
 	/** Entities here are destroyed the next {@link #step()} call TODO this should be a queue not an array */
 	protected final Array<Entity> toBeDestroyed;
 	private final Array<EventHandler> eventHandlers;
+	private final Queue<Event> eventQueue;
+	private boolean firing;
 	
 	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
@@ -153,6 +158,8 @@ public class World implements Disposable, InputProcessor, EventListener {
 		this.toBeDrawn = new Array<Drawable>();
 		this.toBeDestroyed = new Array<Entity>();
 		this.eventHandlers = new Array<EventHandler>();
+		this.eventQueue = new Queue<Event>();
+		this.firing = false;
 
 		new WorldBorder(this, Cardinality.NORTH);
 		new WorldBorder(this, Cardinality.SOUTH);
@@ -170,8 +177,8 @@ public class World implements Disposable, InputProcessor, EventListener {
 
 	public final void render(OrthographicCamera camera) {
 		MapLayer layer = tiledMap.getLayers().get(Constants.LayerId.WORLD.value);
-		float offsetX = Drop.mtToPx(camera.viewportWidth/2 - camera.position.x - worldWidth_mt/2);
-		float offsetY = -Drop.mtToPx(camera.viewportHeight/2 - camera.position.y - worldHeight_mt/2);
+		float offsetX = Drop.mtToPx(camera.zoom*camera.viewportWidth/2 - camera.position.x - worldWidth_mt/2);
+		float offsetY = -Drop.mtToPx(camera.zoom*camera.viewportHeight/2 - camera.position.y - worldHeight_mt/2);
 		layer.setOffsetX(offsetX);
 		layer.setOffsetY(offsetY);
 		mapRenderer.setView(camera);
@@ -206,16 +213,21 @@ public class World implements Disposable, InputProcessor, EventListener {
 		for (ArrayIterator<Entity> iterator = toBeDestroyed.iterator(); iterator.hasNext();) {
 			Entity entity = iterator.next();
 			box2dWorld.destroyBody(entity.self);
+			entity.objectState = Lifetime.DISPOSED;
+			entity.self = null;
 			iterator.remove();
 		}
-		box2dWorld.getBodies(bodies);
 		
+		box2dWorld.getBodies(bodies);
+		//TODO find a better fix to the problem of creating bodies while iterating over getBodies
+		Array<Body> bodies = new Array<Body>(this.bodies);
 		//TODO: determine best values for box2dworld.step()
 		box2dWorld.step(1 / 60f, 6, 2);
-		
-		for (Body body : bodies) {
+		for (Body body : bodies) {			
 			Entity entity = (Entity) body.getUserData();
-			entity.update(viewport);
+			boolean dispose = entity.update(viewport);
+			if (dispose) 
+				destroyEntity(entity);
 		}
 		
 		// Update over entities. Done in step() because entities may change position, which can fire enter/exit without an input event.
@@ -246,7 +258,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 	public final void destroyEntity(Entity entity) {
 		toBeDestroyed.add(entity);
 		if (entity instanceof Drawable) 
-			toBeDrawn.removeValue((Drawable)entity, false);
+			toBeDrawn.removeValue((Drawable)entity, true);
 	}
 	
 	public final Vector2 getLastClickPosition() {
@@ -262,11 +274,22 @@ public class World implements Disposable, InputProcessor, EventListener {
 	public boolean removeHandler(EventHandler handler) { return eventHandlers.removeValue(handler, false); }
 
 	@Override
-	public boolean fire(Event event) {
-		for (EventHandler handler : eventHandlers) 
-			handler.handle(event);
-			
-		return event.isCancelled(); 
+	public void fire(Event event) {
+		eventQueue.addLast(event);
+		if (firing) 
+			return;
+		
+		firing = true;
+		while (eventQueue.size != 0) {
+			Event queuedEvent = eventQueue.removeFirst();
+			for (int i = 0; i < eventHandlers.size; i++) {
+				EventHandler handler = eventHandlers.get(i);
+				handler.handle(queuedEvent);
+				if (queuedEvent.isStopped()) 
+					break;
+			}			
+		}
+		firing = false;
 	}
 	
 	
@@ -310,15 +333,8 @@ public class World implements Disposable, InputProcessor, EventListener {
 			}
 		}
 		
-		if (target == null) {
-			if (game.heldItem != null) {
-				//TODO: make a proper implementation of the drop mechanic
-				createEntity(new DroppedItem.Definition(0, 5, game.heldItem));
-				game.heldItem = null;
-				return true;
-			}
+		if (target == null) 
 			return false;
-		}
 		
 		InputEvent event = new InputEvent(this, target);
 		event.setType(Type.touchDown);
@@ -327,11 +343,9 @@ public class World implements Disposable, InputProcessor, EventListener {
 		event.setPointer(pointer);
 		event.setButton(button);
 
-		boolean cancelled = target.fire(event);
-		Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
+		target.fire(event);
 		
-		boolean handled = event.isHandled();
-		return handled;
+		return event.isHandled();
 	}
 
 	/** Applies a touch up event to the stage and returns true if an actor in the scene {@link Event#handle() handled} the event.
@@ -364,11 +378,9 @@ public class World implements Disposable, InputProcessor, EventListener {
 		event.setPointer(pointer);
 		event.setButton(button);
 
-		boolean cancelled = target.fire(event);
-		Gdx.app.debug("", event.getType().toString() + " cancelled: " + cancelled);
+		target.fire(event);
 
-		boolean handled = event.isHandled();
-		return handled;
+		return event.isHandled();
 	}
 
 	@Override

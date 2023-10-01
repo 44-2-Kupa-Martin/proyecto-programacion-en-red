@@ -28,10 +28,8 @@ public class Inventory extends Stack {
 		hotbar = new Table();
 		hotbar.setVisible(true);
 		
-		for (ObservableReference<Item> itemReference : player.hotbar) 
-			hotbar.add(new Slot(slotSize, itemReference)).width(slotSize).height(slotSize);
-		
-		
+		for (ObservableReference<Item> itemReference : player.items.hotbar) 
+			hotbar.add(new Slot(slotSize, itemReference, player.items.getCursorItemReference())).width(slotSize).height(slotSize);
 		
 		this.inventory = new Table();
 		inventory.setDebug(Constants.DEBUG);
@@ -40,14 +38,14 @@ public class Inventory extends Stack {
 		itemsTable.setDebug(Constants.DEBUG);
 		
 		// The hotbar and inventory's first row share the same item references
-		for (ObservableReference<Item> itemReference : player.hotbar) 
-			itemsTable.add(new Slot(slotSize, itemReference)).width(slotSize).height(slotSize);
+		for (ObservableReference<Item> itemReference : player.items.hotbar) 
+			itemsTable.add(new Slot(slotSize, itemReference, player.items.getCursorItemReference())).width(slotSize).height(slotSize);
 		itemsTable.row();
 		// i starts at 1 because we created the hotbar row in the previous loop
 		// TODO: remove hardcoded values
 		for (int i = 1; i < 4; i++) {
 			for (int j = 0; j < 9; j++) 
-				itemsTable.add(new Slot(slotSize, player.inventory.get(i * 9 + j))).width(slotSize).height(slotSize);
+				itemsTable.add(new Slot(slotSize, player.items.inventory.get(i*9 + j), player.items.getCursorItemReference())).width(slotSize).height(slotSize);
 			itemsTable.row();
 		}
 		inventory.add(itemsTable);
@@ -56,9 +54,9 @@ public class Inventory extends Stack {
 
 		for (int i = 0; i < 4; i++) {
 			// Armor slot
-			armorTable.add(new Slot(slotSize, player.armor.get(i))).width(slotSize).height(slotSize);
+			armorTable.add(new Slot(slotSize, player.items.armor.get(i), player.items.getCursorItemReference())).width(slotSize).height(slotSize);
 			// Accessory slot
-			armorTable.add(new Slot(slotSize, player.accessory.get(i))).width(slotSize).height(slotSize);
+			armorTable.add(new Slot(slotSize, player.items.accessory.get(i), player.items.getCursorItemReference())).width(slotSize).height(slotSize);
 			armorTable.row();
 		}			
 		inventory.add(armorTable);

@@ -3,6 +3,7 @@ package com.mygdx.drop.actors;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
@@ -24,6 +25,8 @@ public class Slot extends Container<Image> {
 	private TextureRegionDrawable transparentPlaceholder;
 	/** The item to display */
 	private final ObservableReference<Item> itemReference;
+	private final ObservableReference<Item> cursorItemReference;
+	private boolean itemChanged;
 	
 	static {
 		// The background is common to all instances
@@ -37,19 +40,20 @@ public class Slot extends Container<Image> {
 	/**
 	 * A {@link Container} that displays an {@link Item} and updates automatically if the items is dropped or moved
 	 * @param size The size of the actor in pixels
-	 * @param reference A reference to an Item
+	 * @param controlledItem A reference to an Item
 	 */
-	public Slot(int size, ObservableReference<Item> reference) {
-		assert reference != null : "Cannot take a null reference";
-		this.itemReference = reference;
+	public Slot(int size, ObservableReference<Item> controlledItem, ObservableReference<Item> cursorItem) {
+		assert controlledItem != null : "Cannot take a null reference";
+		this.itemReference = controlledItem;
+		this.cursorItemReference = cursorItem;
+		this.itemChanged = false;
 		setBackground(background);
 		
 		itemReference.addHandler(new PropertyChangeEventHandler<Item>(Item.class) {
 			@Override
 			public boolean onChange(Object target, Item oldValue, Item newValue) {
-				TextureRegionDrawable drawable = newValue == null ? transparentPlaceholder : new TextureRegionDrawable(newValue.getTexture());
-				getActor().setDrawable(drawable);
-				return true;
+				Slot.this.itemChanged = true;
+				return false;
 			}
 		});
 		
@@ -69,25 +73,34 @@ public class Slot extends Container<Image> {
         	@Override
         	public void clicked(InputEvent event, float x, float y) { 
         		boolean slotHasItem = itemReference.get() != null;
-        		boolean cursorHasItem = Drop.game.heldItem != null;
+        		boolean cursorHasItem = cursorItemReference.get() != null;
         		if (!slotHasItem && !cursorHasItem)
         			return;
         		
         		if (!slotHasItem && cursorHasItem) {        			
-        			itemReference.set(Drop.game.heldItem);
-        			Drop.game.heldItem = null;
+        			itemReference.set(cursorItemReference.get());
+        			cursorItemReference.set(null);
         		}
         		
         		if (slotHasItem && !cursorHasItem) {
-					Drop.game.heldItem = itemReference.get();
+					cursorItemReference.set(itemReference.get());
 					itemReference.set(null);
 				}
         		if (slotHasItem && cursorHasItem) {
 					Item temp = itemReference.get();
-					itemReference.set(Drop.game.heldItem);
-					Drop.game.heldItem = temp;
+					itemReference.set(cursorItemReference.get());
+					cursorItemReference.set(temp);
 				}
         	}
         });
+	}
+	
+	@Override
+	public void draw(Batch batch, float parentAlpha) {
+		if (itemChanged) {
+			TextureRegionDrawable drawable = itemReference.get() == null ? transparentPlaceholder : new TextureRegionDrawable(itemReference.get().getTexture());
+			getActor().setDrawable(drawable);
+		}
+		super.draw(batch, parentAlpha);
 	}
 }

@@ -54,11 +54,6 @@ public class DebugBox extends BoxEntity implements Drawable {
 		});
 	}
 
-
-
-	@Override
-	public boolean update(Viewport viewport) { return false; }
-	
 	public void clicked() { System.out.println("clicked debug box"); };
 
 	@Override

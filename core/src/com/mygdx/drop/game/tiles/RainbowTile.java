@@ -15,8 +15,6 @@ public class RainbowTile extends Tile {
 		fixture.setRestitution(0);
 	}
 
-	@Override
-	public boolean update(Viewport viewport) { return false; }
 	/**
 	 * See {@link Tile.TileDefinition}
 	 */
@@ -26,6 +24,4 @@ public class RainbowTile extends Tile {
 		@Override
 		protected RainbowTile createEntity(World world) { return new RainbowTile(world, (int)x, (int)y); }
 	}
-
-
 }

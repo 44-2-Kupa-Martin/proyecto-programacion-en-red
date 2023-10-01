@@ -63,7 +63,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 
 	@Override
 	public boolean update(Viewport viewport) {
-		super.update(viewport);
+		boolean toBeDisposed = super.update(viewport);
 		assert !Constants.MULTITHREADED;
 		self.setLinearVelocity(player.getPosition().sub(getPosition()).nor().scl(1.5f));
 		if (this.invincibilityTimer > 0)
@@ -73,7 +73,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 
 		if (this.health <= 0)
 			dispose();
-		return false;
+		return toBeDisposed;
 	}
 
 	public void draw(Viewport viewport) {

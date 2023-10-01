@@ -46,9 +46,6 @@ class WorldBorder extends BoxEntity {
 				return wallFixture;
 			})).get());
 	}
-
-	@Override
-	public boolean update(Viewport viewport) { return false; }
 	
 	public enum Cardinality {
 		NORTH,

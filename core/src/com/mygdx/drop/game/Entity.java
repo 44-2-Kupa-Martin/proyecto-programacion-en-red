@@ -6,6 +6,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.Queue;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.EventListener;
@@ -22,9 +23,11 @@ public abstract class Entity implements Disposable, EventListener {
 	protected static Drop game;
 
 	protected final World world;
-	protected final Body self;
+	protected Body self;
 	private Array<EventHandler> eventHandlers;
-	
+	private Queue<Event> eventQueue;
+	private boolean firing;
+	Lifetime objectState;
 
 	/**
 	 * @param world          The {@link World} that holds the entity.
@@ -35,15 +38,18 @@ public abstract class Entity implements Disposable, EventListener {
 		assert Drop.game != null : "Entity created before game instance!";
 		if (game == null)
 			game = Drop.game;
+		this.objectState = Lifetime.ALIVE;
 		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
 		this.eventHandlers = new Array<>();
+		this.eventQueue = new Queue<>();
+		this.firing = false;
 		self.setUserData(this);
 	}
 	
 	@Override
 	public void dispose() {
-		world.destroyEntity(this);
+		this.objectState = Lifetime.TO_BE_DISPOSED;
 	}
 
 	/**
@@ -52,7 +58,11 @@ public abstract class Entity implements Disposable, EventListener {
 	 * @param viewport Needed for projecting/unprojecting
 	 * @return {@code true} if {@link Entity#dispose()} is to be called, {@code false} otherwise
 	 */
-	public abstract boolean update(Viewport viewport);
+	public boolean update(Viewport viewport) {
+		if (objectState == Lifetime.DISPOSED) 
+			throw new IllegalStateException("Calling method of disposed object");
+		return objectState == Lifetime.TO_BE_DISPOSED;
+	}
 
 	/** Returns the position of the entity's center of mass in meters (the same vector each time) */
 	public final Vector2 getPosition() {
@@ -72,15 +82,29 @@ public abstract class Entity implements Disposable, EventListener {
 	public boolean removeHandler(EventHandler handler) { return eventHandlers.removeValue(handler, false); }
 	
 	@Override
-	public boolean fire(Event event) {
-		for (EventHandler eventHandler : eventHandlers) 
-			eventHandler.handle(event);
-
-		return event.isCancelled();
+	public void fire(Event event) {
+		eventQueue.addLast(event);
+		if (firing) 
+			return;
+		
+		firing = true;
+		while (eventQueue.size != 0) {
+			Event queuedEvent = eventQueue.removeFirst();
+			for (int i = 0; i < eventHandlers.size; i++) {
+				EventHandler eventHandler = eventHandlers.get(i);
+				eventHandler.handle(queuedEvent);
+				if (queuedEvent.isStopped()) 
+					break;
+			}			
+		}
+		firing = false;
 	}
 	
 	@Override
-	public void addHandler(EventHandler handler) { eventHandlers.add(handler); }
+	public void addHandler(EventHandler handler) {
+		assert handler != null;
+		eventHandlers.add(handler); 
+	}
 	
 	/**
 	 * Tests if the given coordinates are within the entity
@@ -101,6 +125,12 @@ public abstract class Entity implements Disposable, EventListener {
 	 * @return The same point relative to this entity's center of mass. Measured in meters
 	 */
 	public final Vector2 getRelativeCoordinates(Vector2 worldCoordinates) { return self.getLocalPoint(worldCoordinates); }
+	
+	enum Lifetime {
+		ALIVE,
+		TO_BE_DISPOSED,
+		DISPOSED;
+	}
 	
 	/**
 	 * Defines the minimum requirements for constructing an entity. This class' purpose is to provide an

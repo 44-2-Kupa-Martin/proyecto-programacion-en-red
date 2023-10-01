@@ -20,15 +20,14 @@ public interface EventListener {
 	 * @param handler The handler to be removed
 	 * @return {@code true} if the handler was found and removed, {@code false} otherwise
 	 */
-	public boolean removeHandler(EventHandler handler); //TODO all implementations of this method are O(n), optimize to O(1)
-	
+	public boolean removeHandler(EventHandler handler); // TODO all implementations of this method are O(n), optimize to O(1)
+
 	/**
-	 * Fires an event on the current object. The {@link Event#target} property will be set to
-	 * {@code this} before calling the {@link EventHandler}s
+	 * Fires an event on the current object. NOTE: event handlers may call this very method to chain
+	 * events, implementors must take care to process events in chronological order
 	 * 
 	 * @param event The event to be handled
-	 * @return {@code true} if the event was cancelled, {@code false} otherwise
 	 */
-	public boolean fire(Event event); //TODO: all implementations of this method ignore Event.handled() and Event.cancelled(). Enforce such cases
+	public void fire(Event event);
 
 }
