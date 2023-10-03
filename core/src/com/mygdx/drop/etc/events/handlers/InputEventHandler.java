@@ -8,7 +8,7 @@ import com.mygdx.drop.game.Entity;
 /**
  * Unpacks and handles {@link InputEvent}s
  */
-public class InputEventHandler implements EventHandler {
+public class InputEventHandler implements EventListener {
 	static private final Vector2 tmpCoords = new Vector2();
 
 	/**
@@ -21,7 +21,7 @@ public class InputEventHandler implements EventHandler {
 			return false;
 		InputEvent inputEvent = (InputEvent)event;
 		
-		assert inputEvent.getTarget() != null : "All input events must have a target";
+//		assert inputEvent.getTarget() != null : "All input events must have a target";
 
 		switch (inputEvent.getType()) {
 			case keyDown:
@@ -31,8 +31,12 @@ public class InputEventHandler implements EventHandler {
 			case keyTyped:
 				return keyTyped(inputEvent, inputEvent.getCharacter());
 		}
-
-		tmpCoords.set(inputEvent.getTarget().getRelativeCoordinates(tmpCoords.set(inputEvent.getWorldX(), inputEvent.getWorldY())));
+		
+		if (inputEvent.getTarget() != null) {
+			tmpCoords.set(inputEvent.getTarget().getRelativeCoordinates(tmpCoords.set(inputEvent.getWorldX(), inputEvent.getWorldY())));			
+		} else {
+			tmpCoords.set(inputEvent.getWorldX(), inputEvent.getWorldY());
+		}
 
 		switch (inputEvent.getType()) {
 			case touchDown:

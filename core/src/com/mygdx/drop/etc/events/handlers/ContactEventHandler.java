@@ -10,7 +10,7 @@ import com.mygdx.drop.game.World;
 /**
  * Unpacks {@link ContactEvent}s
  */
-public class ContactEventHandler implements EventHandler {
+public class ContactEventHandler implements EventListener {
 
 	@Override
 	public boolean handle(Event event) {

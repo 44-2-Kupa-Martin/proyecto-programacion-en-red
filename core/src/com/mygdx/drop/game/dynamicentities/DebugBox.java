@@ -46,7 +46,7 @@ public class DebugBox extends BoxEntity implements Drawable {
 
 		this.texture = game.assets.get(TextureId.DebugBox_bucket);
 		
-		addHandler(new ClickEventHandler(Input.Buttons.RIGHT) {
+		addListener(new ClickEventHandler(Input.Buttons.RIGHT) {
 			@Override
 			public void clicked(InputEvent event, float x, float y) { 
 				System.out.println("clicked debugbox");

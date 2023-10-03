@@ -30,28 +30,31 @@ import com.mygdx.drop.Constants.LayerId;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.GameScreen;
 import com.mygdx.drop.etc.Drawable;
-import com.mygdx.drop.etc.EventListener;
+import com.mygdx.drop.etc.EventEmitter;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.etc.events.InputEvent.Type;
-import com.mygdx.drop.etc.events.handlers.EventHandler;
+import com.mygdx.drop.etc.events.handlers.EventListener;
 import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Entity.Lifetime;
 import com.mygdx.drop.game.WorldBorder.Cardinality;
 import com.mygdx.drop.game.dynamicentities.DroppedItem;
+import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.tiles.RainbowTile;
 
 /**
  * A wrapper for box2dworld. Handles the simulation and rendering of all {@link Entity entities} and {@link InputEvent input events}
  */
-public class World implements Disposable, InputProcessor, EventListener {
+public class World implements Disposable, InputProcessor, EventEmitter {
 	protected static Drop game;
 	
 	public final float worldWidth_mt;
 	public final int worldWidth_tl;
 	public final float worldHeight_mt;
 	public final int worldHeight_tl;
+	/** A quick hack for the singleplayer build. TODO when implementing multiplayer, this should be either removed or refectored */
+	public final Player player;
 
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
 	protected TiledMap tiledMap;
@@ -61,7 +64,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 	protected final Array<Drawable> toBeDrawn;
 	/** Entities here are destroyed the next {@link #step()} call TODO this should be a queue not an array */
 	protected final Array<Entity> toBeDestroyed;
-	private final Array<EventHandler> eventHandlers;
+	private final Array<EventListener> eventHandlers;
 	private final Queue<Event> eventQueue;
 	private boolean firing;
 	
@@ -157,7 +160,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 		this.bodies = new Array<Body>();
 		this.toBeDrawn = new Array<Drawable>();
 		this.toBeDestroyed = new Array<Entity>();
-		this.eventHandlers = new Array<EventHandler>();
+		this.eventHandlers = new Array<EventListener>();
 		this.eventQueue = new Queue<Event>();
 		this.firing = false;
 
@@ -172,7 +175,8 @@ public class World implements Disposable, InputProcessor, EventListener {
 				tileDefiniton.y = j;
 				createEntity(tileDefiniton);
 			}
-		}		
+		}
+		this.player = createEntity(new Player.Definition(0,3));
 	}
 
 	public final void render(OrthographicCamera camera) {
@@ -268,10 +272,10 @@ public class World implements Disposable, InputProcessor, EventListener {
 	// EventListerners
 	
 	@Override
-	public void addHandler(EventHandler handler) { eventHandlers.add(handler); }
+	public void addListener(EventListener handler) { eventHandlers.add(handler); }
 
 	@Override
-	public boolean removeHandler(EventHandler handler) { return eventHandlers.removeValue(handler, false); }
+	public boolean removeListener(EventListener handler) { return eventHandlers.removeValue(handler, false); }
 
 	@Override
 	public void fire(Event event) {
@@ -283,7 +287,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 		while (eventQueue.size != 0) {
 			Event queuedEvent = eventQueue.removeFirst();
 			for (int i = 0; i < eventHandlers.size; i++) {
-				EventHandler handler = eventHandlers.get(i);
+				EventListener handler = eventHandlers.get(i);
 				handler.handle(queuedEvent);
 				if (queuedEvent.isStopped()) 
 					break;
@@ -303,10 +307,22 @@ public class World implements Disposable, InputProcessor, EventListener {
 	// InputProcessor
 	//TODO: implement key events 
 	@Override
-	public boolean keyDown(int keycode) { return false; }
+	public boolean keyDown(int keycode) {
+		InputEvent inputEvent = new InputEvent(this, player, null);
+		inputEvent.setType(Type.keyDown);
+		inputEvent.setKeyCode(keycode);
+		this.fire(inputEvent);
+		return inputEvent.isHandled(); 
+	}
 
 	@Override
-	public boolean keyUp(int keycode) { return false; }
+	public boolean keyUp(int keycode) { 
+		InputEvent inputEvent = new InputEvent(this, player, null);
+		inputEvent.setType(Type.keyUp);
+		inputEvent.setKeyCode(keycode);
+		this.fire(inputEvent);
+		return inputEvent.isHandled(); 
+	}
 
 	@Override
 	public boolean keyTyped(char character) { return false; }
@@ -333,17 +349,18 @@ public class World implements Disposable, InputProcessor, EventListener {
 			}
 		}
 		
-		if (target == null) 
-			return false;
-		
-		InputEvent event = new InputEvent(this, target);
+		InputEvent event = new InputEvent(this, player, target);
 		event.setType(Type.touchDown);
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
-
-		target.fire(event);
+		
+		if (target != null) {
+			target.fire(event);			
+		} else {
+			this.fire(event);
+		}
 		
 		return event.isHandled();
 	}
@@ -367,18 +384,19 @@ public class World implements Disposable, InputProcessor, EventListener {
 				break;
 			}
 		}
-		
-		if (target == null) 
-			return false;
 
-		InputEvent event = new InputEvent(this, target);
+		InputEvent event = new InputEvent(this, player, target);
 		event.setType(Type.touchUp);
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
 
-		target.fire(event);
+		if (target != null) {
+			target.fire(event);			
+		} else {
+			this.fire(event);
+		}
 
 		return event.isHandled();
 	}
@@ -422,7 +440,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 
 		// Exit overLast.
 		if (overLast != null) {
-			InputEvent event = new InputEvent(this, overLast);
+			InputEvent event = new InputEvent(this, player, overLast);
 			event.setType(InputEvent.Type.exit);
 			event.setWorldX(worldCoordinates.x);
 			event.setWorldY(worldCoordinates.y);
@@ -433,7 +451,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 
 		// Enter over.
 		if (over != null) {
-			InputEvent event = new InputEvent(this, over);
+			InputEvent event = new InputEvent(this, player, over);
 			event.setType(InputEvent.Type.enter);
 			event.setWorldX(worldCoordinates.x);
 			event.setWorldY(worldCoordinates.y);
@@ -446,7 +464,7 @@ public class World implements Disposable, InputProcessor, EventListener {
 	
 	private void fireExit (Entity entity, int screenX, int screenY, int pointer) {
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
-		InputEvent event = new InputEvent(this, entity);
+		InputEvent event = new InputEvent(this, player, entity);
 		event.setType(InputEvent.Type.exit);
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);

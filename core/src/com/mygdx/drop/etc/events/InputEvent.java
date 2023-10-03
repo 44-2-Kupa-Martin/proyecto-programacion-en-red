@@ -5,6 +5,7 @@ import com.badlogic.gdx.utils.Null;
 import com.mygdx.drop.etc.events.handlers.InputEventHandler;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.dynamicentities.Player;
 
 /**
  * Event for world input: touch, mouse, touch/mouse enter/exit entity, mouse scroll, and keyboard
@@ -15,18 +16,22 @@ import com.mygdx.drop.game.World;
  */
 public class InputEvent extends Event {
 	public final World world;
-	public final Entity target;
+	/** The player resposable for the InputEvent */
+	public final Player player;
+	/** The target of the event, if null no entity was hit */
+	public final @Null Entity target;
 	private Type type;
 	private float worldX_mt, worldY_mt, scrollAmountX, scrollAmountY;
 	private int pointer, button, keyCode;
 	private @Null Entity relatedEntity; // If an enter/exit event, this field contains the entity being exited/entered
 	private char character;
 	
-	public InputEvent(World world, Entity target) {
+	public InputEvent(World world, Player player, Entity target) {
 		assert world != null;
-		assert target != null;
-		this.target = target;
 		this.world = world;
+		assert player != null;
+		this.player = player;
+		this.target = target;
 	}
 	
 	/**

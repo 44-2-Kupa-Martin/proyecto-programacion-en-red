@@ -3,35 +3,23 @@ package com.mygdx.drop.game.dynamicentities;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.CircleShape;
-import com.badlogic.gdx.physics.box2d.Contact;
-import com.badlogic.gdx.physics.box2d.ContactImpulse;
-import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
-import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
-import com.badlogic.gdx.physics.box2d.Manifold;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
-import com.badlogic.gdx.physics.box2d.Shape.Type;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets.SoundId;
 import com.mygdx.drop.Constants;
@@ -43,17 +31,17 @@ import com.mygdx.drop.etc.SimpleContactEventFilter;
 import com.mygdx.drop.etc.events.CanPickupEvent;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.FreeSlotEvent;
+import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.etc.events.handlers.CanPickupEventHandler;
-import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
-import com.mygdx.drop.etc.events.handlers.EventHandler;
+import com.mygdx.drop.etc.events.handlers.ClickEventHandler;
 import com.mygdx.drop.etc.events.handlers.FreeSlotEventHandler;
+import com.mygdx.drop.etc.events.handlers.InputEventHandler;
 import com.mygdx.drop.etc.events.handlers.PropertyChangeEventHandler;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.items.BowItem;
 import com.mygdx.drop.game.items.DebugItem;
-import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Item;
 
 public class Player extends BoxEntity implements Drawable {
@@ -66,9 +54,9 @@ public class Player extends BoxEntity implements Drawable {
 	private EnumMap<State, Animation<TextureRegion>> animations;
 	public final Inventory items;
 	private float maxHealth;
-	public float health;
-	// TODO REMOVE
-	private TestEnemy enemy;
+	private float health;
+	private int groundContacts;
+	private final Map<Integer, Runnable> keybinds;
 
 	/**
 	 * @param x Measured in meters
@@ -114,52 +102,46 @@ public class Player extends BoxEntity implements Drawable {
 			itemReference.set(new DebugItem());
 		}
 		items.hotbar.get(0).set(new BowItem(world, this));
+		this.groundContacts = 0;
+		this.keybinds = new HashMap<>();
+		keybinds.put(Input.Keys.W, this::jump);
+		keybinds.put(Input.Keys.A, this::moveLeft);
+		keybinds.put(Input.Keys.D, this::moveRight);
 	}
+
+	public float getHealth() { return health; }
 
 	@Override
 	public final boolean update(Viewport viewport) {
-		Gdx.app.debug("", "update player");
 		boolean toBeDisposed = super.update(viewport);
 		if (this.invincibilityTimer > 0)
 			invincibilityTimer -= Gdx.graphics.getDeltaTime();
 
-		if (enemy != null)
-			applyDamage(enemy.damage);
+		previousState = currentState;
+		currentState = groundContacts > 0 ? State.IDLE : State.AIRBORNE;
+
+		for (Runnable task : tasks)
+			task.run();
 
 		if (this.health <= 0)
 			return true;
 
-		previousState = currentState;
-		currentState = State.IDLE;
-
 		// TODO change this to a click listener
-		if (Gdx.input.isButtonJustPressed(Buttons.LEFT)) {
+		
+		if (Gdx.input.isKeyJustPressed(Keys.Q)) {
+			dropItem();
+		}
+		
+		if (Gdx.input.isButtonPressed(Buttons.LEFT)) {
 			Item item = items.getItemOnHand();
 			if (item != null)
 				item.use();
 		}
-
-		if (Gdx.input.isKeyJustPressed(Keys.Q) && items.getItemOnHand() != null) {
-			System.out.println("pressed");
-			world.createEntity(new DroppedItem.Definition(getX(), getY(), items.getItemOnHand()));
-			items.getItemOnHandReference().set(null);
-		}
-
-		if (Gdx.input.isKeyPressed(Keys.A)) {
-			self.applyLinearImpulse(new Vector2(-1, 0), self.getWorldCenter(), true);
-			currentState = State.WALKING;
-		}
-		if (Gdx.input.isKeyPressed(Keys.D)) {
-			self.applyLinearImpulse(new Vector2(1, 0), self.getWorldCenter(), true);
-			currentState = State.WALKING;
-		}
-		if (Gdx.input.isKeyPressed(Keys.W)) {
-			self.applyLinearImpulse(new Vector2(0, 1), self.getWorldCenter(), true);
-			currentState = State.WALKING;
-		}
-		if (Gdx.input.isKeyPressed(Keys.S)) {
-			self.applyLinearImpulse(new Vector2(0, -1), self.getWorldCenter(), true);
-			currentState = State.WALKING;
+		
+		for (int key : new int[]{Keys.NUM_1, Keys.NUM_2, Keys.NUM_3, Keys.NUM_4, Keys.NUM_5, Keys.NUM_6, Keys.NUM_7, Keys.NUM_8, Keys.NUM_9}) {
+			if (Gdx.input.isKeyJustPressed(key)) {
+				items.changeItemOnHand(key - Keys.NUM_1);
+			}
 		}
 
 		if (currentState != previousState)
@@ -191,21 +173,91 @@ public class Player extends BoxEntity implements Drawable {
 		animations.put(State.IDLE,
 				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_idle), PlayMode.LOOP));
 		animations.put(State.WALKING,
+				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_idle), PlayMode.LOOP));
+		animations.put(State.AIRBORNE,
 				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_walk), PlayMode.LOOP));
 		return animations;
+	}
+
+	private final void dropItem() {
+		if (items.getItemOnHand() == null)
+			return;
+		world.createEntity(new DroppedItem.Definition(getX(), getY(), items.getItemOnHand()));
+		items.getItemOnHandReference().set(null);
+	}
+
+	private final void moveLeft() {
+		self.applyLinearImpulse(new Vector2(-1, 0), self.getWorldCenter(), true);
+		if (currentState != State.AIRBORNE)
+			currentState = State.WALKING;
+	}
+
+	private final void moveRight() {
+		self.applyLinearImpulse(new Vector2(1, 0), self.getWorldCenter(), true);
+		if (currentState != State.AIRBORNE)
+			currentState = State.WALKING;
+
+	}
+
+	private final void jump() {
+		if (currentState != State.AIRBORNE) {
+			self.applyLinearImpulse(new Vector2(0, 10), self.getWorldCenter(), true);
+		}
 	}
 
 	private static final void initializeClassListeners(World world) {
 		assert !instantiated : "Player.initializeClassListeners called after first instantiation";
 		Player.instantiated = true;
+
+		world.addListener(new ClickEventHandler(Input.Buttons.RIGHT) {
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				if (event.getTarget() != null)
+					return;
+				if (event.player.items.getCursorItem() != null)
+					event.player.dropItem();
+			}
+
+		});
+
+		world.addListener(new InputEventHandler() {
+			@Override
+			public boolean keyDown(InputEvent event, int keycode) {
+				Runnable task = event.player.keybinds.get(keycode);
+				if (task != null)
+					event.player.addTask(task);
+				return true;
+			}
+
+			@Override
+			public boolean keyUp(InputEvent event, int keycode) {
+				Runnable task = event.player.keybinds.get(keycode);
+				if (task != null)
+					event.player.removeTask(task);
+				return true;
+			}
+
+		});
 		/**
 		 * These handlers are shared across all instances of this class. They fire for all events in the
 		 * world and as such are fit for class wide handlers
 		 */
-		world.addHandler(new SimpleContactEventFilter<Player>(Player.class) {
+		world.addListener(new SimpleContactEventFilter<Player>(Player.class) {
 			@Override
 			public boolean beginContact(ContactEvent event, Participants participants) {
-				participants.objectA.fire(event);
+				boolean entityBelongsToTheWorldCategory = (participants.fixtureB.getFilterData().categoryBits
+						& Constants.Category.WORLD.value) != 0;
+				if (entityBelongsToTheWorldCategory)
+					participants.objectA.groundContacts++;
+				return event.isHandled();
+			}
+
+			@Override
+			public boolean endContact(ContactEvent event, ContactEventFilter<Player, Entity>.Participants participants) {
+				boolean entityBelongsToTheWorldCategory = (participants.fixtureB.getFilterData().categoryBits
+						& Constants.Category.WORLD.value) != 0;
+				if (entityBelongsToTheWorldCategory)
+					participants.objectA.groundContacts--;
 				return event.isHandled();
 			}
 
@@ -214,25 +266,33 @@ public class Player extends BoxEntity implements Drawable {
 		 * NOTE: only a single instance of these handlers will exist, NEVER keep collision specific state.
 		 * If said state is needed, make a map associating it with the contact object
 		 */
-		world.addHandler(new ContactEventFilter<Player, DroppedItem>(Player.class, DroppedItem.class) {
+		world.addListener(new ContactEventFilter<Player, DroppedItem>(Player.class, DroppedItem.class) {
 			class State {
 				CanPickupEventHandler onPickupDelayEnd;
 				FreeSlotEventHandler onFreePlayerSlot;
+
 			}
+
 			HashMap<Integer, State> collisionState = new HashMap<>();
+
 			@Override
 			public boolean beginContact(ContactEvent event, Participants participants) {
 				Player player = participants.objectA;
 				DroppedItem droppedItem = participants.objectB;
 				State state = new State();
-				/** because free slot events are fired by a propertychange event listener, and because said listener is registered first when the free slot event ends the change event continues and the slots hear the first change event last */
+				/**
+				 * because free slot events are fired by a propertychange event listener, and because said listener
+				 * is registered first when the free slot event ends the change event continues and the slots hear
+				 * the first change event last
+				 */
 				state.onFreePlayerSlot = new FreeSlotEventHandler() {
 					public boolean onFreeSlot(FreeSlotEvent event) {
 						event.putItemIntoSlot(droppedItem.item);
 						droppedItem.dispose();
-						player.removeHandler(this);
+						player.removeListener(this);
 						return true;
 					};
+
 				};
 
 				state.onPickupDelayEnd = new CanPickupEventHandler() {
@@ -243,11 +303,12 @@ public class Player extends BoxEntity implements Drawable {
 							event.stop();
 							event.droppedItem.dispose();
 						} else {
-							player.addHandler(state.onFreePlayerSlot);
+							player.addListener(state.onFreePlayerSlot);
 						}
-						droppedItem.removeHandler(this);
+						droppedItem.removeListener(this);
 						return event.isHandled();
 					}
+
 				};
 				// TODO find an actual key
 				collisionState.put(droppedItem.hashCode(), state);
@@ -256,11 +317,11 @@ public class Player extends BoxEntity implements Drawable {
 					if (pickedUp) {
 						droppedItem.dispose();
 					} else {
-						player.addHandler(state.onFreePlayerSlot);
+						player.addListener(state.onFreePlayerSlot);
 					}
 					return event.isHandled();
 				}
-				droppedItem.addHandler(state.onPickupDelayEnd);
+				droppedItem.addListener(state.onPickupDelayEnd);
 				return false;
 			}
 
@@ -269,24 +330,39 @@ public class Player extends BoxEntity implements Drawable {
 				Player player = participants.objectA;
 				DroppedItem droppedItem = participants.objectB;
 				State state = collisionState.get(droppedItem.hashCode());
-				player.removeHandler(state.onFreePlayerSlot);
-				droppedItem.removeHandler(state.onPickupDelayEnd);
+				player.removeListener(state.onFreePlayerSlot);
+				droppedItem.removeListener(state.onPickupDelayEnd);
 				// TODO find an actual key
 				collisionState.remove(droppedItem.hashCode());
 				return false;
 			}
+
 		});
 
-		world.addHandler(new ContactEventFilter<Player, TestEnemy>(Player.class, TestEnemy.class) {
+		world.addListener(new ContactEventFilter<Player, TestEnemy>(Player.class, TestEnemy.class) {
+			class State {
+				Runnable task;
+			}
+
+			HashMap<Integer, State> collisionState = new HashMap<>();
+			
 			@Override
 			public boolean beginContact(ContactEvent event, Participants participants) {
-				participants.objectA.enemy = participants.objectB;
+				State state = new State();
+				state.task = () -> {
+					participants.objectA.applyDamage(participants.objectB.damage);
+				};
+				participants.objectA.addTask(state.task);
+				collisionState.put(Objects.hash(participants.objectA, participants.objectB), state);
 				return event.isHandled();
 			}
 
 			@Override
 			public boolean endContact(ContactEvent event, Participants participants) {
-				participants.objectA.enemy = null;
+				State state = collisionState.get(Objects.hash(participants.objectA, participants.objectB));
+				if (state != null) {
+					participants.objectA.removeTask(state.task);
+				}
 				return event.isHandled();
 			}
 
@@ -298,7 +374,8 @@ public class Player extends BoxEntity implements Drawable {
 	 */
 	private enum State {
 		IDLE,
-		WALKING;
+		WALKING,
+		AIRBORNE;
 	}
 
 	public class Inventory {
@@ -326,6 +403,7 @@ public class Player extends BoxEntity implements Drawable {
 
 		private final ObservableReference<Item>[] heldItems;
 		private ObservableReference<Item> itemOnHand;
+		private int selectedSlot;
 
 		public Inventory() {
 			@SuppressWarnings("unchecked")
@@ -340,11 +418,12 @@ public class Player extends BoxEntity implements Drawable {
 			this.armor = Arrays.asList(heldItems).subList(ARMOR_START, ARMOR_END);
 			this.accessory = Arrays.asList(heldItems).subList(ACCESSORY_START, ACCESSORY_END);
 			this.itemOnHand = hotbar.get(0);
+			this.selectedSlot = 0;
 
 			for (int i = 0; i < inventory.size(); i++) {
 				final int finalI = i;
 				ObservableReference<Item> itemReference = inventory.get(i);
-				itemReference.addHandler(new PropertyChangeEventHandler<Item>(Item.class) {
+				itemReference.addListener(new PropertyChangeEventHandler<Item>(Item.class) {
 					@Override
 					public boolean onChange(Object target, Item oldValue, Item newValue) {
 						if (newValue == null) {
@@ -354,6 +433,7 @@ public class Player extends BoxEntity implements Drawable {
 						}
 						return false;
 					}
+
 				});
 			}
 		}
@@ -366,12 +446,21 @@ public class Player extends BoxEntity implements Drawable {
 
 		public final ObservableReference<Item> getCursorItemReference() { return heldItems[CURSOR_ITEM]; }
 
+		public final int getSelectedSlot() { return selectedSlot; }
+
 		// TODO Should this affect the cursor item?
-		public final void changeItemOnHand(int index) { this.itemOnHand = hotbar.get(index); }
+		public final void changeItemOnHand(int index) {
+			this.itemOnHand = hotbar.get(index);
+			this.selectedSlot = index;
+		}
 
-		public final Item getItemOnHand() { return getCursorItemReference().get() == null ? itemOnHand.get() : getCursorItemReference().get(); }
+		public final Item getItemOnHand() {
+			return getCursorItemReference().get() == null ? itemOnHand.get() : getCursorItemReference().get();
+		}
 
-		public final ObservableReference<Item> getItemOnHandReference() { return getCursorItemReference().get() == null ? itemOnHand : getCursorItemReference(); }
+		public final ObservableReference<Item> getItemOnHandReference() {
+			return getCursorItemReference().get() == null ? itemOnHand : getCursorItemReference();
+		}
 
 		/**
 		 * Finds the first free slot in the inventory

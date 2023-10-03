@@ -32,7 +32,6 @@ public class GameScreen implements Screen {
 	private ScreenViewport hudViewport;
 	private ExtendViewport gameViewport;
 	private Stage hudStage;
-	public static Player player;
 	public GameScreen(Drop game) {
 		this.game = game;
 		this.gameCamera = new OrthographicCamera();
@@ -46,13 +45,12 @@ public class GameScreen implements Screen {
 		multiplexer.addProcessor(world);
 		Gdx.input.setInputProcessor(multiplexer);
 //		world.createEntity(new DebugBox.Definition(0, 15, 5, 5));
-		this.player = world.createEntity(new Player.Definition(0,3));
-		this.hud = new HUD(player, world);
-//		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, player));
-//		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, player));
-		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
-		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
-		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
+		this.hud = new HUD(world.player, world);
+		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, world.player));
+		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, world.player));
+//		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
+//		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
+//		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
 		hudStage.addActor(hud);
 		game.assets.get(MusicId.GameScreen_rain).setLooping(true);
 		game.assets.get(MusicId.GameScreen_rain).setVolume(game.masterVolume);
@@ -63,7 +61,6 @@ public class GameScreen implements Screen {
 
 	@Override
 	public void render(float delta) {
-		Gdx.app.debug("", "frame start");
 		updateCameraPosition();
 		ScreenUtils.clear(0, 0, 0.2f, 1);
 		// All camera manipulations must be done before calling this method
@@ -81,7 +78,6 @@ public class GameScreen implements Screen {
 		game.batch.end();
 		
 		world.step();
-		Gdx.app.debug("", "frame end");
 	}
 
 	@Override
@@ -104,7 +100,7 @@ public class GameScreen implements Screen {
 
 	private final void updateCameraPosition() {
 		// Make camera follow player and prevent it from going out of bounds
-		Vector2 playerPosition_mt = player.getPosition();
+		Vector2 playerPosition_mt = world.player.getPosition();
 		Camera camera = gameViewport.getCamera();
 		final float cameraYUpperBound = (world.worldHeight_mt - camera.viewportHeight) / 2;
 		final float cameraYLowerBound = -cameraYUpperBound;
@@ -116,8 +112,8 @@ public class GameScreen implements Screen {
 	}
 	
 	private final void drawHeldItem() {
-		if (player.items.getCursorItem() == null) 
+		if (world.player.items.getCursorItem() == null) 
 			return;
-		game.batch.draw(player.items.getCursorItem().getTexture(), Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
+		game.batch.draw(world.player.items.getCursorItem().getTexture(), Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
 	}
 }

@@ -1,0 +1,6 @@
+fix arrows*
+	shoot at an angle*
+	disappear on colision*
+	dont collide between themselves*
+Crafting
+Mining/placing blocks

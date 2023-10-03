@@ -18,6 +18,7 @@ public class DebugItem implements Item {
 	@Override
 	public boolean use() { return false; }
 
-
+	@Override
+	public boolean isBufferable() { return true; }
 
 }

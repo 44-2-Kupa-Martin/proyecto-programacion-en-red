@@ -17,10 +17,12 @@ public class Inventory extends Stack {
 	private final Drop game;
 	private Table hotbar;
 	private Table inventory;
+	private Player player;
 	
 	public Inventory(Player player) {
 		assert Drop.game != null : "Inventory created before game instance!";
 		this.game = Drop.game;
+		this.player = player;
 		int slotSize = 50;
 		setDebug(Constants.DEBUG);
 		setVisible(true);
@@ -71,6 +73,8 @@ public class Inventory extends Stack {
 			inventory.setVisible(!inventory.isVisible());
 			hotbar.setVisible(!hotbar.isVisible());
 		}
+		Slot selectedSlot = (Slot)hotbar.getChild(player.items.getSelectedSlot());
+		selectedSlot.setBackground(Slot.selectedBackground);
 	}
 	
 }

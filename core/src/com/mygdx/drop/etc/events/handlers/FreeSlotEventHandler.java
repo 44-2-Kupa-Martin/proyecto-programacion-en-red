@@ -3,7 +3,7 @@ package com.mygdx.drop.etc.events.handlers;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.FreeSlotEvent;
 
-public class FreeSlotEventHandler implements EventHandler {
+public class FreeSlotEventHandler implements EventListener {
 
 	@Override
 	public boolean handle(Event event) {

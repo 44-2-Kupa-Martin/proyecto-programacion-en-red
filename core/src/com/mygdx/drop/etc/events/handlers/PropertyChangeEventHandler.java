@@ -3,7 +3,7 @@ package com.mygdx.drop.etc.events.handlers;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
 
-public class PropertyChangeEventHandler<PropertyType> implements EventHandler {
+public class PropertyChangeEventHandler<PropertyType> implements EventListener {
 	private final Class<PropertyType> propertyType;
 	
 	public PropertyChangeEventHandler(Class<PropertyType> propertyType) {

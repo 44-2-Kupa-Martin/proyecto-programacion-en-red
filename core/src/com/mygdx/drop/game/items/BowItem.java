@@ -47,6 +47,7 @@ public class BowItem implements Item {
 		return false;
 	}
 
-
+	@Override
+	public boolean isBufferable() { return false; }
 
 }

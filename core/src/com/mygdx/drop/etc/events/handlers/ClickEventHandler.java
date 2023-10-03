@@ -112,7 +112,7 @@ public class ClickEventHandler extends InputEventHandler {
 
 	/** Returns true if the specified position is over the specified entity or within the tap square. */
 	public boolean isOver(Entity entity, float x, float y) {
-		boolean hit = entity.hit(x, y);
+		boolean hit = entity != null ? entity.hit(x, y) : /* No entity means the world will be considered as the target, hence all positions will always be over the world*/ true;
 		if (!hit)
 			return inTapSquare(x, y);
 		return true;

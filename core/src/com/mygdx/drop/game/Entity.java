@@ -9,22 +9,24 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Queue;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Drop;
-import com.mygdx.drop.etc.EventListener;
+import com.mygdx.drop.etc.EventEmitter;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.InputEvent;
-import com.mygdx.drop.etc.events.handlers.EventHandler;
+import com.mygdx.drop.etc.events.handlers.EventListener;
 
 /**
  * This class is a wrapper for box2d's {@link Body} class
  */
-public abstract class Entity implements Disposable, EventListener {
+public abstract class Entity implements Disposable, EventEmitter {
 	//TODO: either make all game references static or non-static. Ensure consistency
 	// Static because game is a singleton
 	protected static Drop game;
 
 	protected final World world;
 	protected Body self;
-	private Array<EventHandler> eventHandlers;
+	private Array<EventListener> eventHandlers;
+	/** Tasks run on each {@link #update() call} */
+	protected Array<Runnable> tasks;
 	private Queue<Event> eventQueue;
 	private boolean firing;
 	Lifetime objectState;
@@ -43,6 +45,7 @@ public abstract class Entity implements Disposable, EventListener {
 		this.self = world.box2dWorld.createBody(bodyDefinition);
 		this.eventHandlers = new Array<>();
 		this.eventQueue = new Queue<>();
+		this.tasks = new Array<>();
 		this.firing = false;
 		self.setUserData(this);
 	}
@@ -78,8 +81,12 @@ public abstract class Entity implements Disposable, EventListener {
 	/** Returns an Array containing the entity's fixtures. DO NOT modify the array */
 	public final Array<Fixture> getFixtures() { return self.getFixtureList(); } //TODO: make an immutable wrapper for the array class
 	
+	public final void addTask(Runnable task) { tasks.add(task); }
+	
+	public final boolean removeTask(Runnable task) { return tasks.removeValue(task, true); }
+	
 	@Override
-	public boolean removeHandler(EventHandler handler) { return eventHandlers.removeValue(handler, false); }
+	public boolean removeListener(EventListener handler) { return eventHandlers.removeValue(handler, false); }
 	
 	@Override
 	public void fire(Event event) {
@@ -91,7 +98,7 @@ public abstract class Entity implements Disposable, EventListener {
 		while (eventQueue.size != 0) {
 			Event queuedEvent = eventQueue.removeFirst();
 			for (int i = 0; i < eventHandlers.size; i++) {
-				EventHandler eventHandler = eventHandlers.get(i);
+				EventListener eventHandler = eventHandlers.get(i);
 				eventHandler.handle(queuedEvent);
 				if (queuedEvent.isStopped()) 
 					break;
@@ -101,7 +108,7 @@ public abstract class Entity implements Disposable, EventListener {
 	}
 	
 	@Override
-	public void addHandler(EventHandler handler) {
+	public void addListener(EventListener handler) {
 		assert handler != null;
 		eventHandlers.add(handler); 
 	}

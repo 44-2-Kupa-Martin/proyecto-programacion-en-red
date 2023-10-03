@@ -9,6 +9,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.utils.Null;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets.SoundId;
 import com.mygdx.drop.Assets.TextureId;
@@ -31,10 +32,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 	private final float maxHealth;
 	private float health;
 	private float invincibilityTimer;
-	// TODO REMOVE
-	private Arrow arrow;
-	// TODO REMOVE
-	private final Player player;
+	private @Null Player trackedPlayer;
 
 	protected TestEnemy(World world, float x_mt, float y_mt, Player player /* TODO: REMOVE!! */) {
 		super(world, Drop.tlToMt(2), Drop.tlToMt(3), ((Supplier<BodyDef>) (() -> {
@@ -53,26 +51,24 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		if (!instantiated)
 			initializeClassListeners(world);
 
-		this.player = player;
+		this.trackedPlayer = player;
 		this.damage = 15;
 		this.maxHealth = 15;
 		this.health = maxHealth;
 		this.texture = game.assets.get(TextureId.GoofyItem_goofy);
-		this.invincibilityTimer = 1;
+		this.invincibilityTimer = 0.25f;
 	}
 
 	@Override
 	public boolean update(Viewport viewport) {
 		boolean toBeDisposed = super.update(viewport);
 		assert !Constants.MULTITHREADED;
-		self.setLinearVelocity(player.getPosition().sub(getPosition()).nor().scl(1.5f));
+		self.setLinearVelocity(trackedPlayer.getPosition().sub(getPosition()).nor().scl(1.5f));
 		if (this.invincibilityTimer > 0)
 			invincibilityTimer -= Gdx.graphics.getDeltaTime();
-		if (this.arrow != null)
-			applyDamage(arrow.damage);
 
 		if (this.health <= 0)
-			dispose();
+			toBeDisposed = true;
 		return toBeDisposed;
 	}
 
@@ -92,7 +88,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 	private static final void initializeClassListeners(World world) {
 		assert !instantiated : "TestEnemy.initializeClassListeners called after first instantiation";
 		TestEnemy.instantiated = true;
-		world.addHandler(new SimpleContactEventFilter<TestEnemy>(TestEnemy.class) {
+		world.addListener(new SimpleContactEventFilter<TestEnemy>(TestEnemy.class) {
 			@Override
 			public boolean beginContact(ContactEvent event, Participants participants) {
 				participants.objectA.fire(event);
@@ -107,19 +103,12 @@ public class TestEnemy extends BoxEntity implements Drawable {
 
 		});
 
-		world.addHandler(new ContactEventFilter<TestEnemy, Arrow>(TestEnemy.class, Arrow.class) {
+		world.addListener(new ContactEventFilter<TestEnemy, Arrow>(TestEnemy.class, Arrow.class) {
 			@Override
 			public boolean beginContact(ContactEvent event, Participants participants) {
-				participants.objectA.arrow = participants.objectB;
+				participants.objectA.applyDamage(participants.objectB.damage);
 				return event.isHandled();
 			}
-
-			@Override
-			public boolean endContact(ContactEvent event, Participants participants) {
-				participants.objectA.arrow = null;
-				return event.isHandled();
-			}
-
 		});
 	}
 

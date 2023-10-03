@@ -13,7 +13,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
-import com.mygdx.drop.etc.events.handlers.EventHandler;
+import com.mygdx.drop.etc.events.handlers.EventListener;
 import com.mygdx.drop.etc.events.handlers.PropertyChangeEventHandler;
 import com.mygdx.drop.game.Item;
 
@@ -21,7 +21,8 @@ import com.mygdx.drop.game.Item;
  * An slot that displays an {@link Item} in the UI
  */
 public class Slot extends Container<Image> {
-	private static TextureRegionDrawable background;
+	public final static TextureRegionDrawable background;
+	public final static TextureRegionDrawable selectedBackground;
 	private TextureRegionDrawable transparentPlaceholder;
 	/** The item to display */
 	private final ObservableReference<Item> itemReference;
@@ -34,6 +35,11 @@ public class Slot extends Container<Image> {
 		pixmap.setColor(Color.GREEN);
 		pixmap.fill();
 		background = new TextureRegionDrawable(new Texture(pixmap));
+		
+		pixmap.setColor(Color.BLUE);
+		pixmap.fill();
+		selectedBackground = new TextureRegionDrawable(new Texture(pixmap));
+		
 		pixmap.dispose();
 	}
 	
@@ -49,7 +55,7 @@ public class Slot extends Container<Image> {
 		this.itemChanged = false;
 		setBackground(background);
 		
-		itemReference.addHandler(new PropertyChangeEventHandler<Item>(Item.class) {
+		itemReference.addListener(new PropertyChangeEventHandler<Item>(Item.class) {
 			@Override
 			public boolean onChange(Object target, Item oldValue, Item newValue) {
 				Slot.this.itemChanged = true;
@@ -93,6 +99,12 @@ public class Slot extends Container<Image> {
 				}
         	}
         });
+	}
+	
+	@Override
+	public void act(float delta) { 
+		super.act(delta);
+		setBackground(background);
 	}
 	
 	@Override

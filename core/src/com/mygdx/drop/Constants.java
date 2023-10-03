@@ -58,6 +58,8 @@ public final class Constants {
 		PLAYER_COLLIDABLE,
 		/** The category of all items */
 		ITEM,
+		/** The category of all projectiles */
+		PROJECTILE,
 		/** The category of all sensors */
 		SENSOR,
 		/** The category of all bodies that are part of the terrain */

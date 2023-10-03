@@ -5,7 +5,7 @@ import com.mygdx.drop.etc.events.Event;
 /**
  * An object capable of handling an {@link Event}
  */
-public interface EventHandler {
+public interface EventListener {
 	/**
 	 * Try to handle the given event, if it is applicable.
 	 * 
