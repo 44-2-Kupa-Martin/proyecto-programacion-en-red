@@ -3,7 +3,10 @@ package com.mygdx.drop.game;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.mygdx.drop.etc.EventEmitter;
 
-public interface Item {
+public interface Item<OwnerType> {
+	public OwnerType getOwner();
+	public void setOwner(OwnerType owner);
+	
 	public TextureRegion getTexture();
 	
 	/**

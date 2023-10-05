@@ -48,6 +48,8 @@ public class TestEnemy extends BoxEntity implements Drawable {
 			return fixture;
 		})).get());
 
+		
+		
 		if (!instantiated)
 			initializeClassListeners(world);
 
@@ -63,7 +65,9 @@ public class TestEnemy extends BoxEntity implements Drawable {
 	public boolean update(Viewport viewport) {
 		boolean toBeDisposed = super.update(viewport);
 		assert !Constants.MULTITHREADED;
-		self.setLinearVelocity(trackedPlayer.getPosition().sub(getPosition()).nor().scl(1.5f));
+		if (trackedPlayer != null) 
+			self.setLinearVelocity(trackedPlayer.getPosition().sub(getPosition()).nor().scl(1.5f));			
+		
 		if (this.invincibilityTimer > 0)
 			invincibilityTimer -= Gdx.graphics.getDeltaTime();
 

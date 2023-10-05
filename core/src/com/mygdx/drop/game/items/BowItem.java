@@ -15,7 +15,7 @@ import com.mygdx.drop.game.dynamicentities.Arrow;
 import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.dynamicentities.TestEnemy;
 
-public class BowItem implements Item {
+public class BowItem implements Item<Player> {
 	public final AtlasRegion texture;
 	public final float useTime;
 	private final Drop game;
@@ -49,5 +49,13 @@ public class BowItem implements Item {
 
 	@Override
 	public boolean isBufferable() { return false; }
+
+	@Override
+	public Player getOwner() { return player; }
+
+	@Override
+	public void setOwner(Player owner) { this.player = owner; }
+
+	
 
 }

@@ -6,9 +6,11 @@ import com.mygdx.drop.Assets.TextureId;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.Item;
 
-public class GoofyItem implements Item {
+public class GoofyItem<OwnerType> implements Item<OwnerType> {
+	private OwnerType owner;
 	public final AtlasRegion texture;
-	public GoofyItem() { 
+	public GoofyItem(OwnerType owner) {
+		this.owner = owner;
 		this.texture = Drop.game.assets.get(TextureId.GoofyItem_goofy);
 	 }
 
@@ -21,4 +23,9 @@ public class GoofyItem implements Item {
 	@Override
 	public boolean isBufferable() { return true; }
 
+	@Override
+	public OwnerType getOwner() { return owner; }
+
+	@Override
+	public void setOwner(OwnerType owner) { this.owner = owner; }
 }

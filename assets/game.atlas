@@ -506,6 +506,54 @@ textures/DebugBox/bucket
   index: -1
 
 game11.png
+size: 4096, 1024
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+textures/DiamondSet/Diamante_sinfondo
+  rotate: false
+  xy: 2513, 2
+  size: 429, 472
+  orig: 429, 472
+  offset: 0, 0
+  index: -1
+textures/DiamondSet/Espada_sinfondo
+  rotate: false
+  xy: 2, 10
+  size: 1000, 1000
+  orig: 1000, 1000
+  offset: 0, 0
+  index: -1
+textures/DiamondSet/boots
+  rotate: false
+  xy: 2513, 476
+  size: 777, 534
+  orig: 777, 534
+  offset: 0, 0
+  index: -1
+textures/DiamondSet/chestplate
+  rotate: false
+  xy: 1004, 361
+  size: 762, 649
+  orig: 762, 649
+  offset: 0, 0
+  index: -1
+textures/DiamondSet/helmet
+  rotate: false
+  xy: 1768, 406
+  size: 743, 604
+  orig: 743, 604
+  offset: 0, 0
+  index: -1
+textures/DiamondSet/leggins
+  rotate: false
+  xy: 3292, 359
+  size: 522, 651
+  orig: 522, 651
+  offset: 0, 0
+  index: -1
+
+game12.png
 size: 1024, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -518,7 +566,7 @@ textures/GoofyItem/goofy
   offset: 0, 0
   index: -1
 
-game12.png
+game13.png
 size: 32, 32
 format: RGBA8888
 filter: Nearest, Nearest

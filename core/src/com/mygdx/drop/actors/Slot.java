@@ -20,13 +20,14 @@ import com.mygdx.drop.game.Item;
 /**
  * An slot that displays an {@link Item} in the UI
  */
-public class Slot extends Container<Image> {
+public class Slot<ItemOwner, ControlledItemType extends Item<ItemOwner>> extends Container<Image> {
 	public final static TextureRegionDrawable background;
 	public final static TextureRegionDrawable selectedBackground;
 	private TextureRegionDrawable transparentPlaceholder;
 	/** The item to display */
-	private final ObservableReference<Item> itemReference;
-	private final ObservableReference<Item> cursorItemReference;
+	private final ObservableReference<ControlledItemType> itemReference;
+	private final Class<ControlledItemType> controlledItemType;
+	private final ObservableReference<Item<ItemOwner>> cursorItemReference;
 	private boolean itemChanged;
 	
 	static {
@@ -48,9 +49,10 @@ public class Slot extends Container<Image> {
 	 * @param size The size of the actor in pixels
 	 * @param controlledItem A reference to an Item
 	 */
-	public Slot(int size, ObservableReference<Item> controlledItem, ObservableReference<Item> cursorItem) {
+	public Slot(int size, ObservableReference<ControlledItemType> controlledItem, Class<ControlledItemType> controlledItemType, ObservableReference<Item<ItemOwner>> cursorItem) {
 		assert controlledItem != null : "Cannot take a null reference";
 		this.itemReference = controlledItem;
+		this.controlledItemType = controlledItemType;
 		this.cursorItemReference = cursorItem;
 		this.itemChanged = false;
 		setBackground(background);
@@ -72,7 +74,7 @@ public class Slot extends Container<Image> {
         
         
         setActor(new Image());
-        Item referencedItem = itemReference.get();
+        ControlledItemType referencedItem = itemReference.get();
         getActor().setDrawable(referencedItem == null ? transparentPlaceholder : new TextureRegionDrawable(referencedItem.getTexture()));
         
         addListener(new ClickListener() {
@@ -83,9 +85,12 @@ public class Slot extends Container<Image> {
         		if (!slotHasItem && !cursorHasItem)
         			return;
         		
-        		if (!slotHasItem && cursorHasItem) {        			
-        			itemReference.set(cursorItemReference.get());
-        			cursorItemReference.set(null);
+        		if (!slotHasItem && cursorHasItem) {     
+        			boolean canPlace = controlledItemType.isInstance(cursorItemReference.get());
+        			if (canPlace) {						
+        				itemReference.set((ControlledItemType) cursorItemReference.get());
+        				cursorItemReference.set(null);
+					}
         		}
         		
         		if (slotHasItem && !cursorHasItem) {
@@ -93,9 +98,12 @@ public class Slot extends Container<Image> {
 					itemReference.set(null);
 				}
         		if (slotHasItem && cursorHasItem) {
-					Item temp = itemReference.get();
-					itemReference.set(cursorItemReference.get());
-					cursorItemReference.set(temp);
+        			boolean canPlace = controlledItemType.isInstance(cursorItemReference.get());
+        			if (canPlace) {
+        				ControlledItemType temp = itemReference.get();
+        				itemReference.set((ControlledItemType) cursorItemReference.get());
+        				cursorItemReference.set(temp);						
+					}
 				}
         	}
         });

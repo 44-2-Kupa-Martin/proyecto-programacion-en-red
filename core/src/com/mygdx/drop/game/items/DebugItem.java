@@ -6,9 +6,11 @@ import com.mygdx.drop.Assets.TextureId;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.Item;
 
-public class DebugItem implements Item {
+public class DebugItem<OwnerType> implements Item<OwnerType> {
 	public final AtlasRegion texture;
-	public DebugItem() { 
+	private OwnerType owner;
+	public DebugItem(OwnerType owner) {
+		this.owner = owner;
 		this.texture = Drop.game.assets.get(TextureId.DebugBox_bucket); 
 	}
 
@@ -20,5 +22,11 @@ public class DebugItem implements Item {
 
 	@Override
 	public boolean isBufferable() { return true; }
+
+	@Override
+	public OwnerType getOwner() { return owner; }
+	
+	@Override
+	public void setOwner(OwnerType owner) { this.owner = owner; }
 
 }
