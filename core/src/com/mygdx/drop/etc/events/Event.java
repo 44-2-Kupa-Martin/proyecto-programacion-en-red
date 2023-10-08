@@ -5,11 +5,11 @@ package com.mygdx.drop.etc.events;
  *
  */
 public class Event {
+	/** The meaning of this flag is event-dependent, but as a general rule of thumb an event is considered handled if one or many (unspecified) actions or side-effects were successfully performed */
 	private boolean handled;
-	/** NOTE: this is never enforced */
-	//TODO enforce this
 
-	
+	/** NOTE: this is almost never enforced */
+	//TODO enforce this
 	/** {@code true} means propagation was stopped */
 	private boolean stopped;
 

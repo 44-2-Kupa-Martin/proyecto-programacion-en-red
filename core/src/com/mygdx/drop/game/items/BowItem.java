@@ -6,29 +6,25 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.mygdx.drop.Assets.TextureId;
+import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.Entity;
+import com.mygdx.drop.game.Inventory;
 import com.mygdx.drop.game.Item;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Arrow;
 import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.dynamicentities.TestEnemy;
 
-public class BowItem implements Item<Player> {
+public class BowItem implements Item {
 	public final AtlasRegion texture;
 	public final float useTime;
-	private final Drop game;
 	private long lastUsedTime;
-	private final World world;
-	private Player player;
 
-	public BowItem(World world, Player player) {
-		this.game = Drop.game;
-		assert game != null;
-		this.world = world;
-		this.player = player;
-		this.texture = game.assets.get(TextureId.BowItem_bow);
+	public BowItem() {	
+		assert Drop.game != null;
+		this.texture = Drop.game.assets.get(TextureId.BowItem_bow);
 		this.useTime = 0.5f;
 		this.lastUsedTime = 0;
 	}
@@ -37,25 +33,23 @@ public class BowItem implements Item<Player> {
 	public TextureRegion getTexture() { return texture; }
 
 	@Override
-	public boolean use() {
+	public boolean leftUse(Player player, float x, float y) {
+		World world = player.world;
 		if (TimeUtils.timeSinceMillis(lastUsedTime) / 1000 < useTime)
 			return false;
 		lastUsedTime = TimeUtils.millis();
 		assert !Constants.MULTITHREADED;
-		Vector2 arrowDirection = world.getLastClickPosition().sub(player.getPosition()).nor();
-		world.createEntity(new Arrow.Definition(player.getX(), player.getY(), arrowDirection));
-		return false;
+		if (player.items.hasItem(ArrowItem.class)) {
+			Vector2 arrowDirection = player.getRelativeCoordinates(new Vector2(x, y));
+			world.createEntity(new Arrow.Definition(player.getX(), player.getY(), arrowDirection));
+			player.items.consumeItem(ArrowItem.class);
+		}
+		return false; 
 	}
 
 	@Override
-	public boolean isBufferable() { return false; }
-
-	@Override
-	public Player getOwner() { return player; }
-
-	@Override
-	public void setOwner(Player owner) { this.player = owner; }
-
+	public float getLeftUseTime() { return useTime; }
 	
-
+	@Override
+	public float getRightUseTime() { return 0; }
 }

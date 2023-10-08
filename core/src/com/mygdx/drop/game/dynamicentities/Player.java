@@ -38,19 +38,25 @@ import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.etc.events.handlers.CanPickupEventHandler;
 import com.mygdx.drop.etc.events.handlers.ClickEventHandler;
 import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
+import com.mygdx.drop.etc.events.handlers.EventListener;
 import com.mygdx.drop.etc.events.handlers.FreeSlotEventHandler;
 import com.mygdx.drop.etc.events.handlers.InputEventHandler;
 import com.mygdx.drop.etc.events.handlers.PropertyChangeEventHandler;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
+import com.mygdx.drop.game.EquippableItem;
+import com.mygdx.drop.game.Inventory;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.items.ArrowItem;
 import com.mygdx.drop.game.items.BowItem;
 import com.mygdx.drop.game.items.DebugItem;
+import com.mygdx.drop.game.items.DiamondBoots;
 import com.mygdx.drop.game.items.DiamondHelmet;
-import com.mygdx.drop.game.items.EquippableItem;
 import com.mygdx.drop.game.Item;
+import com.mygdx.drop.game.MutableStats;
+import com.mygdx.drop.game.Stats;
 
-public class Player extends BoxEntity implements Drawable, Mob {
+public class Player extends BoxEntity implements Drawable {
 	private static boolean instantiated = false;
 
 	private State previousState;
@@ -58,11 +64,9 @@ public class Player extends BoxEntity implements Drawable, Mob {
 	private float animationTimer;
 	private float invincibilityTimer;
 	private EnumMap<State, Animation<TextureRegion>> animations;
-	public final Inventory items;
-	private float maxHealth;
-	private float health;
-	private int defense;
-	private int contactDamage;
+	public final PlayerInventory items;
+	public final Stats baseStats;
+	private MutableStats stats;
 	private int groundContacts;
 	private final Fixture groundSensor;
 	private final Map<Integer, Runnable> keybinds;
@@ -106,7 +110,20 @@ public class Player extends BoxEntity implements Drawable, Mob {
 		this.groundSensor = self.createFixture(sensor);
 		groundContact.dispose();
 		
-		addListener(new ContactEventHandler() {
+		this.previousState = State.IDLE;
+		this.currentState = State.IDLE;
+		this.animationTimer = 0;
+		this.invincibilityTimer = 0;
+		this.animations = initAnimationsMap();
+		this.baseStats = new Stats(100, 0, 0, 0.25f/*s*/);
+		this.stats = new MutableStats(baseStats);
+		this.groundContacts = 0;
+		this.items = new PlayerInventory();
+		for (ObservableReference<Item> itemReference : items.inventory) {
+			itemReference.set(new ArrowItem());
+		}
+		
+		this.addListener(new ContactEventHandler() {
 			@Override
 			public boolean beginContact(ContactEvent event) {
 				boolean groundFixtureIsParticipant = event.getContact().getFixtureA().equals(groundSensor) || event.getContact().getFixtureB().equals(groundSensor);
@@ -124,79 +141,26 @@ public class Player extends BoxEntity implements Drawable, Mob {
 				}
 				return event.isHandled(); 
 			}
-		});
+		});		
 		
-		this.previousState = State.IDLE;
-		this.currentState = State.IDLE;
-		this.animationTimer = 0;
-		this.invincibilityTimer = 0;
-		this.animations = initAnimationsMap();
-		this.maxHealth = 100;
-		this.health = maxHealth;
-		this.defense = 0;
-		this.contactDamage = 0;
-		this.groundContacts = 0;
-		this.items = new Inventory();
-		for (ObservableReference<Item<Player>> itemReference : items.inventory) {
-			itemReference.set(new DebugItem<Player>(this));
-		}
-		items.hotbar.get(0).set(new BowItem(world, this));
-		items.hotbar.get(1).set(new DiamondHelmet<Player>(this));
+		items.hotbar.get(0).set(new BowItem());
+		items.hotbar.get(1).set(new DiamondHelmet());
+		items.hotbar.get(2).set(new DiamondBoots());
 		this.keybinds = new HashMap<>();
 		keybinds.put(Input.Keys.W, this::jump);
 		keybinds.put(Input.Keys.A, this::moveLeft);
 		keybinds.put(Input.Keys.D, this::moveRight);
 	}
 
-	@Override
-	public float getMaxHealth() { return maxHealth; }
+	public final Stats getStats() { return stats; }
 
-
-
-	@Override
-	public void setMaxHealth(float health) { this.maxHealth = health; }
-
-
-
-	@Override
-	public float getHealth() { return health; }
-
-
-
-	@Override
-	public void setHealth(float health) { this.health = health; }
-
-
-
-	@Override
-	public int getDefense() { return defense; }
-
-
-
-	@Override
-	public void setDefense(int defense) { this.defense = defense; }
-
-
-
-	@Override
-	public int getDamage() { return contactDamage; }
-
-
-
-	@Override
-	public void setDamage(int damage) {this.contactDamage = damage;}
-
-	@Override
-	public void applyHealing(float recoveredHp) { this.health += recoveredHp; }
-
-	@Override
 	public final void applyDamage(float lostHp) {
 		assert lostHp >= 0;
 		if (invincibilityTimer > 0)
 			return;
 		invincibilityTimer = 1;
 		game.assets.get(SoundId.Player_hurt).play(game.masterVolume);
-		this.health -= lostHp - defense;
+		stats.setHealth(stats.getHealth() - (lostHp - stats.getDefense()));
 	}
 
 	@Override
@@ -207,23 +171,27 @@ public class Player extends BoxEntity implements Drawable, Mob {
 
 		previousState = currentState;
 		currentState = groundContacts > 0 ? State.IDLE : State.AIRBORNE;
-			
+		
+		if (items.getItemOnHand() != null) {
+			if (world.isButtonPressed(Buttons.LEFT)) {
+				Vector2 clickPosition = world.getLastClickPosition();
+				items.getItemOnHand().leftUse(this, clickPosition.x, clickPosition.y);
+			} else if (world.isButtonPressed(Buttons.RIGHT)) {
+				Vector2 clickPosition = world.getLastClickPosition();
+				items.getItemOnHand().rightUse(this, clickPosition.x, clickPosition.y);
+			}
+		}
+		
 		for (Runnable task : tasks)
 			task.run();
 
-		if (this.health <= 0)
+		if (stats.getHealth() <= 0)
 			return true;
 
 		// TODO change this to a click listener
 		
 		if (Gdx.input.isKeyJustPressed(Keys.Q)) {
 			dropItem();
-		}
-		
-		if (Gdx.input.isButtonPressed(Buttons.LEFT)) {
-			Item item = items.getItemOnHand();
-			if (item != null)
-				item.use();
 		}
 		
 		for (int key : new int[]{Keys.NUM_1, Keys.NUM_2, Keys.NUM_3, Keys.NUM_4, Keys.NUM_5, Keys.NUM_6, Keys.NUM_7, Keys.NUM_8, Keys.NUM_9}) {
@@ -287,7 +255,7 @@ public class Player extends BoxEntity implements Drawable, Mob {
 	private static final void initializeClassListeners(World world) {
 		assert !instantiated : "Player.initializeClassListeners called after first instantiation";
 		Player.instantiated = true;
-
+		
 		world.addListener(new ClickEventHandler(Input.Buttons.RIGHT) {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -315,7 +283,6 @@ public class Player extends BoxEntity implements Drawable, Mob {
 					event.player.removeTask(task);
 				return true;
 			}
-
 		});
 		/**
 		 * These handlers are shared across all instances of this class. They fire for all events in the
@@ -342,7 +309,6 @@ public class Player extends BoxEntity implements Drawable, Mob {
 			class State {
 				CanPickupEventHandler onPickupDelayEnd;
 				FreeSlotEventHandler onFreePlayerSlot;
-
 			}
 
 			HashMap<Integer, State> collisionState = new HashMap<>();
@@ -355,7 +321,7 @@ public class Player extends BoxEntity implements Drawable, Mob {
 				/**
 				 * because free slot events are fired by a propertychange event listener, and because said listener
 				 * is registered first when the free slot event ends the change event continues and the slots hear
-				 * the first change event last
+				 * the first change event last. In order to fix this, a flag was added to all fire implementations
 				 */
 				state.onFreePlayerSlot = new FreeSlotEventHandler() {
 					public boolean onFreeSlot(FreeSlotEvent event) {
@@ -372,12 +338,11 @@ public class Player extends BoxEntity implements Drawable, Mob {
 					public boolean onCanPickup(CanPickupEvent event) {
 						boolean pickedUp = player.items.pickupItem(event.droppedItem.item);
 						if (pickedUp) {
-							event.stop();
-							event.droppedItem.dispose();
+							event.handle();
 						} else {
 							player.addListener(state.onFreePlayerSlot);
 						}
-						droppedItem.removeListener(this);
+						event.droppedItem.removeListener(this);
 						return event.isHandled();
 					}
 
@@ -450,7 +415,7 @@ public class Player extends BoxEntity implements Drawable, Mob {
 		AIRBORNE;
 	}
 
-	public class Inventory {
+	public class PlayerInventory extends Inventory {
 		public static final int HOTBAR_SLOTS = 9;
 		public static final int INVENTORY_SLOTS = HOTBAR_SLOTS + 9 * 3;
 		public static final int ACCESSORY_SLOTS = 4;
@@ -468,94 +433,93 @@ public class Player extends BoxEntity implements Drawable, Mob {
 		/** The hotbar counts as part of the inventory, hence it is not included in the calculation */
 		public static final int N_ITEMS = INVENTORY_SLOTS + ACCESSORY_SLOTS + ARMOR_SLOTS + 1;
 
-		public final List<ObservableReference<Item<Player>>> hotbar;
-		public final List<ObservableReference<Item<Player>>> inventory;
-		public final List<ObservableReference<EquippableItem<Player>>> armor;
-		public final List<ObservableReference<EquippableItem<Player>>> accessory;
+		public final List<ObservableReference<Item>> hotbar;
+		public final List<ObservableReference<Item>> inventory;
+		public final List<ObservableReference<EquippableItem>> armor;
+		public final List<ObservableReference<EquippableItem>> accessory;
 
-		private final ObservableReference<Item<Player>>[] heldItems;
-		private ObservableReference<Item<Player>> itemOnHand;
+		private final EventListener equippableListener;
+		private ObservableReference<Item> itemOnHand;
 		private int selectedSlot;
 
-		@SuppressWarnings("unchecked")
-		public Inventory() {
-			ObservableReference<Item<Player>>[] heldItems = new ObservableReference[N_ITEMS];
-			this.heldItems = heldItems;
+		public PlayerInventory() {
+			super(N_ITEMS);
+			for (int i = 0; i < items.length; i++)
+				items[i] = new ObservableReference<Item>((Item)null);
 
-			for (int i = 0; i < heldItems.length; i++)
-				heldItems[i] = new ObservableReference<Item<Player>>((Item<Player>)null);
-
-			this.hotbar = Arrays.asList(heldItems).subList(HOTBAR_START, HOTBAR_END);
-			this.inventory = Arrays.asList(heldItems).subList(INVENTORY_START, INVENTORY_END);
-			this.armor = (List<ObservableReference<EquippableItem<Player>>>)(List<?>)Arrays.asList(heldItems).subList(ARMOR_START, ARMOR_END);
-			this.accessory = (List<ObservableReference<EquippableItem<Player>>>)(List<?>)Arrays.asList(heldItems).subList(ACCESSORY_START, ACCESSORY_END);
+			this.hotbar = Arrays.asList(items).subList(HOTBAR_START, HOTBAR_END);
+			this.inventory = Arrays.asList(items).subList(INVENTORY_START, INVENTORY_END);
+			this.armor = (List<ObservableReference<EquippableItem>>)(List<?>)Arrays.asList(items).subList(ARMOR_START, ARMOR_END);
+			this.accessory = (List<ObservableReference<EquippableItem>>)(List<?>)Arrays.asList(items).subList(ACCESSORY_START, ACCESSORY_END);
 			this.itemOnHand = hotbar.get(0);
 			this.selectedSlot = 0;
+			this.equippableListener = new PropertyChangeEventHandler<Item>(Item.class) {
+				@Override
+				public boolean onChange(Object target, Item oldValue, Item newValue) {
+					if (oldValue instanceof EquippableItem && oldValue != null) 
+						((EquippableItem)oldValue).unequip(Player.this.stats);
+					if (newValue instanceof EquippableItem && newValue != null) 
+						((EquippableItem)newValue).equip(Player.this.stats);
+					return false; 
+				}
+			};
 
 			for (int i = 0; i < inventory.size(); i++) {
 				final int finalI = i;
-				ObservableReference<Item<Player>> itemReference = inventory.get(i);
+				ObservableReference<Item> itemReference = inventory.get(i);
 				itemReference.addListener(new PropertyChangeEventHandler<Item>(Item.class) {
 					@Override
 					public boolean onChange(Object target, Item oldValue, Item newValue) {
 						if (newValue == null) {
-							FreeSlotEvent event = new FreeSlotEvent(Player.this, finalI);
+							FreeSlotEvent event = new FreeSlotEvent(Player.this.items, finalI);
 							Player.this.fire(event);
 							return event.isHandled();
-						} else {
-							newValue.setOwner(Player.this);
 						}
 						return false;
 					}
-
 				});
 			}
 			
-			for (int i = 0; i < armor.size(); i++) {
-				ObservableReference<EquippableItem<Player>> itemReference = armor.get(i);
-				
-				itemReference.addListener(new PropertyChangeEventHandler<EquippableItem>(EquippableItem.class) {
-					@Override
-					public boolean onChange(Object target, EquippableItem oldValue, EquippableItem newValue) {
-						if (oldValue != null) 
-							oldValue.unequip();
-						if (newValue != null) 
-							newValue.equip();
-						return false; 
-					}
-				});
-			}
+			for (int i = 0; i < armor.size(); i++) 
+				armor.get(i).addListener(equippableListener);
+			
+			itemOnHand.addListener(equippableListener);
 		}
 
 //		public final ObservableReference<Item> getItemReference(int index) { return heldItems[index]; }
 
-		public final Item<Player> getCursorItem() { return heldItems[CURSOR_ITEM].get(); }
+		public final Item getCursorItem() { return items[CURSOR_ITEM].get(); }
 
-		public final void setCursorItem(Item<Player> newItem) { heldItems[CURSOR_ITEM].set(newItem); }
+		public final void setCursorItem(Item newItem) { items[CURSOR_ITEM].set(newItem); }
 
-		public final ObservableReference<Item<Player>> getCursorItemReference() { return heldItems[CURSOR_ITEM]; }
+		public final ObservableReference<Item> getCursorItemReference() { return items[CURSOR_ITEM]; }
 
 		public final int getSelectedSlot() { return selectedSlot; }
 
 		// TODO Should this affect the cursor item?
 		public final void changeItemOnHand(int index) {
+			if (itemOnHand.get() instanceof EquippableItem) {
+				((EquippableItem)itemOnHand.get()).unequip(stats);
+			}
+			this.itemOnHand.removeListener(equippableListener);
 			this.itemOnHand = hotbar.get(index);
+			this.itemOnHand.addListener(equippableListener);
+			if (itemOnHand.get() instanceof EquippableItem) {
+				((EquippableItem)itemOnHand.get()).equip(stats);
+			}
 			this.selectedSlot = index;
 		}
 
-		public final Item<Player> getItemOnHand() {
+		public final Item getItemOnHand() {
 			return getCursorItemReference().get() == null ? itemOnHand.get() : getCursorItemReference().get();
 		}
 
-		public final ObservableReference<Item<Player>> getItemOnHandReference() {
+		public final ObservableReference<Item> getItemOnHandReference() {
 			return getCursorItemReference().get() == null ? itemOnHand : getCursorItemReference();
 		}
 
-		/**
-		 * Finds the first free slot in the inventory
-		 * 
-		 * @return the index of the free slot or {@code -1} if there isn't
-		 */
+	
+		@Override
 		public final int findFreeInventorySlot() {
 			for (int i = 0; i < inventory.size(); i++) {
 				if (inventory.get(i).get() == null)
@@ -564,6 +528,12 @@ public class Player extends BoxEntity implements Drawable, Mob {
 			return -1;
 		}
 
+		@Override
+		public ObservableReference<Item> getItemReference(int index) {
+			assert index < INVENTORY_END;
+			return super.getItemReference(index); 
+		}
+		
 		public final boolean canPickupItem() { return findFreeInventorySlot() != -1; }
 
 		/**
@@ -576,7 +546,6 @@ public class Player extends BoxEntity implements Drawable, Mob {
 			int slot = findFreeInventorySlot();
 			if (slot == -1)
 				return false;
-			item.setOwner(Player.this);
 			inventory.get(slot).set(item);
 			return true;
 		}

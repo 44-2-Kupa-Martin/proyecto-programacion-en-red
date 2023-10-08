@@ -65,7 +65,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 	public boolean update(Viewport viewport) {
 		boolean toBeDisposed = super.update(viewport);
 		assert !Constants.MULTITHREADED;
-		if (trackedPlayer != null) 
+		if (trackedPlayer != null && !trackedPlayer.isDisposed()) 
 			self.setLinearVelocity(trackedPlayer.getPosition().sub(getPosition()).nor().scl(1.5f));			
 		
 		if (this.invincibilityTimer > 0)

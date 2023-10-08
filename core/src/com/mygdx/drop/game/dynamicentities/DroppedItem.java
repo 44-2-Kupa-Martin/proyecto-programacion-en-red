@@ -64,7 +64,7 @@ public class DroppedItem extends BoxEntity implements Drawable {
 			CanPickupEvent event = new CanPickupEvent(this); 
 			fire(event);
 			this.eventFired = true;
-			toBeDisposed = event.wasPickedUp();
+			toBeDisposed = event.isHandled();
 		}
 		return toBeDisposed; 
 	}

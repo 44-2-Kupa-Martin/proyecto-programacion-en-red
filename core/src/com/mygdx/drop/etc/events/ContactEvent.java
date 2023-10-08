@@ -9,7 +9,7 @@ import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.game.World;
 
 /**
- * Event for handling collisions between fixtures
+ * Event for handling collisions between fixtures. The event is {@link #handle() handled} if any listener considers their operations successful and wishes to mark the event as such, note it is not required to
  */
 public class ContactEvent extends Event {
 	public final World world;

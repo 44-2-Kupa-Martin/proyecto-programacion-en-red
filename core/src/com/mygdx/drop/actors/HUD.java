@@ -20,7 +20,7 @@ public class HUD extends Table {
 		
 		assert Drop.game != null : "Inventory created before game instance!";
 		
-		labelHP = new Label("HP:" + player.getHealth(), Drop.game.assets.get(SkinId.Glassy_glassy));
+		labelHP = new Label("HP:" + player.getStats().getHealth(), Drop.game.assets.get(SkinId.Glassy_glassy));
 		
 		this.player = player;
 		
@@ -51,7 +51,7 @@ public class HUD extends Table {
 		
 		super.act(delta);
 		
-		labelHP.setText("HP:" + player.getHealth());
+		labelHP.setText("HP:" + player.getStats().getHealth());
 		
 	}
 	

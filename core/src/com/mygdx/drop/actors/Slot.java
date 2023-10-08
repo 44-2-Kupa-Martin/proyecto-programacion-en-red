@@ -20,14 +20,14 @@ import com.mygdx.drop.game.Item;
 /**
  * An slot that displays an {@link Item} in the UI
  */
-public class Slot<ItemOwner, ControlledItemType extends Item<ItemOwner>> extends Container<Image> {
+public class Slot<ControlledItemType extends Item> extends Container<Image> {
 	public final static TextureRegionDrawable background;
 	public final static TextureRegionDrawable selectedBackground;
 	private TextureRegionDrawable transparentPlaceholder;
 	/** The item to display */
 	private final ObservableReference<ControlledItemType> itemReference;
 	private final Class<ControlledItemType> controlledItemType;
-	private final ObservableReference<Item<ItemOwner>> cursorItemReference;
+	private final ObservableReference<Item> cursorItemReference;
 	private boolean itemChanged;
 	
 	static {
@@ -49,7 +49,7 @@ public class Slot<ItemOwner, ControlledItemType extends Item<ItemOwner>> extends
 	 * @param size The size of the actor in pixels
 	 * @param controlledItem A reference to an Item
 	 */
-	public Slot(int size, ObservableReference<ControlledItemType> controlledItem, Class<ControlledItemType> controlledItemType, ObservableReference<Item<ItemOwner>> cursorItem) {
+	public Slot(int size, ObservableReference<ControlledItemType> controlledItem, Class<ControlledItemType> controlledItemType, ObservableReference<Item> cursorItem) {
 		assert controlledItem != null : "Cannot take a null reference";
 		this.itemReference = controlledItem;
 		this.controlledItemType = controlledItemType;

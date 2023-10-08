@@ -172,7 +172,10 @@ public class Assets implements Disposable {
 		BowItem_bow("BowItem/bow"),
 		Arrow_arrow("Arrow/arrow"),
 		Background_mainMenu("Background/mainMenu2"),
-		DiamondSet_helmet("DiamondSet/helmet");
+		DiamondSet_helmet("DiamondSet/helmet"),
+		DiamondSet_chestplate("DiamondSet/chestplate"),
+		DiamondSet_leggings("DiamondSet/leggins"),
+		DiamondSet_boots("DiamondSet/boots");
 		
 		public final String path;
 

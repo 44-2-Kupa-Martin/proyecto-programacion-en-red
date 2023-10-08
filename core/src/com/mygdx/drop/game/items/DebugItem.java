@@ -6,11 +6,9 @@ import com.mygdx.drop.Assets.TextureId;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.Item;
 
-public class DebugItem<OwnerType> implements Item<OwnerType> {
+public class DebugItem implements Item {
 	public final AtlasRegion texture;
-	private OwnerType owner;
-	public DebugItem(OwnerType owner) {
-		this.owner = owner;
+	public DebugItem() {
 		this.texture = Drop.game.assets.get(TextureId.DebugBox_bucket); 
 	}
 
@@ -18,15 +16,8 @@ public class DebugItem<OwnerType> implements Item<OwnerType> {
 	public TextureRegion getTexture() { return texture; }
 
 	@Override
-	public boolean use() { return false; }
+	public float getLeftUseTime() { return 0; }
 
 	@Override
-	public boolean isBufferable() { return true; }
-
-	@Override
-	public OwnerType getOwner() { return owner; }
-	
-	@Override
-	public void setOwner(OwnerType owner) { this.owner = owner; }
-
+	public float getRightUseTime() { return 0; }
 }

@@ -22,13 +22,14 @@ public abstract class Entity implements Disposable, EventEmitter {
 	// Static because game is a singleton
 	protected static Drop game;
 
-	protected final World world;
+	public final World world;
 	protected Body self;
 	private Array<EventListener> eventHandlers;
 	/** Tasks run on each {@link #update() call} */
 	protected Array<Runnable> tasks;
 	private Queue<Event> eventQueue;
 	private boolean firing;
+	/** Hidden to classes/subclasses outside this package */
 	Lifetime objectState;
 
 	/**
@@ -53,6 +54,10 @@ public abstract class Entity implements Disposable, EventEmitter {
 	@Override
 	public void dispose() {
 		this.objectState = Lifetime.TO_BE_DISPOSED;
+	}
+	
+	public final boolean isDisposed() {
+		return objectState == Lifetime.DISPOSED;
 	}
 
 	/**
@@ -90,6 +95,7 @@ public abstract class Entity implements Disposable, EventEmitter {
 	
 	@Override
 	public void fire(Event event) {
+		//TODO perhaps blocking all events from being fired when the entity has been disposed of would be a good idea
 		eventQueue.addLast(event);
 		if (firing) 
 			return;

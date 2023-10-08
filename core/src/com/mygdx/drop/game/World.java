@@ -28,7 +28,6 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Constants.LayerId;
 import com.mygdx.drop.Drop;
-import com.mygdx.drop.GameScreen;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.EventEmitter;
 import com.mygdx.drop.etc.events.ContactEvent;
@@ -39,7 +38,6 @@ import com.mygdx.drop.etc.events.handlers.EventListener;
 import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Entity.Lifetime;
 import com.mygdx.drop.game.WorldBorder.Cardinality;
-import com.mygdx.drop.game.dynamicentities.DroppedItem;
 import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.tiles.RainbowTile;
 
@@ -76,8 +74,10 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	
 	private final Entity[] pointerOverEntities = new Entity[20];
 	private final boolean[] pointerTouched = new boolean[20];
-	private final int[] pointerScreenX = new int[20], pointerScreenY = new int[20];
-	private int mouseScreenX, mouseScreenY;
+	/** reference counted, each pointer increases the reference */
+	private final short[] buttonPressed = new short[5];
+	private final float[] pointerWorldX = new float[20], pointerWorldY = new float[20];
+	private float mouseWorldX, mouseWorldY;
 	private @Null Entity mouseOverEntity;
 	
 	/**
@@ -239,14 +239,14 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 			Entity overLast = pointerOverEntities[pointer];
 			if (pointerTouched[pointer]) {
 				// Update the over actor for the pointer.
-				pointerOverEntities[pointer] = fireEnterAndExit(overLast, pointerScreenX[pointer], pointerScreenY[pointer], pointer);
+				pointerOverEntities[pointer] = fireEnterAndExit(overLast, pointerWorldX[pointer], pointerWorldY[pointer], pointer);
 			} else if (overLast != null) {
 				// The pointer is gone, exit the over actor for the pointer, if any.
 				pointerOverEntities[pointer] = null;
-				fireExit(overLast, pointerScreenX[pointer], pointerScreenY[pointer], pointer);
+				fireExit(overLast, pointerWorldX[pointer], pointerWorldY[pointer], pointer);
 			}
 		}
-		mouseOverEntity = fireEnterAndExit(mouseOverEntity, mouseScreenX, mouseScreenY, -1);
+		mouseOverEntity = fireEnterAndExit(mouseOverEntity, mouseWorldX, mouseWorldY, -1);
 	}
 	
 
@@ -264,11 +264,15 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 		if (entity instanceof Drawable) 
 			toBeDrawn.removeValue((Drawable)entity, true);
 	}
-	
-	public final Vector2 getLastClickPosition() {
-		return viewport.unproject(tempCoords.set(pointerScreenX[0], pointerScreenY[0]));
-	}
 
+	public final Vector2 getLastClickPosition() {
+		return tempCoords.set(pointerWorldX[0], pointerWorldY[0]);
+	}
+	
+	public final boolean isButtonPressed(int button) {
+		return buttonPressed[button] > 0;
+	}
+	
 	// EventListerners
 	
 	@Override
@@ -308,6 +312,8 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	//TODO: implement key events 
 	@Override
 	public boolean keyDown(int keycode) {
+		if (player.isDisposed()) 
+			return false;
 		InputEvent inputEvent = new InputEvent(this, player, null);
 		inputEvent.setType(Type.keyDown);
 		inputEvent.setKeyCode(keycode);
@@ -317,6 +323,8 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 
 	@Override
 	public boolean keyUp(int keycode) { 
+		if (player.isDisposed()) 
+			return false;
 		InputEvent inputEvent = new InputEvent(this, player, null);
 		inputEvent.setType(Type.keyUp);
 		inputEvent.setKeyCode(keycode);
@@ -331,15 +339,18 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	 * event. */
 	@Override
 	public boolean touchDown (int screenX, int screenY, int pointer, int button) {
+		//TODO maybe implement?
 //		if (!isInsideViewport(screenX, screenY)) return false;
 //
 		pointerTouched[pointer] = true;
-		pointerScreenX[pointer] = screenX;
-		pointerScreenY[pointer] = screenY;
-
-		
+		buttonPressed[button]++;
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
-
+		pointerWorldX[pointer] = worldCoordinates.x;
+		pointerWorldY[pointer] = worldCoordinates.y;
+	
+		if (player.isDisposed()) 
+			return false;
+		
 		Entity target = null;
 		for (Body body : bodies) {
 			Entity entity = (Entity)body.getUserData();
@@ -369,12 +380,14 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	 * Only {@link InputListener listeners} that returned true for touchDown will receive this event. */
 	public boolean touchUp (int screenX, int screenY, int pointer, int button) {
 		pointerTouched[pointer] = false;
-		pointerScreenX[pointer] = screenX;
-		pointerScreenY[pointer] = screenY;
-//
-//		if (touchFocuses.size == 0) return false;
-
+		buttonPressed[button]--;
 		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
+		pointerWorldX[pointer] = worldCoordinates.x;
+		pointerWorldY[pointer] = worldCoordinates.y;
+
+		if (player.isDisposed()) 
+			return false;
+		
 		
 		Entity target = null;
 		for (Body body : bodies) {
@@ -406,31 +419,43 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) { 
-		pointerScreenX[pointer] = screenX;
-		pointerScreenY[pointer] = screenY;
-		mouseScreenX = screenX;
-		mouseScreenY = screenY;
+		Vector2 worldPosition = viewport.unproject(tempCoords.set(screenX, screenY));
+		pointerWorldX[pointer] = worldPosition.x;
+		pointerWorldY[pointer] = worldPosition.y;
+		mouseWorldX = worldPosition.x;
+		mouseWorldY = worldPosition.y;
+		if (player.isDisposed()) 
+			return false;
+		//TODO fire inputevent
 		return false; 
 	}
 
 	@Override
-	public boolean mouseMoved(int screenX, int screenY) { 
-		mouseScreenX = screenX;
-		mouseScreenY = screenY;
+	public boolean mouseMoved(int screenX, int screenY) {
+		Vector2 worldPosition = viewport.unproject(tempCoords.set(screenX, screenY));
+		mouseWorldX = worldPosition.x;
+		mouseWorldY = worldPosition.y;
+		if (player.isDisposed()) 
+			return false;
+		//TODO fire inputevent
 		return false; 
 	}
 
 	@Override
-	public boolean scrolled(float amountX, float amountY) { return false; }
+	public boolean scrolled(float amountX, float amountY) {
+		//TODO fire inputevent		
+		return false; 
+	}
 	
-	private Entity fireEnterAndExit (Entity overLast, int screenX, int screenY, int pointer) {
-		// Find the actor under the point.
-		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
-		
+	private Entity fireEnterAndExit (Entity overLast, float worldX, float worldY, int pointer) {
+		//TODO think this through
+		if (player.isDisposed()) 
+			return null;
+		// Find the actor under the point.		
 		Entity over = null;
 		for (Body body : bodies) {
 			Entity entity = (Entity)body.getUserData();
-			if (entity.hit(worldCoordinates.x, worldCoordinates.y)) {
+			if (entity.hit(worldX, worldY)) {
 				over = entity;
 				break;
 			}
@@ -442,8 +467,8 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 		if (overLast != null) {
 			InputEvent event = new InputEvent(this, player, overLast);
 			event.setType(InputEvent.Type.exit);
-			event.setWorldX(worldCoordinates.x);
-			event.setWorldY(worldCoordinates.y);
+			event.setWorldX(worldX);
+			event.setWorldY(worldY);
 			event.setPointer(pointer);
 			event.setRelatedEntity(over);
 			overLast.fire(event);
@@ -453,8 +478,8 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 		if (over != null) {
 			InputEvent event = new InputEvent(this, player, over);
 			event.setType(InputEvent.Type.enter);
-			event.setWorldX(worldCoordinates.x);
-			event.setWorldY(worldCoordinates.y);
+			event.setWorldX(worldX);
+			event.setWorldY(worldY);
 			event.setPointer(pointer);
 			event.setRelatedEntity(overLast);
 			over.fire(event);
@@ -462,12 +487,13 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 		return over;
 	}
 	
-	private void fireExit (Entity entity, int screenX, int screenY, int pointer) {
-		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
+	private void fireExit (Entity entity, float worldX, float worldY, int pointer) {
+		if (player.isDisposed()) 
+			return;
 		InputEvent event = new InputEvent(this, player, entity);
 		event.setType(InputEvent.Type.exit);
-		event.setWorldX(worldCoordinates.x);
-		event.setWorldY(worldCoordinates.y);
+		event.setWorldX(worldX);
+		event.setWorldY(worldY);
 		event.setPointer(pointer);
 		event.setRelatedEntity(null);
 		entity.fire(event);

@@ -99,6 +99,9 @@ public class GameScreen implements Screen {
 	public void dispose() { world.dispose(); hudStage.dispose(); }
 
 	private final void updateCameraPosition() {
+		if (world.player.isDisposed()) {
+			return;
+		}
 		// Make camera follow player and prevent it from going out of bounds
 		Vector2 playerPosition_mt = world.player.getPosition();
 		Camera camera = gameViewport.getCamera();
