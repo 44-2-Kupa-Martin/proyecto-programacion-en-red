@@ -170,9 +170,8 @@ public class Assets implements Disposable {
 		DebugBox_bucket("DebugBox/bucket"),
 		GoofyItem_goofy("GoofyItem/goofy"),
 		BowItem_bow("BowItem/bow"),
-		Arrow_arrow("Arrow/arrow"),
-		Background_mainMenu("Background/mainMenu2"),
-		DiamondSet_helmet("DiamondSet/helmet");
+		DiamondSet_helmet("DiamondSet/helmet"),
+		Arrow_arrow("Arrow/arrow");
 		
 		public final String path;
 
@@ -182,7 +181,8 @@ public class Assets implements Disposable {
 
 	public enum AnimationId {
 		Player_walk("Player/walk"),
-		Player_idle("Player/idle");
+		Player_idle("Player/idle"),
+		Background_frame("Background/frame");
 
 		public final String path;
 
