@@ -1,5 +1,53 @@
 
 game.png
+size: 4096, 4096
+format: RGBA8888
+filter: Nearest, Nearest
+repeat: none
+animations/Background/frame
+  rotate: false
+  xy: 2, 2166
+  size: 2000, 1080
+  orig: 2000, 1080
+  offset: 0, 0
+  index: 0
+animations/Background/frame
+  rotate: false
+  xy: 2, 1084
+  size: 2000, 1080
+  orig: 2000, 1080
+  offset: 0, 0
+  index: 1
+animations/Background/frame
+  rotate: false
+  xy: 2004, 2166
+  size: 2000, 1080
+  orig: 2000, 1080
+  offset: 0, 0
+  index: 2
+animations/Background/frame
+  rotate: false
+  xy: 2, 2
+  size: 2000, 1080
+  orig: 2000, 1080
+  offset: 0, 0
+  index: 3
+animations/Background/frame
+  rotate: false
+  xy: 2004, 1084
+  size: 2000, 1080
+  orig: 2000, 1080
+  offset: 0, 0
+  index: 4
+animations/Background/frame
+  rotate: false
+  xy: 2004, 2
+  size: 2000, 1080
+  orig: 2000, 1080
+  offset: 0, 0
+  index: 5
+
+game2.png
 size: 1024, 64
 format: RGBA8888
 filter: Nearest, Nearest
@@ -131,7 +179,7 @@ animations/Player/walk
   offset: 0, 0
   index: 7
 
-game2.png
+game3.png
 size: 512, 256
 format: RGBA8888
 filter: Nearest, Nearest
@@ -144,7 +192,7 @@ skins/Button/button
   offset: 0, 0
   index: -1
 
-game3.png
+game4.png
 size: 512, 256
 format: RGBA8888
 filter: Nearest, Nearest
@@ -157,7 +205,7 @@ skins/Default/uiskin
   offset: 0, 0
   index: -1
 
-game4.png
+game5.png
 size: 1024, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -170,7 +218,7 @@ skins/Glassy/preview
   offset: 0, 0
   index: -1
 
-game5.png
+game6.png
 size: 1024, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -433,7 +481,7 @@ skins/Glassy/raw/window
   offset: 0, 0
   index: -1
 
-game6.png
+game7.png
 size: 2048, 2048
 format: RGBA8888
 filter: Nearest, Nearest
@@ -446,7 +494,7 @@ skins/Glassy/skin/glassy-ui
   offset: 0, 0
   index: -1
 
-game7.png
+game8.png
 size: 512, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -459,7 +507,7 @@ textures/Arrow/arrow
   offset: 0, 0
   index: -1
 
-game8.png
+game9.png
 size: 2048, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -479,7 +527,7 @@ textures/Background/mainMenu2
   offset: 0, 0
   index: -1
 
-game9.png
+game10.png
 size: 512, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -492,7 +540,7 @@ textures/BowItem/bow
   offset: 0, 0
   index: -1
 
-game10.png
+game11.png
 size: 128, 128
 format: RGBA8888
 filter: Nearest, Nearest
@@ -505,7 +553,7 @@ textures/DebugBox/bucket
   offset: 0, 0
   index: -1
 
-game11.png
+game12.png
 size: 4096, 1024
 format: RGBA8888
 filter: Nearest, Nearest
@@ -553,7 +601,7 @@ textures/DiamondSet/leggins
   offset: 0, 0
   index: -1
 
-game12.png
+game13.png
 size: 1024, 512
 format: RGBA8888
 filter: Nearest, Nearest
@@ -566,7 +614,7 @@ textures/GoofyItem/goofy
   offset: 0, 0
   index: -1
 
-game13.png
+game14.png
 size: 32, 32
 format: RGBA8888
 filter: Nearest, Nearest

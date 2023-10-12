@@ -176,6 +176,7 @@ public class Assets implements Disposable {
 		DiamondSet_chestplate("DiamondSet/chestplate"),
 		DiamondSet_leggings("DiamondSet/leggins"),
 		DiamondSet_boots("DiamondSet/boots");
+
 		
 		public final String path;
 
@@ -185,7 +186,8 @@ public class Assets implements Disposable {
 
 	public enum AnimationId {
 		Player_walk("Player/walk"),
-		Player_idle("Player/idle");
+		Player_idle("Player/idle"),
+		Background_frame("Background/frame");
 
 		public final String path;
 

@@ -1,10 +1,12 @@
 package com.mygdx.drop;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -13,14 +15,15 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.mygdx.drop.Assets.AnimationId;
 import com.mygdx.drop.Assets.SkinId;
-import com.mygdx.drop.Assets.TextureId;
 
 public class MainMenuScreen implements Screen {
 	private final Drop game;
 	private final OrthographicCamera camera;
 	private Stage stage;
 	private Skin skin;
+	private float stateTime = 0.0f;
 
 	public MainMenuScreen(Drop game) {
 		this.game = game;
@@ -116,18 +119,24 @@ public class MainMenuScreen implements Screen {
 		
 		Gdx.gl.glClearColor(.1f, .12f, .16f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        
         //Update the camera and viewport
         camera.update();
         game.batch.setProjectionMatrix(camera.combined);
         
         //Background Image
         
+        Animation<TextureRegion> mainMenuAnimation = new Animation<>(0.1f, 
+        		game.assets.get(AnimationId.Background_frame), PlayMode.LOOP);
+        TextureRegion currentFrame = mainMenuAnimation.getKeyFrame(stateTime);
+        
         game.batch.begin();
         float viewportWidth = camera.viewportWidth;
         float viewportHeight = camera.viewportHeight;
-        game.batch.draw(game.assets.get(TextureId.Background_mainMenu), 0, 0, viewportWidth, viewportHeight);
+        game.batch.draw(currentFrame, 0, 0, viewportWidth, viewportHeight);
+       
         game.batch.end();
+        
+        stateTime += Gdx.graphics.getDeltaTime();
         
         stage.act();
         stage.draw();
