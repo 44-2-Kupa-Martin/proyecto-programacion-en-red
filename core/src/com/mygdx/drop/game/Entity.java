@@ -125,9 +125,9 @@ public abstract class Entity implements Disposable, EventEmitter {
 	 * @param worldY_mt
 	 * @return {@code true} if the entity was hit, {@code false} otherwise
 	 */
-	public final boolean hit(float worldX_mt, float worldY_mt) {
+	public boolean hit(float worldX_mt, float worldY_mt) {
 		for (Fixture fixture : self.getFixtureList()) {
-			if (fixture.testPoint(worldX_mt, worldY_mt))
+			if (fixture.testPoint(worldX_mt, worldY_mt) && !fixture.isSensor())
 				return true;
 		}
 		return false;

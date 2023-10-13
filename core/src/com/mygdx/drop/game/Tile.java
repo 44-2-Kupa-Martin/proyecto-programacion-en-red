@@ -6,13 +6,17 @@ import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.ChainShape;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Constants.LayerId;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.game.dynamicentities.DroppedItem;
+import com.mygdx.drop.game.items.BowItem;
 
 public abstract class Tile extends Entity {
 	protected static Drop game;
@@ -20,7 +24,10 @@ public abstract class Tile extends Entity {
 	public final World world;
 	public final int x_tl;
 	public final int y_tl;
-
+	public final int breakageLevel;
+	private int fractureLevel;
+	private final Fixture chainFixture;
+	
 	protected final LayerId layerId;
 	protected final TileId tileId;
 
@@ -59,7 +66,9 @@ public abstract class Tile extends Entity {
 		this.tileId = tileId;
 		this.x_tl = x;
 		this.y_tl = y;
-
+		this.breakageLevel = 4;
+		this.fractureLevel = 0;
+		
 		TiledMapTileLayer layer = (TiledMapTileLayer) world.tiledMap.getLayers().get(LayerId.WORLD.value);
 		layer.setCell(x, y, new Cell().setTile(world.tiledMap.getTileSets().getTileSet(layerId.value).getTile(tileId.value)));
 
@@ -73,8 +82,43 @@ public abstract class Tile extends Entity {
 		chain.createLoop(new float[] { -halfWidth, -halfHeight, halfWidth, -halfHeight, halfWidth, halfHeight, -halfWidth, halfHeight });
 
 		fixtureDefinition.shape = chain;
-		self.createFixture(fixtureDefinition);
+		this.chainFixture = self.createFixture(fixtureDefinition);
 		chain.dispose();
+	}
+	
+	@Override
+	public boolean hit(float worldX_mt, float worldY_mt) { 
+		ChainShape chainShape = (ChainShape) chainFixture.getShape();
+		Vector2 vertex1 = new Vector2();
+		Vector2 vertex2 = new Vector2();
+		chainShape.getVertex(0, vertex1);
+		chainShape.getVertex(2, vertex2);
+		vertex1.add(self.getWorldCenter());
+		vertex2.add(self.getWorldCenter());
+		/** TODO refactor this war crime. This code relies on the assumption that the vertices are stored in the order they're passed to {@link ChainShape#createLoop} on {@link Tile#Tile} */ 
+		assert vertex1.x != vertex2.x && vertex1.y != vertex2.y;
+		assert vertex1.x < vertex2.x && vertex1.y < vertex2.y;
+		boolean onYRange = worldY_mt >= vertex1.y && worldY_mt <= vertex2.y;
+		boolean onXRange = worldX_mt >= vertex1.x && worldX_mt <= vertex2.x;
+		return onXRange && onYRange;
+	}
+	
+	public boolean fracture() {
+		fractureLevel++;
+		if (fractureLevel == breakageLevel) {
+			Vector2 position = self.getWorldCenter();
+			world.createEntity(new DroppedItem.Definition(position.x, position.y, new BowItem()));
+			this.dispose();
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public void dispose() { 
+		super.dispose(); 
+		TiledMapTileLayer layer = (TiledMapTileLayer) world.tiledMap.getLayers().get(LayerId.WORLD.value);
+		layer.getCell(x_tl, y_tl).setTile(null);
 	}
 
 	/**

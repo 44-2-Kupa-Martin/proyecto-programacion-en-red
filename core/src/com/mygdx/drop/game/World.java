@@ -273,6 +273,19 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 		return buttonPressed[button] > 0;
 	}
 	
+	public final Entity hit(float x, float y) {
+		Entity hit = null;
+		box2dWorld.getBodies(bodies);
+		for (Body body : bodies) {
+			Entity entity = (Entity)body.getUserData();
+			if (entity.hit(x, y)) {
+				hit = entity;
+				break;
+			}
+		}
+		return hit;
+	}
+	
 	// EventListerners
 	
 	@Override

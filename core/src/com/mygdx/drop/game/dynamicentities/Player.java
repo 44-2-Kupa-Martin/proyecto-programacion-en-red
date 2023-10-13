@@ -52,9 +52,11 @@ import com.mygdx.drop.game.items.BowItem;
 import com.mygdx.drop.game.items.DebugItem;
 import com.mygdx.drop.game.items.DiamondBoots;
 import com.mygdx.drop.game.items.DiamondHelmet;
+import com.mygdx.drop.game.items.PickaxeItem;
 import com.mygdx.drop.game.Item;
 import com.mygdx.drop.game.MutableStats;
 import com.mygdx.drop.game.Stats;
+import com.mygdx.drop.game.Tile;
 
 public class Player extends BoxEntity implements Drawable {
 	private static boolean instantiated = false;
@@ -69,6 +71,7 @@ public class Player extends BoxEntity implements Drawable {
 	private MutableStats stats;
 	private int groundContacts;
 	private final Fixture groundSensor;
+	private final Fixture hitRadius;
 	private final Map<Integer, Runnable> keybinds;
 
 	/**
@@ -98,10 +101,16 @@ public class Player extends BoxEntity implements Drawable {
 		sensor.filter.maskBits = Constants.Category.ITEM.value;
 		sensor.filter.categoryBits = Constants.Category.SENSOR.value;
 		CircleShape pickupRange = new CircleShape();
-		pickupRange.setRadius(1.5f);
+		pickupRange.setRadius(1.2f);
 		sensor.shape = pickupRange;
 		self.createFixture(sensor);
-		pickupRange.dispose();
+		
+		CircleShape hitRange = pickupRange;
+		hitRange.setRadius(Drop.tlToMt(3));
+		sensor.filter.maskBits = Constants.Category.WORLD.value;
+		sensor.shape = hitRange;
+		this.hitRadius = self.createFixture(sensor);
+		hitRange.dispose();
 		
 		PolygonShape groundContact = new PolygonShape();
 		groundContact.setAsBox(getWidth()/2 -0.02f, 0.04f, new Vector2(0, -getHeight()/2 -0.02f),  0);
@@ -146,6 +155,7 @@ public class Player extends BoxEntity implements Drawable {
 		items.hotbar.get(0).set(new BowItem());
 		items.hotbar.get(1).set(new DiamondHelmet());
 		items.hotbar.get(2).set(new DiamondBoots());
+		items.hotbar.get(3).set(new PickaxeItem());
 		this.keybinds = new HashMap<>();
 		keybinds.put(Input.Keys.W, this::jump);
 		keybinds.put(Input.Keys.A, this::moveLeft);
@@ -214,6 +224,10 @@ public class Player extends BoxEntity implements Drawable {
 		TextureRegion frame = currentAnimation.getKeyFrame(animationTimer);
 		game.batch.draw(frame, coords.x, coords.y, getWidth(), getHeight());
 	}
+	
+	public final boolean canReach(float x, float y) {
+		return hitRadius.testPoint(x, y);
+	}
 
 	private final EnumMap<State, Animation<TextureRegion>> initAnimationsMap() {
 		EnumMap<State, Animation<TextureRegion>> animations = new EnumMap<>(State.class);
@@ -264,7 +278,6 @@ public class Player extends BoxEntity implements Drawable {
 				if (event.player.items.getCursorItem() != null)
 					event.player.dropItem();
 			}
-
 		});
 
 		world.addListener(new InputEventHandler() {
