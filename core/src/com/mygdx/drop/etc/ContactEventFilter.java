@@ -5,9 +5,11 @@ import com.badlogic.gdx.physics.box2d.ContactImpulse;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.utils.Null;
+import com.mygdx.drop.etc.events.ClassifiedContactEvent;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.listeners.ContactEventListener;
+import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Player;
 
@@ -18,10 +20,10 @@ import com.mygdx.drop.game.dynamicentities.Player;
  * @param <TypeObjectA> The type for which the collision handling functions will be called
  * @param <TypeObjectB> The type for which the collision handling functions will be called
  */
-public class ContactEventFilter<TypeObjectA, TypeObjectB> extends ContactEventListener {
+public class ContactEventFilter<TypeObjectA extends Entity, TypeObjectB extends Entity> extends ContactEventListener {
 	private final Class<TypeObjectA> typeA;
 	private final @Null Class<TypeObjectB> typeB;
-	private Participants contactParticipants;
+	private ClassifiedContactEvent<TypeObjectA, TypeObjectB> contactParticipants;
 
 	public ContactEventFilter(Class<TypeObjectA> typeA, Class<TypeObjectB> typeB) {
 		assert typeA != null;
@@ -44,7 +46,7 @@ public class ContactEventFilter<TypeObjectA, TypeObjectB> extends ContactEventLi
 
 		if (typeB == null) {
 			// Ensure objects are in the order of this generic's parameters
-			this.contactParticipants = new Participants((TypeObjectA) (ownerAOfTypeA ? ownerFixtureA : ownerFixtureB),
+			this.contactParticipants = new ClassifiedContactEvent<TypeObjectA, TypeObjectB>(contactEvent, (TypeObjectA) (ownerAOfTypeA ? ownerFixtureA : ownerFixtureB),
 					ownerAOfTypeA ? contactEvent.getContact().getFixtureA() : contactEvent.getContact().getFixtureB(),
 					(TypeObjectB) (ownerAOfTypeA ? ownerFixtureB : ownerFixtureA),
 					ownerAOfTypeA ? contactEvent.getContact().getFixtureB() : contactEvent.getContact().getFixtureA());
@@ -58,7 +60,7 @@ public class ContactEventFilter<TypeObjectA, TypeObjectB> extends ContactEventLi
 			return false;
 
 		// Ensure objects are in the order of this generic's parameters
-		this.contactParticipants = new Participants((TypeObjectA) (ownerAOfTypeA ? ownerFixtureA : ownerFixtureB),
+		this.contactParticipants = new ClassifiedContactEvent<TypeObjectA, TypeObjectB>(contactEvent, (TypeObjectA) (ownerAOfTypeA ? ownerFixtureA : ownerFixtureB),
 				ownerAOfTypeA ? contactEvent.getContact().getFixtureA() : contactEvent.getContact().getFixtureB(),
 				(TypeObjectB) (ownerAOfTypeA ? ownerFixtureB : ownerFixtureA),
 				ownerAOfTypeA ? contactEvent.getContact().getFixtureB() : contactEvent.getContact().getFixtureA());
@@ -66,13 +68,13 @@ public class ContactEventFilter<TypeObjectA, TypeObjectB> extends ContactEventLi
 		return super.handle(contactEvent);
 	}
 
-	public boolean preSolve(ContactEvent event, Participants participants) { return false; }
+	public boolean preSolve(ContactEvent event, ClassifiedContactEvent<TypeObjectA, TypeObjectB> participants) { return false; }
 
-	public boolean postSolve(ContactEvent event, Participants participants) { return false; }
+	public boolean postSolve(ContactEvent event, ClassifiedContactEvent<TypeObjectA, TypeObjectB> participants) { return false; }
 
-	public boolean beginContact(ContactEvent event, Participants participants) { return false; }
+	public boolean beginContact(ContactEvent event, ClassifiedContactEvent<TypeObjectA, TypeObjectB> participants) { return false; }
 
-	public boolean endContact(ContactEvent event, Participants participants) { return false; }
+	public boolean endContact(ContactEvent event, ClassifiedContactEvent<TypeObjectA, TypeObjectB> participants) { return false; }
 
 	@Override
 	public boolean preSolve(ContactEvent event) { return preSolve(event, this.contactParticipants); }
@@ -85,20 +87,5 @@ public class ContactEventFilter<TypeObjectA, TypeObjectB> extends ContactEventLi
 
 	@Override
 	public boolean endContact(ContactEvent event) { return endContact(event, this.contactParticipants); }
-
-	public class Participants {
-		public final TypeObjectA objectA;
-		public final Fixture fixtureA;
-		public final TypeObjectB objectB;
-		public final Fixture fixtureB;
-
-		public Participants(TypeObjectA objectA, Fixture fixtureA, TypeObjectB objectB, Fixture fixtureB) {
-			this.objectA = objectA;
-			this.fixtureA = fixtureA;
-			this.objectB = objectB;
-			this.fixtureB = fixtureB;
-		}
-
-	}
 
 }

@@ -8,7 +8,7 @@ import com.mygdx.drop.game.Entity;
  *
  * @param <TypeObjectA> The type for which the collision handling functions will be called
  */
-public class SimpleContactEventFilter<TypeObjectA> extends ContactEventFilter<TypeObjectA, Entity> {
+public class SimpleContactEventFilter<TypeObjectA extends Entity> extends ContactEventFilter<TypeObjectA, Entity> {
 
 	public SimpleContactEventFilter(Class<TypeObjectA> typeA) { 
 		super(typeA, Entity.class);
