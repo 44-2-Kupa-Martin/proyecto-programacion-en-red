@@ -10,6 +10,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.EventManager;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.events.CanPickupEvent;
 import com.mygdx.drop.etc.events.Event;
@@ -62,7 +63,7 @@ public class DroppedItem extends BoxEntity implements Drawable {
 			pickupDelay -= Gdx.graphics.getDeltaTime();
 		} else if (!eventFired) {
 			CanPickupEvent event = new CanPickupEvent(this); 
-			fire(event);
+			EventManager.fire(event);
 			this.eventFired = true;
 			toBeDisposed = event.isHandled();
 		}

@@ -1,6 +1,8 @@
-fix arrows*
-	shoot at an angle*
-	disappear on colision*
-	dont collide between themselves*
-Crafting
-Mining/placing blocks
+refactor tile rendering*
+create multiplayer menu
+create escape menu
+create server
+	send entity's position after each step
+create client 
+	draw entities
+

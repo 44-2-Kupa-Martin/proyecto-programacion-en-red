@@ -2,7 +2,7 @@ package com.mygdx.drop.game.items;
 
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.mygdx.drop.Assets.TextureId;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.EquippableItem;
 import com.mygdx.drop.game.MutableStats;
@@ -15,7 +15,7 @@ public class DiamondHelmet implements EquippableItem {
 	public DiamondHelmet() {
 		assert Drop.game != null;
 		this.game = Drop.game;
-		this.texture = game.assets.get(TextureId.DiamondSet_helmet);
+		this.texture = Assets.Textures.DiamondSet_helmet.get();
 	}
 
 	@Override

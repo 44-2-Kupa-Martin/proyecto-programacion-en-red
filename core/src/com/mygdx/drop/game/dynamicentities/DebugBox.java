@@ -10,11 +10,11 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Assets.TextureId;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.events.InputEvent;
-import com.mygdx.drop.etc.events.handlers.ClickEventHandler;
+import com.mygdx.drop.etc.events.listeners.ClickEventListener;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
@@ -44,9 +44,9 @@ public class DebugBox extends BoxEntity implements Drawable {
 			return fixture;
 		})).get());
 
-		this.texture = game.assets.get(TextureId.DebugBox_bucket);
+		this.texture = Assets.Textures.DebugBox_bucket.get();
 		
-		addListener(new ClickEventHandler(Input.Buttons.RIGHT) {
+		addListener(new ClickEventListener(Input.Buttons.RIGHT) {
 			@Override
 			public void clicked(InputEvent event, float x, float y) { 
 				System.out.println("clicked debugbox");

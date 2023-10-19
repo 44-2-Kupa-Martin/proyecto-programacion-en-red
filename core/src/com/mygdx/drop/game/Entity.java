@@ -9,26 +9,24 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Queue;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Drop;
-import com.mygdx.drop.etc.EventEmitter;
+import com.mygdx.drop.etc.EventCapable;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.InputEvent;
-import com.mygdx.drop.etc.events.handlers.EventListener;
+import com.mygdx.drop.etc.events.listeners.EventListener;
 
 /**
  * This class is a wrapper for box2d's {@link Body} class
  */
-public abstract class Entity implements Disposable, EventEmitter {
+public abstract class Entity implements Disposable, EventCapable {
 	//TODO: either make all game references static or non-static. Ensure consistency
 	// Static because game is a singleton
 	protected static Drop game;
 
 	public final World world;
 	protected Body self;
-	private Array<EventListener> eventHandlers;
 	/** Tasks run on each {@link #update() call} */
+	private Array<EventListener> listeners;
 	protected Array<Runnable> tasks;
-	private Queue<Event> eventQueue;
-	private boolean firing;
 	/** Hidden to classes/subclasses outside this package */
 	Lifetime objectState;
 
@@ -44,10 +42,8 @@ public abstract class Entity implements Disposable, EventEmitter {
 		this.objectState = Lifetime.ALIVE;
 		this.world = world;
 		this.self = world.box2dWorld.createBody(bodyDefinition);
-		this.eventHandlers = new Array<>();
-		this.eventQueue = new Queue<>();
+		this.listeners = new Array<>();
 		this.tasks = new Array<>();
-		this.firing = false;
 		self.setUserData(this);
 	}
 	
@@ -91,33 +87,16 @@ public abstract class Entity implements Disposable, EventEmitter {
 	public final boolean removeTask(Runnable task) { return tasks.removeValue(task, true); }
 	
 	@Override
-	public boolean removeListener(EventListener handler) { return eventHandlers.removeValue(handler, false); }
+	public boolean removeListener(EventListener listener) { return listeners.removeValue(listener, false); }
 	
 	@Override
-	public void fire(Event event) {
-		//TODO perhaps blocking all events from being fired when the entity has been disposed of would be a good idea
-		eventQueue.addLast(event);
-		if (firing) 
-			return;
-		
-		firing = true;
-		while (eventQueue.size != 0) {
-			Event queuedEvent = eventQueue.removeFirst();
-			for (int i = 0; i < eventHandlers.size; i++) {
-				EventListener eventHandler = eventHandlers.get(i);
-				eventHandler.handle(queuedEvent);
-				if (queuedEvent.isStopped()) 
-					break;
-			}			
-		}
-		firing = false;
+	public void addListener(EventListener listener) {
+		assert listener != null;
+		listeners.add(listener); 
 	}
 	
 	@Override
-	public void addListener(EventListener handler) {
-		assert handler != null;
-		eventHandlers.add(handler); 
-	}
+	public Array<EventListener> getListeners() { return listeners; }
 	
 	/**
 	 * Tests if the given coordinates are within the entity

@@ -1,9 +1,9 @@
-package com.mygdx.drop.etc.events.handlers;
+package com.mygdx.drop.etc.events.listeners;
 
 import com.mygdx.drop.etc.events.CanPickupEvent;
 import com.mygdx.drop.etc.events.Event;
 
-public class CanPickupEventHandler implements EventListener {
+public class CanPickupEventListener implements EventListener {
 
 	@Override
 	public boolean handle(Event event) {

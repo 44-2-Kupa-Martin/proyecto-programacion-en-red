@@ -2,6 +2,7 @@ package com.mygdx.drop.game;
 
 import java.util.function.Supplier;
 
+import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer.Cell;
@@ -9,16 +10,17 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.physics.box2d.ChainShape;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.mygdx.drop.Constants;
-import com.mygdx.drop.Constants.LayerId;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.game.dynamicentities.DroppedItem;
 import com.mygdx.drop.game.items.BowItem;
 
-public abstract class Tile extends Entity {
+public abstract class Tile extends Entity implements Drawable {
 	protected static Drop game;
 
 	public final World world;
@@ -26,11 +28,10 @@ public abstract class Tile extends Entity {
 	public final int y_tl;
 	public final int breakageLevel;
 	private int fractureLevel;
+	private final AtlasRegion texture;
 	private final Fixture chainFixture;
+	private final Vector2 bottomLeftVertex;
 	
-	protected final LayerId layerId;
-	protected final TileId tileId;
-
 	/**
 	 * 
 	 * @param world   A reference to the {@link World} object that will hold the tile
@@ -39,7 +40,7 @@ public abstract class Tile extends Entity {
 	 * @param x       Measured in tiles, origin is at the bottom left corner of the world
 	 * @param y       Measured in tiles, origin is at the bottom left corner of the world
 	 */
-	public <T extends Tile> Tile(World world, LayerId layerId, TileId tileId, int x, int y, Class<T> subclass) {
+	public <T extends Tile> Tile(World world, int x, int y, AtlasRegion texture) {
 		super(world, ((Supplier<BodyDef>) (() -> {
 			BodyDef bodyDefiniton = new BodyDef();
 			bodyDefiniton.type = BodyType.StaticBody;
@@ -48,29 +49,16 @@ public abstract class Tile extends Entity {
 			bodyDefiniton.fixedRotation = true;
 			return bodyDefiniton;
 		})).get());
-		// TODO: remove subclass parameter, it is debug only
-		assert tileId != null : "tileId cannot be null!";
-		if (Constants.DEBUG) {
-			TileId correspondingTileId = debug_findCorrespondingId(subclass);
-			assert correspondingTileId != null
-					: "The " + subclass.getSimpleName() + " class doesnt have a corresponding entry in the Tile.TileId enum";
-			assert correspondingTileId == tileId
-					: "The provided tileId " + tileId.name() + " is not the correct id for class " + subclass.getSimpleName();
-		}
 
 		assert Drop.game != null : "Tile object created before game instance!";
 		game = Drop.game;
 
 		this.world = world;
-		this.layerId = layerId;
-		this.tileId = tileId;
 		this.x_tl = x;
 		this.y_tl = y;
 		this.breakageLevel = 4;
 		this.fractureLevel = 0;
-		
-		TiledMapTileLayer layer = (TiledMapTileLayer) world.tiledMap.getLayers().get(LayerId.WORLD.value);
-		layer.setCell(x, y, new Cell().setTile(world.tiledMap.getTileSets().getTileSet(layerId.value).getTile(tileId.value)));
+		this.texture = texture;
 
 		FixtureDef fixtureDefinition = new FixtureDef();
 		fixtureDefinition.filter.categoryBits = (short) (Constants.Category.WORLD.value | Constants.Category.PLAYER_COLLIDABLE.value);
@@ -80,10 +68,17 @@ public abstract class Tile extends Entity {
 		float halfWidth = Drop.tlToMt(1) / 2;
 		float halfHeight = halfWidth;
 		chain.createLoop(new float[] { -halfWidth, -halfHeight, halfWidth, -halfHeight, halfWidth, halfHeight, -halfWidth, halfHeight });
+		this.bottomLeftVertex = new Vector2(-halfWidth, -halfHeight);
 
 		fixtureDefinition.shape = chain;
 		this.chainFixture = self.createFixture(fixtureDefinition);
 		chain.dispose();
+	}
+	
+	@Override
+	public void draw(Viewport viewport) {
+		Vector2 coords = getDrawingCoordinates();
+		game.batch.draw(texture, coords.x, coords.y, Drop.tlToMt(1), Drop.tlToMt(1));
 	}
 	
 	@Override
@@ -114,12 +109,11 @@ public abstract class Tile extends Entity {
 		return false;
 	}
 	
-	@Override
-	public void dispose() { 
-		super.dispose(); 
-		TiledMapTileLayer layer = (TiledMapTileLayer) world.tiledMap.getLayers().get(LayerId.WORLD.value);
-		layer.getCell(x_tl, y_tl).setTile(null);
-	}
+	/**
+	 * The world coordinates of the hitbox's bottom left corner measured in meters. Same {@link Vector2}
+	 * is returned every time
+	 */
+	protected Vector2 getDrawingCoordinates() { return self.getWorldPoint(bottomLeftVertex); }
 
 	/**
 	 * Tile classes take the position as tiles from the bottom left corner of the world
@@ -129,26 +123,6 @@ public abstract class Tile extends Entity {
 	public static abstract class TileDefinition<T extends Tile> extends Entity.EntityDefinition<T> {
 		public TileDefinition(int x, int y) { super(x, y); }
 
-	}
-
-	/**
-	 * Enforces the requirement for all subclasses of tile to have a matching entry in the
-	 * {@link TileId} enum
-	 * 
-	 * @return Whether the requirement was met
-	 */
-	protected static final <T extends Tile> TileId debug_findCorrespondingId(Class<T> subclass) {
-		assert Constants.DEBUG
-				: "Debug only method " + Thread.currentThread().getStackTrace()[1].getMethodName() + " is called outside of debug build!";
-		if (!Constants.DEBUG)
-			throw new RuntimeException("Debug only method " + Thread.currentThread().getStackTrace()[1].getMethodName()
-					+ " is called outside of debug build!");
-
-		for (TileId id : TileId.values()) {
-			if (subclass.getSimpleName().toUpperCase().equals(id.name().replaceAll("_", "")))
-				return id;
-		}
-		return null;
 	}
 
 	/**

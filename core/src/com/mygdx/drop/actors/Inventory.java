@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.mygdx.drop.Assets.SkinId;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ObservableReference;
@@ -38,7 +38,7 @@ public class Inventory extends Stack {
 		this.inventory = new Table();
 		inventory.setDebug(Constants.DEBUG);
 		inventory.setVisible(false);
-		Table itemsTable = new Table(game.assets.get(SkinId.Global_default));
+		Table itemsTable = new Table(Assets.Skins.Global_default.get());
 		itemsTable.setDebug(Constants.DEBUG);
 		
 		// The hotbar and inventory's first row share the same item references

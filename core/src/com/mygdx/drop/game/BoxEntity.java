@@ -23,7 +23,7 @@ public abstract class BoxEntity extends Entity {
 	 * The offset between the entity's origin and its bottom left corner, useful for drawing the entity
 	 * as {@link SpriteBatch} doesn't draw from the center of the texture. Cached for performance.
 	 */
-	private Vector2 bottomLeftVertexOffset;
+	private final Vector2 bottomLeftVertexOffset;
 
 	/**
 	 * 

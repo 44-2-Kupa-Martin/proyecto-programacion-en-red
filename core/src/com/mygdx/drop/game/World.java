@@ -26,15 +26,15 @@ import com.badlogic.gdx.utils.Null;
 import com.badlogic.gdx.utils.Queue;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
-import com.mygdx.drop.Constants.LayerId;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.EventManager;
 import com.mygdx.drop.etc.Drawable;
-import com.mygdx.drop.etc.EventEmitter;
+import com.mygdx.drop.etc.EventCapable;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.etc.events.InputEvent.Type;
-import com.mygdx.drop.etc.events.handlers.EventListener;
+import com.mygdx.drop.etc.events.listeners.EventListener;
 import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Entity.Lifetime;
 import com.mygdx.drop.game.WorldBorder.Cardinality;
@@ -44,7 +44,7 @@ import com.mygdx.drop.game.tiles.RainbowTile;
 /**
  * A wrapper for box2dworld. Handles the simulation and rendering of all {@link Entity entities} and {@link InputEvent input events}
  */
-public class World implements Disposable, InputProcessor, EventEmitter {
+public class World implements Disposable, InputProcessor, EventCapable {
 	protected static Drop game;
 	
 	public final float worldWidth_mt;
@@ -55,7 +55,6 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	public final Player player;
 
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
-	protected TiledMap tiledMap;
 	/** There is a 1 to 1 correspondence between bodies and entities. TODO consider whether it would be better to have an array on entities */
 	protected final Array<Body> bodies;
 	/** If an entity object implements {@link Drawable} it is placed here automatically (see {@link #createEntity(EntityDefinition)} */
@@ -66,7 +65,6 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	private final Queue<Event> eventQueue;
 	private boolean firing;
 	
-	private final OrthogonalTiledMapRenderer mapRenderer;
 	private final Debug debug = Constants.DEBUG ? new Debug() : null;
 	private final Vector2 tempCoords = new Vector2();
 
@@ -110,25 +108,25 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 			@Override
 			public void preSolve(Contact contact, Manifold oldManifold) {
 				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.preSolve, oldManifold);
-				World.this.fire(event);
+				EventManager.fire(event);
 			}
 			
 			@Override
 			public void postSolve(Contact contact, ContactImpulse impulse) {
 				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.postSolve, impulse);
-				World.this.fire(event);
+				EventManager.fire(event);
 			}
 			
 			@Override
 			public void beginContact(Contact contact) {
 				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.beginContact);
-				World.this.fire(event);
+				EventManager.fire(event);
 			}
 			
 			@Override
 			public void endContact(Contact contact) {
 				ContactEvent event = new ContactEvent(World.this, contact, ContactEvent.Type.endContact);
-				World.this.fire(event);
+				EventManager.fire(event);
 			}
 		});
 
@@ -136,27 +134,6 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 			debug.debugRenderer = new Box2DDebugRenderer();
 		}
 
-		//TODO: move this to a World.loadTilesets() method to allow for asynchronous loading of assets while the world initializes
-		// tiledMap initialization
-		this.tiledMap = new TiledMap();
-		TiledMapTileSets tilesets = tiledMap.getTileSets();
-		for (LayerId layerId : LayerId.values()) {
-			// init layers
-			TiledMapTileLayer layer = new TiledMapTileLayer(width_tl, height_tl, Constants.TL_TO_PX_SCALAR, Constants.TL_TO_PX_SCALAR);
-			layer.setName(layerId.name);
-			tiledMap.getLayers().add(layer);
-
-			// init tilesets
-			TiledMapTileSet tileset = new TiledMapTileSet();
-			Array<AtlasRegion> tilesetTextures = game.assets.get(layerId.tileset); 
-			for (int i = 0; i < tilesetTextures.size; i++) {
-				tileset.putTile(i, new StaticTiledMapTile(tilesetTextures.get(i)));
-			}
-			tileset.setName(layerId.name);
-			tilesets.addTileSet(tileset);
-		}
-
-		this.mapRenderer = new OrthogonalTiledMapRenderer(tiledMap, Constants.PX_TO_MT_SCALAR, game.batch);
 		this.bodies = new Array<Body>();
 		this.toBeDrawn = new Array<Drawable>();
 		this.toBeDestroyed = new Array<Entity>();
@@ -180,14 +157,6 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	}
 
 	public final void render(OrthographicCamera camera) {
-		MapLayer layer = tiledMap.getLayers().get(Constants.LayerId.WORLD.value);
-		float offsetX = Drop.mtToPx(camera.zoom*camera.viewportWidth/2 - camera.position.x - worldWidth_mt/2);
-		float offsetY = -Drop.mtToPx(camera.zoom*camera.viewportHeight/2 - camera.position.y - worldHeight_mt/2);
-		layer.setOffsetX(offsetX);
-		layer.setOffsetY(offsetY);
-		mapRenderer.setView(camera);
-		mapRenderer.render();
-
 		if (Constants.DEBUG) {
 			debug.debugRenderer.render(box2dWorld, camera.combined);
 		}
@@ -286,39 +255,21 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 		return hit;
 	}
 	
-	// EventListerners
+	// EventCapable
 	
 	@Override
 	public void addListener(EventListener handler) { eventHandlers.add(handler); }
 
 	@Override
 	public boolean removeListener(EventListener handler) { return eventHandlers.removeValue(handler, false); }
-
-	@Override
-	public void fire(Event event) {
-		eventQueue.addLast(event);
-		if (firing) 
-			return;
-		
-		firing = true;
-		while (eventQueue.size != 0) {
-			Event queuedEvent = eventQueue.removeFirst();
-			for (int i = 0; i < eventHandlers.size; i++) {
-				EventListener handler = eventHandlers.get(i);
-				handler.handle(queuedEvent);
-				if (queuedEvent.isStopped()) 
-					break;
-			}			
-		}
-		firing = false;
-	}
 	
+	@Override
+	public Array<EventListener> getListeners() { return eventHandlers; }
 	
 	// Disposable
 	@Override
 	public void dispose() {
 		box2dWorld.dispose();
-		tiledMap.dispose();
 	}
 
 	// InputProcessor
@@ -327,10 +278,10 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	public boolean keyDown(int keycode) {
 		if (player.isDisposed()) 
 			return false;
-		InputEvent inputEvent = new InputEvent(this, player, null);
+		InputEvent inputEvent = new InputEvent(this, this, player);
 		inputEvent.setType(Type.keyDown);
 		inputEvent.setKeyCode(keycode);
-		this.fire(inputEvent);
+		EventManager.fire(inputEvent);
 		return inputEvent.isHandled(); 
 	}
 
@@ -338,10 +289,10 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	public boolean keyUp(int keycode) { 
 		if (player.isDisposed()) 
 			return false;
-		InputEvent inputEvent = new InputEvent(this, player, null);
+		InputEvent inputEvent = new InputEvent(this, this, player);
 		inputEvent.setType(Type.keyUp);
 		inputEvent.setKeyCode(keycode);
-		this.fire(inputEvent);
+		EventManager.fire(inputEvent);
 		return inputEvent.isHandled(); 
 	}
 
@@ -364,7 +315,8 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 		if (player.isDisposed()) 
 			return false;
 		
-		Entity target = null;
+		/** If no entity is hit, the event will be fired on the world */
+		EventCapable target = this;
 		for (Body body : bodies) {
 			Entity entity = (Entity)body.getUserData();
 			if (entity.hit(worldCoordinates.x, worldCoordinates.y)) {
@@ -373,18 +325,13 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 			}
 		}
 		
-		InputEvent event = new InputEvent(this, player, target);
+		InputEvent event = new InputEvent(target, this, player);
 		event.setType(Type.touchDown);
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
-		
-		if (target != null) {
-			target.fire(event);			
-		} else {
-			this.fire(event);
-		}
+		EventManager.fire(event);
 		
 		return event.isHandled();
 	}
@@ -402,7 +349,8 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 			return false;
 		
 		
-		Entity target = null;
+		/** If no entity is hit, the event will be fired on the world */
+		EventCapable target = this;
 		for (Body body : bodies) {
 			Entity entity = (Entity)body.getUserData();
 			if (entity.hit(tempCoords.x, tempCoords.y)) {
@@ -411,18 +359,13 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 			}
 		}
 
-		InputEvent event = new InputEvent(this, player, target);
+		InputEvent event = new InputEvent(target, this, player);
 		event.setType(Type.touchUp);
 		event.setWorldX(worldCoordinates.x);
 		event.setWorldY(worldCoordinates.y);
 		event.setPointer(pointer);
 		event.setButton(button);
-
-		if (target != null) {
-			target.fire(event);			
-		} else {
-			this.fire(event);
-		}
+		EventManager.fire(event);
 
 		return event.isHandled();
 	}
@@ -478,24 +421,24 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 
 		// Exit overLast.
 		if (overLast != null) {
-			InputEvent event = new InputEvent(this, player, overLast);
+			InputEvent event = new InputEvent(overLast, this, player);
 			event.setType(InputEvent.Type.exit);
 			event.setWorldX(worldX);
 			event.setWorldY(worldY);
 			event.setPointer(pointer);
 			event.setRelatedEntity(over);
-			overLast.fire(event);
+			EventManager.fire(event);
 		}
 
 		// Enter over.
 		if (over != null) {
-			InputEvent event = new InputEvent(this, player, over);
+			InputEvent event = new InputEvent(over, this, player);
 			event.setType(InputEvent.Type.enter);
 			event.setWorldX(worldX);
 			event.setWorldY(worldY);
 			event.setPointer(pointer);
 			event.setRelatedEntity(overLast);
-			over.fire(event);
+			EventManager.fire(event);
 		}
 		return over;
 	}
@@ -503,13 +446,13 @@ public class World implements Disposable, InputProcessor, EventEmitter {
 	private void fireExit (Entity entity, float worldX, float worldY, int pointer) {
 		if (player.isDisposed()) 
 			return;
-		InputEvent event = new InputEvent(this, player, entity);
+		InputEvent event = new InputEvent(entity, this, player);
 		event.setType(InputEvent.Type.exit);
 		event.setWorldX(worldX);
 		event.setWorldY(worldY);
 		event.setPointer(pointer);
 		event.setRelatedEntity(null);
-		entity.fire(event);
+		EventManager.fire(event);
 	}
 	
 	// Classes

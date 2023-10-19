@@ -7,15 +7,18 @@ import com.mygdx.drop.game.Item;
 /**
  * Signals that an slot in an inventory has been freed. If the event is handled the slot is considered to have been filled with an item 
  */
-public class FreeSlotEvent extends Event {
-	public final Inventory inventory;
+public class FreeSlotEvent extends Event<Inventory> {
 	public final int slotIndex;
 	private Reference<Item> freeSlot;
 	
 	public FreeSlotEvent(Inventory inventory, int slotIndex) {
-		this.inventory = inventory;
+		super(inventory);
 		this.slotIndex = slotIndex;
 		this.freeSlot = inventory.getItemReference(slotIndex);
+	}
+	
+	public Inventory getInventory() {
+		return target;
 	}
 	
 	/**

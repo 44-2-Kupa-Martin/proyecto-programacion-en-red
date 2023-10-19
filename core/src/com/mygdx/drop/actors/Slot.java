@@ -13,8 +13,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
-import com.mygdx.drop.etc.events.handlers.EventListener;
-import com.mygdx.drop.etc.events.handlers.PropertyChangeEventHandler;
+import com.mygdx.drop.etc.events.listeners.EventListener;
+import com.mygdx.drop.etc.events.listeners.PropertyChangeEventListener;
 import com.mygdx.drop.game.Item;
 
 /**
@@ -57,7 +57,7 @@ public class Slot<ControlledItemType extends Item> extends Container<Image> {
 		this.itemChanged = false;
 		setBackground(background);
 		
-		itemReference.addListener(new PropertyChangeEventHandler<Item>(Item.class) {
+		itemReference.addListener(new PropertyChangeEventListener<Item>(Item.class) {
 			@Override
 			public boolean onChange(Object target, Item oldValue, Item newValue) {
 				Slot.this.itemChanged = true;

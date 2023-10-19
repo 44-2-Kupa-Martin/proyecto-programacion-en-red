@@ -1,7 +1,7 @@
 package com.mygdx.drop.game;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.mygdx.drop.etc.EventEmitter;
+import com.mygdx.drop.etc.EventCapable;
 import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.game.dynamicentities.Player;
 

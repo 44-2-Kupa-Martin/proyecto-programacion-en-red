@@ -4,7 +4,7 @@ package com.mygdx.drop.actors;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Align;
-import com.mygdx.drop.Assets.SkinId;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.World;
@@ -20,7 +20,7 @@ public class HUD extends Table {
 		
 		assert Drop.game != null : "Inventory created before game instance!";
 		
-		labelHP = new Label("HP:" + player.getStats().getHealth(), Drop.game.assets.get(SkinId.Glassy_glassy));
+		labelHP = new Label("HP:" + player.getStats().getHealth(), Assets.Skins.Glassy_glassy.get());
 		
 		this.player = player;
 		

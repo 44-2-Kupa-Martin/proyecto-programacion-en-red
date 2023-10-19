@@ -4,7 +4,6 @@ import java.util.Iterator;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.mygdx.drop.Assets.TilesetId;
 import com.mygdx.drop.game.World;
 
 @SuppressWarnings("unused")
@@ -72,28 +71,6 @@ public final class Constants {
 			this.value = (short) Math.pow(2, (double) ordinal());
 			assert ordinal() < 16 : "The maximum amount of categories is 16";
 		}
-
-	}
-
-	/**
-	 * Used for creating the layers of the {@link TiledMap} (see {@link World#World()}) Each layer has
-	 * its own tileset. The order of declaration defines the order in which the layers are rendered.
-	 */
-	public static enum LayerId {
-		WORLD("world", TilesetId.World_world);
-
-		public final int value;
-		public final String name;
-		public final TilesetId tileset;
-
-		private LayerId(String name, TilesetId tileset) {
-			this.value = ordinal();
-			this.name = name;
-			this.tileset = tileset;
-		}
-
-		@Override
-		public final String toString() { return name + " layer"; }
 
 	}
 

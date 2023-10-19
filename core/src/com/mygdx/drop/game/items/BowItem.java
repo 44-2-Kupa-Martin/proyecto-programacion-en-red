@@ -5,8 +5,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.TimeUtils;
-import com.mygdx.drop.Assets.TextureId;
 import com.mygdx.drop.etc.events.InputEvent;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.Entity;
@@ -24,7 +24,7 @@ public class BowItem implements Item {
 
 	public BowItem() {	
 		assert Drop.game != null;
-		this.texture = Drop.game.assets.get(TextureId.BowItem_bow);
+		this.texture = Assets.Textures.BowItem_bow.get();
 		this.useTime = 0.5f;
 		this.lastUsedTime = 0;
 	}

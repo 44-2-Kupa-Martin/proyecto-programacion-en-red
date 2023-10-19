@@ -11,8 +11,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.Null;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Assets.SoundId;
-import com.mygdx.drop.Assets.TextureId;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ContactEventFilter;
@@ -20,7 +19,7 @@ import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.SimpleContactEventFilter;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.Event;
-import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
+import com.mygdx.drop.etc.events.listeners.ContactEventListener;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
@@ -57,7 +56,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		this.damage = 15;
 		this.maxHealth = 15;
 		this.health = maxHealth;
-		this.texture = game.assets.get(TextureId.GoofyItem_goofy);
+		this.texture = Assets.Textures.GoofyItem_goofy.get();
 		this.invincibilityTimer = 0.25f;
 	}
 

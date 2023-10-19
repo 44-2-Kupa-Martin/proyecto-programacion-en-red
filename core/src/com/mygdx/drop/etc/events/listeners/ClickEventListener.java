@@ -1,4 +1,4 @@
-package com.mygdx.drop.etc.events.handlers;
+package com.mygdx.drop.etc.events.listeners;
 
 import com.badlogic.gdx.utils.TimeUtils;
 import com.mygdx.drop.etc.events.InputEvent;
@@ -12,7 +12,7 @@ import com.mygdx.drop.game.Entity;
  * other touch downs are ignored.
  * 
  */
-public class ClickEventHandler extends InputEventHandler {
+public class ClickEventListener extends InputEventListener {
 	/**
 	 * Time in seconds {@link #isVisualPressed()} reports true after a press resulting in a click is
 	 * released.
@@ -35,10 +35,10 @@ public class ClickEventHandler extends InputEventHandler {
 	 * 
 	 * @see #ClickEventHandler(int)
 	 */
-	public ClickEventHandler() {}
+	public ClickEventListener() {}
 
 	/** @see #setButton(int) */
-	public ClickEventHandler(int button) { this.button = button; }
+	public ClickEventListener(int button) { this.button = button; }
 
 	public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
 		if (pressed)
@@ -57,7 +57,7 @@ public class ClickEventHandler extends InputEventHandler {
 	public void touchDragged(InputEvent event, float x, float y, int pointer) {
 		if (pointer != pressedPointer || cancelled)
 			return;
-		pressed = isOver(event.getTarget(), x, y);
+		pressed = event.getTarget() instanceof Entity ? isOver((Entity)event.getTarget(), x, y) : true;
 		if (!pressed) {
 			// Once outside the tap square, don't use the tap square anymore.
 			invalidateTapSquare();
@@ -67,7 +67,7 @@ public class ClickEventHandler extends InputEventHandler {
 	public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
 		if (pointer == pressedPointer) {
 			if (!cancelled) {
-				boolean touchUpOver = isOver(event.getTarget(), x, y);
+				boolean touchUpOver = event.getTarget() instanceof Entity ? isOver((Entity)event.getTarget(), x, y) : true;
 				// Ignore touch up if the wrong mouse button.
 				if (touchUpOver && pointer == 0 && this.button != -1 && button != this.button)
 					touchUpOver = false;

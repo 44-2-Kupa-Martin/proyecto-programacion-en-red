@@ -11,11 +11,10 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import com.mygdx.drop.Assets.MusicId;
 import com.mygdx.drop.actors.HUD;
 import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.etc.events.ContactEvent;
-import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
+import com.mygdx.drop.etc.events.listeners.ContactEventListener;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Arrow;
 import com.mygdx.drop.game.dynamicentities.DebugBox;
@@ -52,12 +51,12 @@ public class GameScreen implements Screen {
 //		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
 //		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
 		hudStage.addActor(hud);
-		game.assets.get(MusicId.GameScreen_rain).setLooping(true);
-		game.assets.get(MusicId.GameScreen_rain).setVolume(game.masterVolume);
+		Assets.Music.rain.get().setLooping(true);
+		Assets.Music.rain.get().setVolume(game.masterVolume);
 	}
 
 	@Override
-	public void show() { game.assets.get(MusicId.GameScreen_rain).play(); }
+	public void show() { Assets.Music.rain.get().play(); }
 
 	@Override
 	public void render(float delta) {

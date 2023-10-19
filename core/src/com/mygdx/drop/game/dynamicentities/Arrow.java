@@ -10,14 +10,14 @@ import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Assets.TextureId;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.SimpleContactEventFilter;
 import com.mygdx.drop.etc.events.ContactEvent;
-import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
+import com.mygdx.drop.etc.events.listeners.ContactEventListener;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
@@ -49,7 +49,7 @@ public class Arrow extends BoxEntity implements Drawable {
 			initializeClassListeners(world);
 		}
 		
-		this.texture = game.assets.get(TextureId.Arrow_arrow);
+		this.texture = Assets.Textures.Arrow_arrow.get();
 		self.setTransform(getPosition(), directionVector.angleRad());
 		self.applyLinearImpulse(directionVector.nor().scl(30), self.getWorldCenter(), false);
 		this.damage = 5;

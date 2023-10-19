@@ -2,7 +2,8 @@ package com.mygdx.drop.etc.events;
 
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.utils.Null;
-import com.mygdx.drop.etc.events.handlers.InputEventHandler;
+import com.mygdx.drop.etc.EventCapable;
+import com.mygdx.drop.etc.events.listeners.InputEventListener;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Player;
@@ -12,34 +13,36 @@ import com.mygdx.drop.game.dynamicentities.Player;
  * events. If the event is marked {@link #handle() handled}, the {@link World} will eat the input
  * (see {@link InputMultiplexer})
  * 
- * @see InputEventHandler
+ * @see InputEventListener
  */
-public class InputEvent extends Event {
+public class InputEvent extends Event<EventCapable> {
 	public final World world;
-	/** The player resposable for the InputEvent */
+	/** The player responsable for the InputEvent */
 	public final Player player;
-	/** The target of the event, if null no entity was hit */
-	public final @Null Entity target;
 	private Type type;
 	private float worldX_mt, worldY_mt, scrollAmountX, scrollAmountY;
 	private int pointer, button, keyCode;
 	private @Null Entity relatedEntity; // If an enter/exit event, this field contains the entity being exited/entered
 	private char character;
 	
-	public InputEvent(World world, Player player, Entity target) {
+	/**
+	 * 
+	 * @param target Either an Entity or the World itself. Sadly their only common interface is EventCapable
+	 * @param world
+	 * @param player
+	 */
+	public InputEvent(EventCapable target, World world, Player player) {
+		super(target);
 		assert world != null;
 		this.world = world;
 		assert player != null;
 		this.player = player;
-		this.target = target;
 	}
 	
 	/**
 	 * The world where the InputEvent occurred
 	 */
 	public World getWorld() { return world; }
-	
-	public Entity getTarget() { return target; }
 	
 	/**
 	 * The world x coordinate (in meters) where the event occurred. Valid for: touchDown, touchDragged,

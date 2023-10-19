@@ -15,8 +15,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
-import com.mygdx.drop.Assets.AnimationId;
-import com.mygdx.drop.Assets.SkinId;
 
 public class MainMenuScreen implements Screen {
 	private final Drop game;
@@ -46,7 +44,7 @@ public class MainMenuScreen implements Screen {
 		
 		game.batch.begin();
 		
-		skin = game.assets.get(SkinId.Glassy_glassy);
+		skin = Assets.Skins.Glassy_glassy.get();
 		
 		Label titleLabel = new Label("Placeholder", skin);
 		
@@ -126,7 +124,7 @@ public class MainMenuScreen implements Screen {
         //Background Image
         
         Animation<TextureRegion> mainMenuAnimation = new Animation<>(0.1f, 
-        		game.assets.get(AnimationId.Background_frame), PlayMode.LOOP);
+        		Assets.Animations.menuBackground.get(), PlayMode.LOOP);
         TextureRegion currentFrame = mainMenuAnimation.getKeyFrame(stateTime);
         
         game.batch.begin();

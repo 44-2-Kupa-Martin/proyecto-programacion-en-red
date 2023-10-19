@@ -21,7 +21,6 @@ public class Drop extends Game {
 	public static @Null World world;
 	private static boolean constructed = false;
 
-	public Assets assets;
 	public SpriteBatch batch;
 	public float masterVolume;
 	public float zoom = 1.0f;
@@ -52,16 +51,15 @@ public class Drop extends Game {
 	@Override
 	public void create() {
 		Box2D.init();
-
+		Assets.load();
+		Assets.finishLoading();
+		
 		Gdx.app.setLogLevel(Constants.LOG_LEVEL);
-		this.assets = Assets.load();
-		assets.finishLoading();
 
 		this.batch = new SpriteBatch();
 		this.masterVolume = 1.0f;
 		this.zoom = 1.0f;
 		this.setScreen(new MainMenuScreen(this));
-		
 	}
 
 	@Override
@@ -70,10 +68,7 @@ public class Drop extends Game {
 	@Override
 	public void dispose() {
 		super.screen.dispose();
-		assets.dispose();
+		Assets.dispose();
 		batch.dispose();
 	}
-	
-	
-	
 }

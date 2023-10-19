@@ -3,170 +3,150 @@ package com.mygdx.drop;
 import java.util.EnumMap;
 
 import com.badlogic.gdx.assets.AssetDescriptor;
+import com.badlogic.gdx.assets.AssetLoaderParameters;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.assets.loaders.BitmapFontLoader.BitmapFontParameter;
+import com.badlogic.gdx.assets.loaders.MusicLoader.MusicParameter;
+import com.badlogic.gdx.assets.loaders.SkinLoader.SkinParameter;
+import com.badlogic.gdx.assets.loaders.SoundLoader.SoundParameter;
+import com.badlogic.gdx.assets.loaders.TextureAtlasLoader.TextureAtlasParameter;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 
 /**
  * Manages the loading of assets
  */
-public class Assets implements Disposable {
-	private final String ATLAS = "game.atlas";
+public abstract class Assets {
+	private static final String ATLAS = "game.atlas";
 	/** TODO look into {@link AssetDescriptor} */
-	private final AssetManager manager = new AssetManager();
-
-	// These maps are for assets which are not managed by the AssetManager TODO refactor these into the enums
-	private EnumMap<FontId, BitmapFont> fonts = new EnumMap<>(FontId.class);
-	private EnumMap<SoundId, com.badlogic.gdx.audio.Sound> sounds;
-	private EnumMap<MusicId, com.badlogic.gdx.audio.Music> music;
-	private EnumMap<SkinId, com.badlogic.gdx.scenes.scene2d.ui.Skin> skins;
-	// The texture and animations are managed by a TextureAtlas
-	private EnumMap<TextureId, AtlasRegion> textures = new EnumMap<>(TextureId.class);
-	private EnumMap<AnimationId, Array<AtlasRegion>> animations = new EnumMap<>(AnimationId.class);
-	private EnumMap<TilesetId, Array<AtlasRegion>> tilesets = new EnumMap<>(TilesetId.class);
+	private static final AssetManager manager = new AssetManager();
+	private static final Array<Disposable> manuallyDisposed = new Array<>();
 
 	private static boolean loaded = false;
 
-	private Assets() {
-		// Put the assets into the load queue. Null paths indicate that the asset is generated
-		// programmatically and must be mapped in the corresponding EnumMap and be disposed manually.
-		for (FontId font : FontId.values()) {
-			if (font.path == null)
-				continue;
-		}
-		fonts.put(FontId.MainMenuScreen_arial, new BitmapFont());
-
-		for (SoundId sound : SoundId.values()) {
-			if (sound.path == null)
-				continue;
-			manager.load(sound.path, com.badlogic.gdx.audio.Sound.class);
-		}
-
-		for (MusicId music : MusicId.values()) {
-			if (music.path == null)
-				continue;
-
-			manager.load(music.path, com.badlogic.gdx.audio.Music.class);
-		}
-
-		for (SkinId skin : SkinId.values()) {
-			if (skin.path == null) 
-				continue;
-			
-			manager.load(skin.path, com.badlogic.gdx.scenes.scene2d.ui.Skin.class);
-		}
-		manager.load(ATLAS, TextureAtlas.class);
-		// Start loading
-		manager.update();
-	}
-
-	public static final Assets load() {
+	public static final void load() {
 		if (Constants.DEBUG) {
 			assert !loaded : "Already loaded the assets";
 			loaded = true;
 		}
-		return new Assets();
+		
+		// Unmanaged assets
+		Fonts.arial.font = new BitmapFont();
+		manuallyDisposed.add(Fonts.arial.font);
+		
+		// Managed assets
+		for (Fonts font : Fonts.values()) {
+			// Null descriptors indicate that the asset is generated programmatically (i.e is unmanaged) and must be disposed manually.
+			if (font.descriptor == null)
+				continue;
+			manager.load(font.descriptor);
+		}
+
+		for (Sounds sound : Sounds.values()) {
+			if (sound.descriptor == null)
+				continue;
+			manager.load(sound.descriptor);
+		}
+
+		for (Music music : Music.values()) {
+			if (music.descriptor == null)
+				continue;
+			manager.load(music.descriptor);
+		}
+
+		for (Skins skin : Skins.values()) {
+			if (skin.descriptor == null) 
+				continue;
+			manager.load(skin.descriptor);
+		}
+		
+		TextureAtlasParameter params = new TextureAtlasParameter();
+		params.loadedCallback = (manager, fileName, type) -> {
+			TextureAtlas atlas = manager.get(fileName);
+			for (Textures texture : Textures.values()) 
+				texture.texture = atlas.findRegion(texture.descriptor.fileName);
+			
+			for (Animations animation : Animations.values()) 
+				animation.animation = atlas.findRegions(animation.descriptor.fileName);			
+		};
+		manager.load(ATLAS, TextureAtlas.class, params);
+		
+		// Start loading
+		manager.update();
 	}
+	
+	public static final boolean update() { return manager.update(); }
 
-	public final boolean update() { return manager.update(); }
-
-	public final void finishLoading() {
+	public static final void finishLoading() {
 		manager.finishLoading();
-
-		for (TextureId texture : TextureId.values()) {
-			if (texture.path == null)
-				continue;
-			AtlasRegion asset = manager.get(ATLAS, TextureAtlas.class).findRegion(texture.path);
-			assert asset != null : "Failed to load texture!";
-			textures.put(texture, asset);
-		}
-
-		for (AnimationId animation : AnimationId.values()) {
-			if (animation.path == null)
-				continue;
-			Array<AtlasRegion> asset = manager.get(ATLAS, TextureAtlas.class).findRegions(animation.path);
-			assert asset.size != 0 : "Failed to load animation!";
-			animations.put(animation, asset);
-		}
-
-		for (TilesetId tileset : TilesetId.values()) {
-			if (tileset.path == null)
-				continue;
-			Array<AtlasRegion> asset = manager.get(ATLAS, TextureAtlas.class).findRegions(tileset.path);
-			assert asset.size != 0 : "Failed to load tileset!";
-			tilesets.put(tileset, asset);
-		}
 	}
 
-	public final BitmapFont get(FontId identifier) {
-		if (identifier.path == null)
-			return fonts.get(identifier);
-		return manager.get(identifier.path);
-	}
-
-	public final com.badlogic.gdx.audio.Sound get(SoundId identifier) {
-		if (identifier.path == null)
-			return sounds.get(identifier);
-		return manager.get(identifier.path);
-	}
-
-	public final com.badlogic.gdx.audio.Music get(MusicId identifier) {
-		if (identifier.path == null)
-			return music.get(identifier);
-		return manager.get(identifier.path);
-	}
-	public final com.badlogic.gdx.scenes.scene2d.ui.Skin get(SkinId identifier) {
-		if (identifier.path == null)
-			return skins.get(identifier);
-		return manager.get(identifier.path);
-	}
-
-	public final AtlasRegion get(TextureId identifier) { return textures.get(identifier); }
-
-	public final Array<AtlasRegion> get(AnimationId identifier) { return animations.get(identifier); }
-
-	public final Array<AtlasRegion> get(TilesetId identifier) { return tilesets.get(identifier); }
-
-	@Override
-	public void dispose() {
+	public static final void dispose() {
 		manager.dispose();
-		fonts.get(FontId.MainMenuScreen_arial).dispose();
+		for (Disposable disposable : manuallyDisposed) {
+			disposable.dispose();
+		}
 	}
 
 	// Assets' names are prefixed with the name of the class that they belong. An empty string in the
 	// path indicates that the asset is generated programmatically and must me mapped manually
-	public enum FontId {
-		MainMenuScreen_arial("");
+	public static enum Fonts {
+		arial(null);
 
-		public final String path;
+		public final AssetDescriptor<BitmapFont> descriptor;
+		private BitmapFont font;
 
-		private FontId(String path) { this.path = path == "" ? null : "fonts/" + path; }
-
+		private Fonts(String path) {
+			BitmapFontParameter params = new BitmapFontParameter();
+			params.loadedCallback = (manager, fileName, type) -> {
+				this.font = manager.get(fileName);
+			};
+			this.descriptor = path != null ? new AssetDescriptor<>("fonts/" + path, BitmapFont.class, params) : null;
+		}
+		
+		public BitmapFont get() { return font; }
 	}
 
-	public enum SoundId {
-		GameScreen_drop("GameScreen/drop.wav"),
-		Player_hurt("Player/hurt.mp3");
+	public enum Sounds {
+		waterDrop("GameScreen/drop.wav"),
+		playerHurt("Player/hurt.mp3");
 
-		public final String path;
+		public final AssetDescriptor<Sound> descriptor;
+		private Sound sound;
 
-		private SoundId(String path) { this.path = path == "" ? null : "sounds/" + path; }
-
+		private Sounds(String path) {
+			SoundParameter params = new SoundParameter();
+			params.loadedCallback = (manager, fileName, type) -> {
+				this.sound = manager.get(fileName);
+			};
+			this.descriptor = path != null ? new AssetDescriptor<>("sounds/" + path, Sound.class, params) : null; 
+		}
+		
+		public Sound get() { return sound; }
 	}
 
-	public enum MusicId {
-		GameScreen_rain("GameScreen/rain.mp3");
+	public enum Music {
+		rain("GameScreen/rain.mp3");
 
-		public final String path;
+		public final AssetDescriptor<com.badlogic.gdx.audio.Music> descriptor;
+		private com.badlogic.gdx.audio.Music music;
 
-		private MusicId(String path) { this.path = path == "" ? null : "music/" + path; }
-
+		private Music(String path) { 
+			MusicParameter params = new MusicParameter();
+			params.loadedCallback = (manager, fileName, type) -> {
+				this.music = manager.get(fileName);
+			};
+			this.descriptor = path != null ? new AssetDescriptor<>("music/" + path, com.badlogic.gdx.audio.Music.class, params) : null; 
+		}
+		public com.badlogic.gdx.audio.Music get() { return music; }
 	}
 
-	public enum TextureId {
+	public enum Textures {
 		DebugBox_bucket("DebugBox/bucket"),
 		GoofyItem_goofy("GoofyItem/goofy"),
 		BowItem_bow("BowItem/bow"),
@@ -175,40 +155,48 @@ public class Assets implements Disposable {
 		DiamondSet_helmet("DiamondSet/helmet"),
 		DiamondSet_chestplate("DiamondSet/chestplate"),
 		DiamondSet_leggings("DiamondSet/leggins"),
-		DiamondSet_boots("DiamondSet/boots");
+		DiamondSet_boots("DiamondSet/boots"),
+		rainbowTile("tiles/rainbowTile");
 
 		
-		public final String path;
+		public final AssetDescriptor<AtlasRegion> descriptor;
+		private AtlasRegion texture;
 
-		private TextureId(String path) { this.path = path == "" ? null : "textures/" + path; }
+		private Textures(String path) { 
+			this.descriptor = path != null ? new AssetDescriptor<>("textures/" + path, AtlasRegion.class) : null; 
+		}
 
+		public AtlasRegion get() { return texture; }
 	}
 
-	public enum AnimationId {
-		Player_walk("Player/walk"),
-		Player_idle("Player/idle"),
-		Background_frame("Background/frame");
+	public enum Animations {
+		playerWalking("Player/walk"),
+		playerIdle("Player/idle"),
+		menuBackground("Background/frame");
 
-		public final String path;
+		public final AssetDescriptor<Array<AtlasRegion>> descriptor;
+		private Array<AtlasRegion> animation;
 
-		private AnimationId(String path) { this.path = path == "" ? null : "animations/" + path; }
+		private Animations(String path) { 
+			this.descriptor = path != null ? (AssetDescriptor<Array<AtlasRegion>>)((AssetDescriptor<?>)new AssetDescriptor<Array>("animations/" + path, Array.class)) : null;
+		}
 
+		public Array<AtlasRegion> get() { return animation; }
 	}
 
-	public enum TilesetId {
-		World_world("World/world");
-
-		public final String path;
-
-		private TilesetId(String path) { this.path = path == "" ? null : "tilesets/" + path; }
-
-	}
-
-	public enum SkinId {
+	public enum Skins {
 		Global_default("Default/uiskin.json"),
 		Glassy_glassy("Glassy/skin/glassy-ui.json");
 		
-		public final String path;
-		private SkinId(String path) { this.path = "skins/" + path; }
+		public final AssetDescriptor<Skin> descriptor;
+		private Skin skin;
+		private Skins(String path) { 
+			SkinParameter params = new SkinParameter();
+			params.loadedCallback = (manager, fileName, type) -> {
+				this.skin = manager.get(fileName);
+			};
+			this.descriptor = path != null ? new AssetDescriptor<>("skins/" + path, Skin.class, params) : null; 
+		}
+		public Skin get() { return skin; }
 	}
 }

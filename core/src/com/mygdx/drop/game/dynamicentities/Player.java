@@ -24,9 +24,10 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Assets.SoundId;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.EventManager;
 import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.ObservableReference;
@@ -35,13 +36,13 @@ import com.mygdx.drop.etc.events.CanPickupEvent;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.FreeSlotEvent;
 import com.mygdx.drop.etc.events.InputEvent;
-import com.mygdx.drop.etc.events.handlers.CanPickupEventHandler;
-import com.mygdx.drop.etc.events.handlers.ClickEventHandler;
-import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
-import com.mygdx.drop.etc.events.handlers.EventListener;
-import com.mygdx.drop.etc.events.handlers.FreeSlotEventHandler;
-import com.mygdx.drop.etc.events.handlers.InputEventHandler;
-import com.mygdx.drop.etc.events.handlers.PropertyChangeEventHandler;
+import com.mygdx.drop.etc.events.listeners.CanPickupEventListener;
+import com.mygdx.drop.etc.events.listeners.ClickEventListener;
+import com.mygdx.drop.etc.events.listeners.ContactEventListener;
+import com.mygdx.drop.etc.events.listeners.EventListener;
+import com.mygdx.drop.etc.events.listeners.FreeSlotEventListener;
+import com.mygdx.drop.etc.events.listeners.InputEventListener;
+import com.mygdx.drop.etc.events.listeners.PropertyChangeEventListener;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.EquippableItem;
@@ -132,7 +133,7 @@ public class Player extends BoxEntity implements Drawable {
 			itemReference.set(new ArrowItem());
 		}
 		
-		this.addListener(new ContactEventHandler() {
+		this.addListener(new ContactEventListener() {
 			@Override
 			public boolean beginContact(ContactEvent event) {
 				boolean groundFixtureIsParticipant = event.getContact().getFixtureA().equals(groundSensor) || event.getContact().getFixtureB().equals(groundSensor);
@@ -169,7 +170,7 @@ public class Player extends BoxEntity implements Drawable {
 		if (invincibilityTimer > 0)
 			return;
 		invincibilityTimer = 1;
-		game.assets.get(SoundId.Player_hurt).play(game.masterVolume);
+		Assets.Sounds.playerHurt.get().play(game.masterVolume);
 		stats.setHealth(stats.getHealth() - (lostHp - stats.getDefense()));
 	}
 
@@ -232,11 +233,11 @@ public class Player extends BoxEntity implements Drawable {
 	private final EnumMap<State, Animation<TextureRegion>> initAnimationsMap() {
 		EnumMap<State, Animation<TextureRegion>> animations = new EnumMap<>(State.class);
 		animations.put(State.IDLE,
-				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_idle), PlayMode.LOOP));
+				new Animation<TextureRegion>(0.05f, Assets.Animations.playerIdle.get(), PlayMode.LOOP));
 		animations.put(State.WALKING,
-				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_idle), PlayMode.LOOP));
+				new Animation<TextureRegion>(0.05f, Assets.Animations.playerIdle.get(), PlayMode.LOOP));
 		animations.put(State.AIRBORNE,
-				new Animation<TextureRegion>(0.05f, game.assets.get(com.mygdx.drop.Assets.AnimationId.Player_walk), PlayMode.LOOP));
+				new Animation<TextureRegion>(0.05f, Assets.Animations.playerWalking.get(), PlayMode.LOOP));
 		return animations;
 	}
 
@@ -270,17 +271,15 @@ public class Player extends BoxEntity implements Drawable {
 		assert !instantiated : "Player.initializeClassListeners called after first instantiation";
 		Player.instantiated = true;
 		
-		world.addListener(new ClickEventHandler(Input.Buttons.RIGHT) {
+		world.addListener(new ClickEventListener(Input.Buttons.RIGHT) {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				if (event.getTarget() != null)
-					return;
 				if (event.player.items.getCursorItem() != null)
 					event.player.dropItem();
 			}
 		});
 
-		world.addListener(new InputEventHandler() {
+		world.addListener(new InputEventListener() {
 			@Override
 			public boolean keyDown(InputEvent event, int keycode) {
 				Runnable task = event.player.keybinds.get(keycode);
@@ -320,8 +319,8 @@ public class Player extends BoxEntity implements Drawable {
 		 */
 		world.addListener(new ContactEventFilter<Player, DroppedItem>(Player.class, DroppedItem.class) {
 			class State {
-				CanPickupEventHandler onPickupDelayEnd;
-				FreeSlotEventHandler onFreePlayerSlot;
+				CanPickupEventListener onPickupDelayEnd;
+				FreeSlotEventListener onFreePlayerSlot;
 			}
 
 			HashMap<Integer, State> collisionState = new HashMap<>();
@@ -336,7 +335,7 @@ public class Player extends BoxEntity implements Drawable {
 				 * is registered first when the free slot event ends the change event continues and the slots hear
 				 * the first change event last. In order to fix this, a flag was added to all fire implementations
 				 */
-				state.onFreePlayerSlot = new FreeSlotEventHandler() {
+				state.onFreePlayerSlot = new FreeSlotEventListener() {
 					public boolean onFreeSlot(FreeSlotEvent event) {
 						event.putItemIntoSlot(droppedItem.item);
 						droppedItem.dispose();
@@ -346,16 +345,16 @@ public class Player extends BoxEntity implements Drawable {
 
 				};
 
-				state.onPickupDelayEnd = new CanPickupEventHandler() {
+				state.onPickupDelayEnd = new CanPickupEventListener() {
 					@Override
 					public boolean onCanPickup(CanPickupEvent event) {
-						boolean pickedUp = player.items.pickupItem(event.droppedItem.item);
+						boolean pickedUp = player.items.pickupItem(event.target.item);
 						if (pickedUp) {
 							event.handle();
 						} else {
 							player.addListener(state.onFreePlayerSlot);
 						}
-						event.droppedItem.removeListener(this);
+						event.target.removeListener(this);
 						return event.isHandled();
 					}
 
@@ -367,7 +366,7 @@ public class Player extends BoxEntity implements Drawable {
 					if (pickedUp) {
 						droppedItem.dispose();
 					} else {
-						player.addListener(state.onFreePlayerSlot);
+						player.items.addListener(state.onFreePlayerSlot);
 					}
 					return event.isHandled();
 				}
@@ -380,7 +379,7 @@ public class Player extends BoxEntity implements Drawable {
 				Player player = participants.objectA;
 				DroppedItem droppedItem = participants.objectB;
 				State state = collisionState.get(droppedItem.hashCode());
-				player.removeListener(state.onFreePlayerSlot);
+				player.items.removeListener(state.onFreePlayerSlot);
 				droppedItem.removeListener(state.onPickupDelayEnd);
 				// TODO find an actual key
 				collisionState.remove(droppedItem.hashCode());
@@ -466,7 +465,7 @@ public class Player extends BoxEntity implements Drawable {
 			this.accessory = (List<ObservableReference<EquippableItem>>)(List<?>)Arrays.asList(items).subList(ACCESSORY_START, ACCESSORY_END);
 			this.itemOnHand = hotbar.get(0);
 			this.selectedSlot = 0;
-			this.equippableListener = new PropertyChangeEventHandler<Item>(Item.class) {
+			this.equippableListener = new PropertyChangeEventListener<Item>(Item.class) {
 				@Override
 				public boolean onChange(Object target, Item oldValue, Item newValue) {
 					if (oldValue instanceof EquippableItem && oldValue != null) 
@@ -480,12 +479,12 @@ public class Player extends BoxEntity implements Drawable {
 			for (int i = 0; i < inventory.size(); i++) {
 				final int finalI = i;
 				ObservableReference<Item> itemReference = inventory.get(i);
-				itemReference.addListener(new PropertyChangeEventHandler<Item>(Item.class) {
+				itemReference.addListener(new PropertyChangeEventListener<Item>(Item.class) {
 					@Override
 					public boolean onChange(Object target, Item oldValue, Item newValue) {
 						if (newValue == null) {
-							FreeSlotEvent event = new FreeSlotEvent(Player.this.items, finalI);
-							Player.this.fire(event);
+							FreeSlotEvent event = new FreeSlotEvent(PlayerInventory.this, finalI);
+							EventManager.fire(event);
 							return event.isHandled();
 						}
 						return false;

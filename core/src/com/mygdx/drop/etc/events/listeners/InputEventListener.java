@@ -1,4 +1,4 @@
-package com.mygdx.drop.etc.events.handlers;
+package com.mygdx.drop.etc.events.listeners;
 
 import com.badlogic.gdx.math.Vector2;
 import com.mygdx.drop.etc.events.Event;
@@ -8,7 +8,7 @@ import com.mygdx.drop.game.Entity;
 /**
  * Unpacks and handles {@link InputEvent}s
  */
-public class InputEventHandler implements EventListener {
+public class InputEventListener implements EventListener {
 	static private final Vector2 tmpCoords = new Vector2();
 
 	/**
@@ -32,8 +32,8 @@ public class InputEventHandler implements EventListener {
 				return keyTyped(inputEvent, inputEvent.getCharacter());
 		}
 		
-		if (inputEvent.getTarget() != null) {
-			tmpCoords.set(inputEvent.getTarget().getRelativeCoordinates(tmpCoords.set(inputEvent.getWorldX(), inputEvent.getWorldY())));			
+		if (inputEvent.getTarget() instanceof Entity) {
+			tmpCoords.set(((Entity)inputEvent.getTarget()).getRelativeCoordinates(tmpCoords.set(inputEvent.getWorldX(), inputEvent.getWorldY())));			
 		} else {
 			tmpCoords.set(inputEvent.getWorldX(), inputEvent.getWorldY());
 		}

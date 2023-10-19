@@ -1,4 +1,4 @@
-package com.mygdx.drop.etc.events.handlers;
+package com.mygdx.drop.etc.events.listeners;
 
 import com.mygdx.drop.etc.events.Event;
 //TODO rename all event handlers to listeners

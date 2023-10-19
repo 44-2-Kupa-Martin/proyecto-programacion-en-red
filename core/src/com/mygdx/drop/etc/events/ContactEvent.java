@@ -11,8 +11,7 @@ import com.mygdx.drop.game.World;
 /**
  * Event for handling collisions between fixtures. The event is {@link #handle() handled} if any listener considers their operations successful and wishes to mark the event as such, note it is not required to
  */
-public class ContactEvent extends Event {
-	public final World world;
+public class ContactEvent extends Event<World> {
 	public final Type eventType;
 	public final Contact contact;
 	public final @Null Manifold manifold;
@@ -31,8 +30,7 @@ public class ContactEvent extends Event {
 	}
 	
 	public ContactEvent(World world, Contact contact, Type eventType, Manifold manifold, ContactImpulse contactImpulse) {
-		assert world != null;
-		this.world = world;
+		super(world);
 		assert eventType != null;
 		this.eventType = eventType;
 		assert contact != null;
@@ -41,7 +39,7 @@ public class ContactEvent extends Event {
 		this.contactImpulse = contactImpulse;
 	}
 	
-	public World getWorld() { return world; }
+	public World getWorld() { return target; }
 	public Contact getContact() { return contact; }
 	public Manifold getManifold() { return manifold; }
 	public ContactImpulse getContactImpulse() { return contactImpulse; }

@@ -1,4 +1,4 @@
-package com.mygdx.drop.etc.events.handlers;
+package com.mygdx.drop.etc.events.listeners;
 
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.ContactImpulse;
@@ -10,7 +10,7 @@ import com.mygdx.drop.game.World;
 /**
  * Unpacks {@link ContactEvent}s
  */
-public class ContactEventHandler implements EventListener {
+public class ContactEventListener implements EventListener {
 
 	@Override
 	public boolean handle(Event event) {

@@ -1,12 +1,12 @@
-package com.mygdx.drop.etc.events.handlers;
+package com.mygdx.drop.etc.events.listeners;
 
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
 
-public class PropertyChangeEventHandler<PropertyType> implements EventListener {
+public class PropertyChangeEventListener<PropertyType> implements EventListener {
 	private final Class<PropertyType> propertyType;
 	
-	public PropertyChangeEventHandler(Class<PropertyType> propertyType) {
+	public PropertyChangeEventListener(Class<PropertyType> propertyType) {
 		this.propertyType = propertyType;
 	}
 	

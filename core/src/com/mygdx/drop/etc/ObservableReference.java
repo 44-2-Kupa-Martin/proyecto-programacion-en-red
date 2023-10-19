@@ -2,19 +2,18 @@ package com.mygdx.drop.etc;
 
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Queue;
+import com.mygdx.drop.EventManager;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
-import com.mygdx.drop.etc.events.handlers.EventListener;
+import com.mygdx.drop.etc.events.listeners.EventListener;
 /**
  * Holds a reference to an object and notifies its listeners when it changes.
  *
  * @param <T> The type of the object.
  * @see Reference
  */
-public class ObservableReference<T> extends Reference<T> implements EventEmitter {
-	private Array<EventListener> handlers = new Array<>();
-	private Queue<Event> eventQueue = new Queue<>();
-	private boolean firing = false;
+public class ObservableReference<T> extends Reference<T> implements EventCapable {
+	private Array<EventListener> listeners = new Array<>();
 	public ObservableReference(T object) { super(object); }
 
 	@Override
@@ -24,31 +23,15 @@ public class ObservableReference<T> extends Reference<T> implements EventEmitter
 		T oldValue = get();
 		super.set(object);
 		PropertyChangeEvent<T> changeEvent = new PropertyChangeEvent<T>(this, oldValue, get());
-		fire(changeEvent);
+		EventManager.fire(changeEvent);
 	}
 
 	@Override
-	public void addListener(EventListener handler) { handlers.add(handler); }
+	public void addListener(EventListener listener) { listeners.add(listener); }
 
 	@Override
-	public boolean removeListener(EventListener handler) { return handlers.removeValue(handler, false); }
+	public boolean removeListener(EventListener listener) { return listeners.removeValue(listener, false); }
 
 	@Override
-	public void fire(Event event) {
-		eventQueue.addLast(event);
-		if (firing) 
-			return;
-		
-		firing = true;
-		while (eventQueue.size != 0) {			
-			Event queuedEvent = eventQueue.removeFirst();
-			for (int i = 0; i < handlers.size; i++) {
-				EventListener eventHandler = handlers.get(i);
-				eventHandler.handle(queuedEvent);
-				if (queuedEvent.isStopped()) 
-					break;
-			}
-		}
-		firing = false;
-	}
+	public Array<EventListener> getListeners() { return listeners; }
 }

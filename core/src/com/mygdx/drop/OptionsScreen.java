@@ -19,7 +19,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.mygdx.drop.Assets.SkinId;
 
 public class OptionsScreen implements Screen {
 	private final Drop game;
@@ -41,7 +40,7 @@ public class OptionsScreen implements Screen {
 		this.stage = new Stage(viewport);
 		camera.setToOrtho(false, 800, 480);
 
-		skin = game.assets.get(SkinId.Glassy_glassy);
+		skin = Assets.Skins.Glassy_glassy.get();
 		volumeSlider = new Slider(0.0f, 1.0f, 0.01f, false, skin); // Adjust min, max, and step size
 		volumeSlider.setValue(game.masterVolume); // Set the initial volume level
 		volumeLabel = new Label("Volume: " + (int)(game.masterVolume * 100) + "%", skin);

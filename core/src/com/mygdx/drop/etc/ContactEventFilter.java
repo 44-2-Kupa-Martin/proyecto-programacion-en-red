@@ -7,7 +7,7 @@ import com.badlogic.gdx.physics.box2d.Manifold;
 import com.badlogic.gdx.utils.Null;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.Event;
-import com.mygdx.drop.etc.events.handlers.ContactEventHandler;
+import com.mygdx.drop.etc.events.listeners.ContactEventListener;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Player;
 
@@ -18,7 +18,7 @@ import com.mygdx.drop.game.dynamicentities.Player;
  * @param <TypeObjectA> The type for which the collision handling functions will be called
  * @param <TypeObjectB> The type for which the collision handling functions will be called
  */
-public class ContactEventFilter<TypeObjectA, TypeObjectB> extends ContactEventHandler {
+public class ContactEventFilter<TypeObjectA, TypeObjectB> extends ContactEventListener {
 	private final Class<TypeObjectA> typeA;
 	private final @Null Class<TypeObjectB> typeB;
 	private Participants contactParticipants;

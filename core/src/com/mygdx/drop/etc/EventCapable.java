@@ -1,12 +1,14 @@
 package com.mygdx.drop.etc;
 
+import com.badlogic.gdx.utils.Array;
+import com.mygdx.drop.EventManager;
 import com.mygdx.drop.etc.events.Event;
-import com.mygdx.drop.etc.events.handlers.EventListener;
+import com.mygdx.drop.etc.events.listeners.EventListener;
 
 /**
  * An object capable of listening for {@link Event}s
  */
-public interface EventEmitter {
+public interface EventCapable {
 	/**
 	 * Sets up an {@link EventListener} to be called when an {@link Event} is {@link #fire(Event) fired}
 	 * 
@@ -21,13 +23,10 @@ public interface EventEmitter {
 	 * @return {@code true} if the listener was found and removed, {@code false} otherwise
 	 */
 	public boolean removeListener(EventListener listener); // TODO all implementations of this method are O(n), optimize to O(1)
-
+	
 	/**
-	 * Fires an event on the current object. NOTE: event handlers may call this very method to chain
-	 * events, implementors must take care to process events in chronological order
-	 * 
-	 * @param event The event to be handled
+	 * Only meant to be called by {@link EventManager}
+	 * @return the listeners to be called
 	 */
-	public void fire(Event event);
-
+	public Array<EventListener> getListeners();
 }
