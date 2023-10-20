@@ -94,13 +94,13 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		world.addListener(new SimpleContactEventFilter<TestEnemy>(TestEnemy.class) {
 			@Override
 			public boolean beginContact(ContactEvent event, Participants participants) {
-				participants.objectA.fire(event);
+				//TODO change all this participants.objectA.fire(event);
 				return event.isHandled();
 			}
 
 			@Override
 			public boolean endContact(ContactEvent event, Participants participants) {
-				participants.objectA.fire(event);
+				//TODO change all this participants.objectA.fire(event);
 				return event.isHandled();
 			}
 

@@ -35,12 +35,6 @@ public class MainMenuScreen implements Screen {
 		
 		Gdx.input.setInputProcessor(stage);
 		
-		//Create Table
-		Table mainTable = new Table();
-		//Set table to fill stage
-		mainTable.setFillParent(true);
-		//Set alignment of contents in the table
-		mainTable.center();
 		
 		game.batch.begin();
 		
@@ -48,11 +42,13 @@ public class MainMenuScreen implements Screen {
 		
 		Label titleLabel = new Label("Placeholder", skin);
 		
-		TextButton playButton = new TextButton("Play",skin);
+		TextButton singleplayerButton = new TextButton("Singleplayer",skin);
+		TextButton multiplayerButton = new TextButton("Multiplayer",skin);
 		TextButton optionsButton = new TextButton("Options",skin);
 		TextButton exitButton = new TextButton("Exit",skin);
 		
-		playButton.setTransform(true);
+		singleplayerButton.setTransform(true);
+		multiplayerButton.setTransform(true);
 		optionsButton.setTransform(true);
 		exitButton.setTransform(true);
 		
@@ -60,8 +56,8 @@ public class MainMenuScreen implements Screen {
 		
 		titleLabel.setFontScale(2.0f * Gdx.graphics.getWidth() / 800f);
 		
-		//Add a click listener to Play button
-		playButton.addListener(new ClickListener(){
+		//Add a click listener to singleplayerButton
+		singleplayerButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
             	
@@ -69,13 +65,24 @@ public class MainMenuScreen implements Screen {
             }
         });
 		
-		//Add a click listener to Options button
+		//Add a click listener to multiplayerButton
+		multiplayerButton.addListener(new ClickListener(){
+	        @Override
+		    public void clicked(InputEvent event, float x, float y) {
+		        
+	        	game.setScreen(new MultiplayerScreen(game));
+	        	dispose();
+	        }
+		});
+		
+		//Add a click listener to optionsButton
 		
 		optionsButton.addListener(new ClickListener() {
 	        @Override
 	        public void clicked(InputEvent event, float x, float y) {
-	        	Gdx.app.log("click", "entre a opciones");
+	        	
 	        	game.setScreen(new OptionsScreen(game));
+	        	dispose();
 	        }
 		});
 		
@@ -88,26 +95,39 @@ public class MainMenuScreen implements Screen {
 		});
 		
 		
-		//Set size to buttons
+		//TODO Change the resize of buttons so it fits in all window sizes
 		
-		 float buttonWidth = Gdx.graphics.getWidth() * 0.1f;
-		 float buttonHeight = buttonWidth * 0.25f;
+		 //float buttonWidth = Gdx.graphics.getWidth() * 0.1f;
+		 //float buttonHeight = buttonWidth * 0.25f;
+		
+		//Create Table titleTablr
+		Table titleTable = new Table();
+				
+		titleTable.setFillParent(true);
+		titleTable.right().top();
+		
+		//Add label to table
 		 
-//		 playButton.setSize(buttonWidth, buttonHeight);
-//		 optionsButton.setSize(buttonWidth, buttonHeight);
-//		 exitButton.setSize(buttonWidth, buttonHeight);
+		titleTable.add(titleLabel).padTop(30).padRight(60).center().row();
+		titleTable.row().padTop(200);
 		
-		//Add buttons and lable to table
-		 
-		mainTable.add(titleLabel).padTop(50).colspan(3).center().row();
-		mainTable.row().padTop(200);
 		
-		mainTable.add(playButton).padBottom(20);
-		mainTable.add(optionsButton).padBottom(20);
-		mainTable.add(exitButton).padBottom(20).row();
+		//Create table buttonsTable
+		Table buttonsTable = new Table();
 		
-		//Add table to stage
-		stage.addActor(mainTable);
+		buttonsTable.setFillParent(true);
+		buttonsTable.center().left();
+		
+		
+		//Add buttons to table
+		buttonsTable.add(singleplayerButton).padBottom(20).row();
+		buttonsTable.add(multiplayerButton).padBottom(20).row();
+		buttonsTable.add(optionsButton).padBottom(20).row();
+		buttonsTable.add(exitButton).padBottom(20).row();
+		
+		//Add tables to stage
+		stage.addActor(titleTable);
+		stage.addActor(buttonsTable);
 	}
 
 	@Override
