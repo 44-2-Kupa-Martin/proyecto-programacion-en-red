@@ -16,6 +16,7 @@ import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.SimpleContactEventFilter;
+import com.mygdx.drop.etc.events.ClassifiedContactEvent;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.listeners.ContactEventListener;
 import com.mygdx.drop.game.BoxEntity;
@@ -73,8 +74,8 @@ public class Arrow extends BoxEntity implements Drawable {
 		
 		world.addListener(new SimpleContactEventFilter<Arrow>(Arrow.class) {
 			@Override
-			public boolean beginContact(ContactEvent event, Participants participants) {
-				participants.objectA.dispose();
+			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<Arrow, Entity> participants) {
+				participants.self.dispose();
 				return false; 
 			}
 		});

@@ -45,7 +45,7 @@ public class GameScreen implements Screen {
 		Gdx.input.setInputProcessor(multiplexer);
 //		world.createEntity(new DebugBox.Definition(0, 15, 5, 5));
 		this.hud = new HUD(world.player, world);
-		this.hud.getCells().get(0).setActor(new )
+//		this.hud.getCells().get(0).setActor(new )
 //		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, world.player));
 //		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, world.player));
 //		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));

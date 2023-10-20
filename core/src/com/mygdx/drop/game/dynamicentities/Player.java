@@ -33,6 +33,7 @@ import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.SimpleContactEventFilter;
 import com.mygdx.drop.etc.events.CanPickupEvent;
+import com.mygdx.drop.etc.events.ClassifiedContactEvent;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.FreeSlotEvent;
 import com.mygdx.drop.etc.events.InputEvent;
@@ -302,14 +303,15 @@ public class Player extends BoxEntity implements Drawable {
 		 */
 		world.addListener(new SimpleContactEventFilter<Player>(Player.class) {
 			@Override
-			public boolean beginContact(ContactEvent event, Participants participants) {
-				//TODO change all this participants.objectA.fire(event);
+			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<Player, Entity> classifiedEvent) {
+				EventManager.fire(classifiedEvent);
 				return event.isHandled();
 			}
 
 			@Override
-			public boolean endContact(ContactEvent event, Participants participants) {
-				//TODO change all this participants.objectA.fire(event);
+
+			public boolean endContact(ContactEvent event, ClassifiedContactEvent<Player, Entity> classifiedEvent) {
+				EventManager.fire(classifiedEvent);
 				return event.isHandled();
 			}
 		});
@@ -326,9 +328,9 @@ public class Player extends BoxEntity implements Drawable {
 			HashMap<Integer, State> collisionState = new HashMap<>();
 
 			@Override
-			public boolean beginContact(ContactEvent event, Participants participants) {
-				Player player = participants.objectA;
-				DroppedItem droppedItem = participants.objectB;
+			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<Player, DroppedItem> classifiedEvent) {
+				Player player = classifiedEvent.self;
+				DroppedItem droppedItem = classifiedEvent.other;
 				State state = new State();
 				/**
 				 * because free slot events are fired by a propertychange event listener, and because said listener
@@ -375,9 +377,9 @@ public class Player extends BoxEntity implements Drawable {
 			}
 
 			@Override
-			public boolean endContact(ContactEvent event, Participants participants) {
-				Player player = participants.objectA;
-				DroppedItem droppedItem = participants.objectB;
+			public boolean endContact(ContactEvent event, ClassifiedContactEvent<Player, DroppedItem> classifiedEvent) {
+				Player player = classifiedEvent.self;
+				DroppedItem droppedItem = classifiedEvent.other;
 				State state = collisionState.get(droppedItem.hashCode());
 				player.items.removeListener(state.onFreePlayerSlot);
 				droppedItem.removeListener(state.onPickupDelayEnd);
@@ -396,21 +398,21 @@ public class Player extends BoxEntity implements Drawable {
 			HashMap<Integer, State> collisionState = new HashMap<>();
 			
 			@Override
-			public boolean beginContact(ContactEvent event, Participants participants) {
+			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<Player, TestEnemy> classfiedEvent) {
 				State state = new State();
 				state.task = () -> {
-					participants.objectA.applyDamage(participants.objectB.damage);
+					classfiedEvent.self.applyDamage(classfiedEvent.other.damage);
 				};
-				participants.objectA.addTask(state.task);
-				collisionState.put(Objects.hash(participants.objectA, participants.objectB), state);
+				classfiedEvent.self.addTask(state.task);
+				collisionState.put(Objects.hash(classfiedEvent.self, classfiedEvent.other), state);
 				return event.isHandled();
 			}
 
 			@Override
-			public boolean endContact(ContactEvent event, Participants participants) {
-				State state = collisionState.get(Objects.hash(participants.objectA, participants.objectB));
+			public boolean endContact(ContactEvent event, ClassifiedContactEvent<Player, TestEnemy> classifiedEvent) {
+				State state = collisionState.get(Objects.hash(classifiedEvent.self, classifiedEvent.other));
 				if (state != null) {
-					participants.objectA.removeTask(state.task);
+					classifiedEvent.self.removeTask(state.task);
 				}
 				return event.isHandled();
 			}

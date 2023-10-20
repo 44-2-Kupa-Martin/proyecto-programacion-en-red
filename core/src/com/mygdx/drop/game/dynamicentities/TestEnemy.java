@@ -14,9 +14,11 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.EventManager;
 import com.mygdx.drop.etc.ContactEventFilter;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.SimpleContactEventFilter;
+import com.mygdx.drop.etc.events.ClassifiedContactEvent;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.listeners.ContactEventListener;
@@ -93,14 +95,14 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		TestEnemy.instantiated = true;
 		world.addListener(new SimpleContactEventFilter<TestEnemy>(TestEnemy.class) {
 			@Override
-			public boolean beginContact(ContactEvent event, Participants participants) {
-				//TODO change all this participants.objectA.fire(event);
+			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<TestEnemy, Entity> classifiedEvent) {
+				EventManager.fire(classifiedEvent);
 				return event.isHandled();
 			}
 
 			@Override
-			public boolean endContact(ContactEvent event, Participants participants) {
-				//TODO change all this participants.objectA.fire(event);
+			public boolean endContact(ContactEvent event, ClassifiedContactEvent<TestEnemy, Entity> classifiedEvent) {				
+				EventManager.fire(classifiedEvent);
 				return event.isHandled();
 			}
 
@@ -108,8 +110,8 @@ public class TestEnemy extends BoxEntity implements Drawable {
 
 		world.addListener(new ContactEventFilter<TestEnemy, Arrow>(TestEnemy.class, Arrow.class) {
 			@Override
-			public boolean beginContact(ContactEvent event, Participants participants) {
-				participants.objectA.applyDamage(participants.objectB.damage);
+			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<TestEnemy, Arrow> classfiedEvent) {
+				classfiedEvent.self.applyDamage(classfiedEvent.other.damage);
 				return event.isHandled();
 			}
 		});
