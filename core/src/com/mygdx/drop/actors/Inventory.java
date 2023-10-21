@@ -20,9 +20,7 @@ public class Inventory extends Stack {
 	private final Drop game;
 	private Table hotbar;
 	private Table inventory;
-	private Table escapeTable;
 	private Player player;
-	private final TextButton resume;
 	
 	public Inventory(Player player) {
 		assert Drop.game != null : "Inventory created before game instance!";
@@ -69,10 +67,7 @@ public class Inventory extends Stack {
 		add(inventory);
 		add(hotbar);
 		
-		this.resume = new TextButton("Resume", Assets.Skins.Glassy_glassy.get());
 		
-		this.escapeTable = new Table();
-		escapeTable.setVisible(false);
 	}
 	
 	@Override
@@ -84,13 +79,7 @@ public class Inventory extends Stack {
 		}
 		Slot selectedSlot = (Slot)hotbar.getChild(player.items.getSelectedSlot());
 		selectedSlot.setBackground(Slot.selectedBackground);
-		
-		
-		if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
-			//inventory.setVisible(!inventory.isVisible());
-			//hotbar.setVisible(!hotbar.isVisible());
-			
-		}
+
 		
 	}
 	
