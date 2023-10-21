@@ -52,7 +52,8 @@ public class Client implements Disposable {
 		}
 		try {
 			TestObject message = (TestObject)input.readObject();
-			System.out.println(message.num1);
+			System.out.println("received id: " + message.assetId);
+			System.out.println(Assets.getById(message.assetId).getDescriptor().fileName);
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

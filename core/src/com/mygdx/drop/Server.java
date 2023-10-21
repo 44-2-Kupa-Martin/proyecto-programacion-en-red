@@ -37,7 +37,8 @@ public class Server implements Disposable {
 		}
 		System.out.println("server received packet size: " + packet.getLength());
 		try {
-			outputStream.writeObject(new TestObject(10, 15));
+			outputStream.writeObject(new TestObject(10, 15, Assets.Textures.DebugBox_bucket.getId()));
+			System.out.println("Asset id:" + Assets.Textures.DebugBox_bucket.getId());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
