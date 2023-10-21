@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -31,6 +32,7 @@ public class GameScreen implements Screen {
 	private ScreenViewport hudViewport;
 	private ExtendViewport gameViewport;
 	private Stage hudStage;
+	private Disposable networkThread;
 	public GameScreen(Drop game) {
 		this.game = game;
 		this.gameCamera = new OrthographicCamera();
@@ -45,6 +47,11 @@ public class GameScreen implements Screen {
 		Gdx.input.setInputProcessor(multiplexer);
 //		world.createEntity(new DebugBox.Definition(0, 15, 5, 5));
 		this.hud = new HUD(world.player, world);
+//		Server server = new Server();
+//		this.networkThread = server;
+		Client client = new Client();
+		this.networkThread = client;
+		client.sendString("hello from client");
 		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, world.player));
 //		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, world.player));
 //		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
@@ -95,7 +102,7 @@ public class GameScreen implements Screen {
 	public void hide() {}
 
 	@Override
-	public void dispose() { world.dispose(); hudStage.dispose(); }
+	public void dispose() { world.dispose(); hudStage.dispose(); networkThread.dispose(); }
 
 	private final void updateCameraPosition() {
 		if (world.player.isDisposed()) {
