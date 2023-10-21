@@ -309,6 +309,7 @@ public class Player extends BoxEntity implements Drawable {
 			}
 
 			@Override
+
 			public boolean endContact(ContactEvent event, ClassifiedContactEvent<Player, Entity> classifiedEvent) {
 				EventManager.fire(classifiedEvent);
 				return event.isHandled();

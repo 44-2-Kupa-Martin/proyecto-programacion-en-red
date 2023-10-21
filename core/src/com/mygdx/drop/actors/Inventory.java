@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.scenes.scene2d.ui.Stack;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
@@ -65,17 +66,21 @@ public class Inventory extends Stack {
 		inventory.add(armorTable);
 		add(inventory);
 		add(hotbar);
+		
+		
 	}
 	
 	@Override
 	public void act(float delta) { 
 		super.act(delta);
-		if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
+		if (Gdx.input.isKeyJustPressed(Keys.E)) {
 			inventory.setVisible(!inventory.isVisible());
 			hotbar.setVisible(!hotbar.isVisible());
 		}
 		Slot selectedSlot = (Slot)hotbar.getChild(player.items.getSelectedSlot());
 		selectedSlot.setBackground(Slot.selectedBackground);
+
+		
 	}
 	
 }

@@ -49,9 +49,9 @@ public class GameScreen implements Screen {
 		this.hud = new HUD(world.player, world);
 //		Server server = new Server();
 //		this.networkThread = server;
-		Client client = new Client();
-		this.networkThread = client;
-		client.sendString("hello from client");
+//		Client client = new Client();
+//		this.networkThread = client;
+//		client.sendString("hello from client");
 //		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, world.player));
 //		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, world.player));
 //		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
@@ -60,6 +60,8 @@ public class GameScreen implements Screen {
 		hudStage.addActor(hud);
 		Assets.Music.rain.get().setLooping(true);
 		Assets.Music.rain.get().setVolume(game.masterVolume);
+		System.out.println(game.ipAdress);
+		System.out.println(game.portAdress);
 	}
 
 	@Override

@@ -24,6 +24,9 @@ public class Drop extends Game {
 	public SpriteBatch batch;
 	public float masterVolume;
 	public float zoom = 1.0f;
+	//TODO Change this to work with an actual server
+	public int ipAdress;
+	public int portAdress;
 
 	/** Initialization done in {@link Drop#create()} */
 	public Drop() {
@@ -59,6 +62,11 @@ public class Drop extends Game {
 		this.batch = new SpriteBatch();
 		this.masterVolume = 1.0f;
 		this.zoom = 1.0f;
+		
+		//TODO change this to work with an actual server
+		this.ipAdress = 0;
+		this.portAdress = 0;
+		
 		this.setScreen(new MainMenuScreen(this));
 	}
 

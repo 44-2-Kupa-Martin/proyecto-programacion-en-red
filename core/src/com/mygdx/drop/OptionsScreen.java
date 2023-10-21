@@ -30,7 +30,6 @@ public class OptionsScreen implements Screen {
 	private final Label zoomLabel;
 	private final Skin skin;
 	private final TextButton backButton;
-
 	private final Viewport viewport;
 
 	public OptionsScreen(Drop game) {
@@ -74,12 +73,13 @@ public class OptionsScreen implements Screen {
 
 		// Add a click listener to the "Back" button
 		backButton.addListener(new ClickListener() {
-			//TODO possibly a memory leak, previous screen was not dispose()d
+			//TODO possibly a memory leak, previous screen was not disposed
 			@Override
-			public void clicked(InputEvent event, float x, float y) { game.setScreen(new MainMenuScreen(game)); }
+			public void clicked(InputEvent event, float x, float y) { 
+			game.setScreen(new MainMenuScreen(game)); 
+			dispose();			
+			}
 		});
-
-		System.out.println(backButton.getHeight() + "Altura" + "    " + backButton.getWidth());
 
 		Table table = new Table();
 		table.setSkin(skin);
