@@ -11,6 +11,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets;
+import com.mygdx.drop.Assets.Textures;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.events.InputEvent;
@@ -18,9 +19,10 @@ import com.mygdx.drop.etc.events.listeners.ClickEventListener;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.PlayerManager.FrameComponent;
 
 public class DebugBox extends BoxEntity implements Drawable {
-	private final AtlasRegion texture;
+	private final Textures texture;
 
 	/**
 	 * Creates a DebugBox.
@@ -44,7 +46,7 @@ public class DebugBox extends BoxEntity implements Drawable {
 			return fixture;
 		})).get());
 
-		this.texture = Assets.Textures.DebugBox_bucket.get();
+		this.texture = Assets.Textures.DebugBox_bucket;
 		
 		addListener(new ClickEventListener(Input.Buttons.RIGHT) {
 			@Override
@@ -57,9 +59,9 @@ public class DebugBox extends BoxEntity implements Drawable {
 	public void clicked() { System.out.println("clicked debug box"); };
 
 	@Override
-	public void draw(Viewport viewport) {
+	public FrameComponent getFrameComponent() { 
 		Vector2 coords = getDrawingCoordinates();
-		game.batch.draw(texture, coords.x, coords.y, 0, 0, getWidth(), getHeight(), 1, 1, self.getAngle() * MathUtils.radiansToDegrees);
+		return new FrameComponent(texture.getId(), coords.x, coords.y, getWidth(), getHeight(), self.getAngle() * MathUtils.radiansToDegrees, 0); 
 	}
 
 	/**

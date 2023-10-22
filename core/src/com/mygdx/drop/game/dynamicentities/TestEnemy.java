@@ -12,6 +12,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.Null;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets;
+import com.mygdx.drop.Assets.Textures;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.EventManager;
@@ -25,11 +26,12 @@ import com.mygdx.drop.etc.events.listeners.ContactEventListener;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.PlayerManager.FrameComponent;
 
 public class TestEnemy extends BoxEntity implements Drawable {
 	private static boolean instantiated = false;
 	public final float damage;
-	private final AtlasRegion texture;
+	private final Textures texture;
 	private final float maxHealth;
 	private float health;
 	private float invincibilityTimer;
@@ -58,13 +60,13 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		this.damage = 15;
 		this.maxHealth = 15;
 		this.health = maxHealth;
-		this.texture = Assets.Textures.GoofyItem_goofy.get();
+		this.texture = Assets.Textures.GoofyItem_goofy;
 		this.invincibilityTimer = 0.25f;
 	}
 
 	@Override
-	public boolean update(Viewport viewport) {
-		boolean toBeDisposed = super.update(viewport);
+	public boolean update() {
+		boolean toBeDisposed = super.update();
 		assert !Constants.MULTITHREADED;
 		if (trackedPlayer != null && !trackedPlayer.isDisposed()) 
 			self.setLinearVelocity(trackedPlayer.getPosition().sub(getPosition()).nor().scl(1.5f));			
@@ -77,9 +79,10 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		return toBeDisposed;
 	}
 
-	public void draw(Viewport viewport) {
+	@Override
+	public FrameComponent getFrameComponent() { 
 		Vector2 coords = getDrawingCoordinates();
-		game.batch.draw(texture, coords.x, coords.y, getWidth(), getHeight());
+		return new FrameComponent(texture.getId(), coords.x, coords.y, getWidth(), getHeight());
 	}
 
 	public final void applyDamage(float lostHp) {

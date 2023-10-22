@@ -1,6 +1,5 @@
 package com.mygdx.drop.game;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.mygdx.drop.etc.EventCapable;
 import com.mygdx.drop.etc.events.InputEvent;
 import com.mygdx.drop.game.dynamicentities.Player;
@@ -8,7 +7,7 @@ import com.mygdx.drop.game.dynamicentities.Player;
 //TODO make items immutable and create a static object in some common registry
 public interface Item {
 
-	public TextureRegion getTexture();
+	public int getTextureId();
 
 	/**
 	 * 

@@ -7,7 +7,6 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.Shape.Type;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 
 /**
@@ -52,8 +51,8 @@ public abstract class BoxEntity extends Entity {
 	}
 	
 	@Override
-	public boolean update(Viewport viewport) {
-		boolean toBeDisposed = super.update(viewport);
+	public boolean update() {
+		boolean toBeDisposed = super.update();
 		
 		// Rationale: Although the BoxEntity class has a width and a height field, they are simply for
 		// convenience. What actually determines the width and height of the player is the shape associated
@@ -66,7 +65,7 @@ public abstract class BoxEntity extends Entity {
 			Vector2 temp = new Vector2();
 			shapeData.getVertex(2, temp); // vertex 2 should correspond to the top-right corner of the rectangle
 			temp.scl(2); // the origin is at the middle of the body, hence the distances must be scaled by two
-			assert temp.x == getWidth() && temp.y == getHeight() : "Player's properties are desynced from those of its body's";
+			assert temp.x == getWidth() && temp.y == getHeight() : "BoxEntity's properties are desynced from those of its body's";
 		}
 		return toBeDisposed; 
 	}

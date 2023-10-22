@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -15,6 +16,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.dynamicentities.Player;
 
 public class MainMenuScreen implements Screen {
 	private final Drop game;
@@ -60,8 +63,13 @@ public class MainMenuScreen implements Screen {
 		singleplayerButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-            	
-                game.setScreen(new GameScreen(game));
+            	World world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
+            	Player player = world.createEntity(new Player.Definition("kupitinchi", 0, 10));
+            	GameScreen gameScreen = new GameScreen(game, player.name, world);
+            	if (Constants.DEBUG) {
+					world.debug.camera = gameScreen.gameCamera;
+				}
+                game.setScreen(gameScreen);
             }
         });
 		

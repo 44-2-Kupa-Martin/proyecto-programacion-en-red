@@ -11,6 +11,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets;
+import com.mygdx.drop.Assets.Textures;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ContactEventFilter;
@@ -21,12 +22,13 @@ import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.listeners.ContactEventListener;
 import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
+import com.mygdx.drop.game.PlayerManager.FrameComponent;
 import com.mygdx.drop.game.World;
 
 
 public class Arrow extends BoxEntity implements Drawable {
 	private static boolean instantiated = false;
-	public final AtlasRegion texture;
+	public final Textures texture;
 	public final float damage;
 	protected Arrow(World world, float x_mt, float y_mt, Vector2 directionVector) { 
 		super(world, Drop.tlToMt(3), Drop.tlToMt(1), 
@@ -50,22 +52,23 @@ public class Arrow extends BoxEntity implements Drawable {
 			initializeClassListeners(world);
 		}
 		
-		this.texture = Assets.Textures.Arrow_arrow.get();
+		this.texture = Assets.Textures.Arrow_arrow;
 		self.setTransform(getPosition(), directionVector.angleRad());
 		self.applyLinearImpulse(directionVector.nor().scl(30), self.getWorldCenter(), false);
 		this.damage = 5;
 	}
 	
 	@Override
-	public boolean update(Viewport viewport) {
+	public boolean update() {
 		self.setTransform(getPosition(), self.getLinearVelocity().angleRad());
-		return super.update(viewport); 
+		return super.update(); 
 	}
 
 	@Override
-	public void draw(Viewport viewport) {
+	public FrameComponent getFrameComponent() {
 		Vector2 coords = getDrawingCoordinates();
-		game.batch.draw(texture, coords.x, coords.y, 0, 0, getWidth(), getHeight(), 1, 1, self.getAngle() * MathUtils.radiansToDegrees);
+		// TODO maybe can be cached if called multiple times per step()?
+		return new FrameComponent(texture.getId(), coords.x, coords.y, getWidth(), getHeight(), self.getAngle() * MathUtils.radiansToDegrees, 0);
 	}
 	
 	private static void initializeClassListeners(World world) {

@@ -17,6 +17,7 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.Drawable;
+import com.mygdx.drop.game.PlayerManager.FrameComponent;
 import com.mygdx.drop.game.dynamicentities.DroppedItem;
 import com.mygdx.drop.game.items.BowItem;
 
@@ -28,7 +29,7 @@ public abstract class Tile extends Entity implements Drawable {
 	public final int y_tl;
 	public final int breakageLevel;
 	private int fractureLevel;
-	private final AtlasRegion texture;
+	private final int textureId;
 	private final Fixture chainFixture;
 	private final Vector2 bottomLeftVertex;
 	
@@ -40,7 +41,7 @@ public abstract class Tile extends Entity implements Drawable {
 	 * @param x       Measured in tiles, origin is at the bottom left corner of the world
 	 * @param y       Measured in tiles, origin is at the bottom left corner of the world
 	 */
-	public <T extends Tile> Tile(World world, int x, int y, AtlasRegion texture) {
+	public <T extends Tile> Tile(World world, int x, int y, int textureId) {
 		super(world, ((Supplier<BodyDef>) (() -> {
 			BodyDef bodyDefiniton = new BodyDef();
 			bodyDefiniton.type = BodyType.StaticBody;
@@ -58,7 +59,7 @@ public abstract class Tile extends Entity implements Drawable {
 		this.y_tl = y;
 		this.breakageLevel = 4;
 		this.fractureLevel = 0;
-		this.texture = texture;
+		this.textureId = textureId;
 
 		FixtureDef fixtureDefinition = new FixtureDef();
 		fixtureDefinition.filter.categoryBits = (short) (Constants.Category.WORLD.value | Constants.Category.PLAYER_COLLIDABLE.value);
@@ -76,9 +77,9 @@ public abstract class Tile extends Entity implements Drawable {
 	}
 	
 	@Override
-	public void draw(Viewport viewport) {
+	public FrameComponent getFrameComponent() { 
 		Vector2 coords = getDrawingCoordinates();
-		game.batch.draw(texture, coords.x, coords.y, Drop.tlToMt(1), Drop.tlToMt(1));
+		return new FrameComponent(textureId, coords.x, coords.y, Drop.tlToMt(1), Drop.tlToMt(1)); 
 	}
 	
 	@Override

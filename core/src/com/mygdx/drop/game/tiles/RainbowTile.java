@@ -10,7 +10,7 @@ import com.mygdx.drop.game.World;
 
 public class RainbowTile extends Tile {
 	public RainbowTile(World world, int x, int y) {
-		super(world, x, y, Assets.Textures.rainbowTile.get());
+		super(world, x, y, Assets.Textures.rainbowTile.getId());
 		Fixture fixture = self.getFixtureList().get(0);
 		fixture.setDensity(1);
 		fixture.setFriction(1);

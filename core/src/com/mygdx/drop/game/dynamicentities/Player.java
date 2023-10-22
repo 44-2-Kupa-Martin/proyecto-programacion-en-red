@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.function.Supplier;
 
 import com.badlogic.gdx.Gdx;
@@ -15,6 +16,7 @@ import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Animation.PlayMode;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
@@ -49,6 +51,7 @@ import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.EquippableItem;
 import com.mygdx.drop.game.Inventory;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.PlayerManager.FrameComponent;
 import com.mygdx.drop.game.items.ArrowItem;
 import com.mygdx.drop.game.items.BowItem;
 import com.mygdx.drop.game.items.DebugItem;
@@ -63,11 +66,13 @@ import com.mygdx.drop.game.Tile;
 public class Player extends BoxEntity implements Drawable {
 	private static boolean instantiated = false;
 
+	public final String name;
 	private State previousState;
 	private State currentState;
 	private float animationTimer;
 	private float invincibilityTimer;
-	private EnumMap<State, Animation<TextureRegion>> animations;
+	/** A map from the player's state to a pair containing the asset id and animation object to draw */
+	private EnumMap<State, SimpleImmutableEntry<Integer, Animation<AtlasRegion>>> animations;
 	public final PlayerInventory items;
 	public final Stats baseStats;
 	private MutableStats stats;
@@ -80,7 +85,7 @@ public class Player extends BoxEntity implements Drawable {
 	 * @param x Measured in meters
 	 * @param y Measured in meters
 	 */
-	protected Player(World world, float x, float y) {
+	protected Player(World world, String name, float x, float y) {
 		super(world, Drop.tlToMt(2), Drop.tlToMt(3), ((Supplier<BodyDef>) (() -> {
 			BodyDef body = new BodyDef();
 			body.position.set(x, Drop.tlToMt(3) / 2 + y);
@@ -94,7 +99,7 @@ public class Player extends BoxEntity implements Drawable {
 			fixture.filter.maskBits = Constants.Category.PLAYER_COLLIDABLE.value;
 			return fixture;
 		})).get());
-
+		this.name = name;
 		if (!instantiated)
 			initializeClassListeners(world);
 
@@ -176,8 +181,8 @@ public class Player extends BoxEntity implements Drawable {
 	}
 
 	@Override
-	public final boolean update(Viewport viewport) {
-		boolean toBeDisposed = super.update(viewport);
+	public final boolean update() {
+		boolean toBeDisposed = super.update();
 		if (this.invincibilityTimer > 0)
 			invincibilityTimer -= Gdx.graphics.getDeltaTime();
 
@@ -185,11 +190,11 @@ public class Player extends BoxEntity implements Drawable {
 		currentState = groundContacts > 0 ? State.IDLE : State.AIRBORNE;
 		
 		if (items.getItemOnHand() != null) {
-			if (world.isButtonPressed(Buttons.LEFT)) {
-				Vector2 clickPosition = world.getLastClickPosition();
+			if (world.isButtonPressed(this, Buttons.LEFT)) {
+				Vector2 clickPosition = world.getLastClickPosition(this);
 				items.getItemOnHand().leftUse(this, clickPosition.x, clickPosition.y);
-			} else if (world.isButtonPressed(Buttons.RIGHT)) {
-				Vector2 clickPosition = world.getLastClickPosition();
+			} else if (world.isButtonPressed(this, Buttons.RIGHT)) {
+				Vector2 clickPosition = world.getLastClickPosition(this);
 				items.getItemOnHand().rightUse(this, clickPosition.x, clickPosition.y);
 			}
 		}
@@ -217,28 +222,28 @@ public class Player extends BoxEntity implements Drawable {
 
 		return toBeDisposed;
 	}
-
+	
 	@Override
-	public final void draw(Viewport viewport) {
+	public FrameComponent getFrameComponent() { 
 		animationTimer += Gdx.graphics.getDeltaTime();
 		Vector2 coords = getDrawingCoordinates();
-		Animation<TextureRegion> currentAnimation = animations.get(currentState);
-		TextureRegion frame = currentAnimation.getKeyFrame(animationTimer);
-		game.batch.draw(frame, coords.x, coords.y, getWidth(), getHeight());
+		SimpleImmutableEntry<Integer, Animation<AtlasRegion>> currentAnimationIdPair = animations.get(currentState);
+		int frameIndex = currentAnimationIdPair.getValue().getKeyFrameIndex(animationTimer);
+		return new FrameComponent(currentAnimationIdPair.getKey(), coords.x, coords.y, getWidth(), getHeight(), 0, frameIndex); 
 	}
 	
 	public final boolean canReach(float x, float y) {
 		return hitRadius.testPoint(x, y);
 	}
 
-	private final EnumMap<State, Animation<TextureRegion>> initAnimationsMap() {
-		EnumMap<State, Animation<TextureRegion>> animations = new EnumMap<>(State.class);
+	private final EnumMap<State, SimpleImmutableEntry<Integer, Animation<AtlasRegion>>> initAnimationsMap() {
+		EnumMap<State, SimpleImmutableEntry<Integer, Animation<AtlasRegion>>> animations = new EnumMap<>(State.class);
 		animations.put(State.IDLE,
-				new Animation<TextureRegion>(0.05f, Assets.Animations.playerIdle.get(), PlayMode.LOOP));
+				new SimpleImmutableEntry<>(Assets.Animations.playerIdle.getId(), new Animation<AtlasRegion>(0.05f, Assets.Animations.playerIdle.get(), PlayMode.LOOP)));
 		animations.put(State.WALKING,
-				new Animation<TextureRegion>(0.05f, Assets.Animations.playerIdle.get(), PlayMode.LOOP));
+				new SimpleImmutableEntry<>(Assets.Animations.playerIdle.getId(), new Animation<AtlasRegion>(0.05f, Assets.Animations.playerIdle.get(), PlayMode.LOOP)));
 		animations.put(State.AIRBORNE,
-				new Animation<TextureRegion>(0.05f, Assets.Animations.playerWalking.get(), PlayMode.LOOP));
+				new SimpleImmutableEntry<>(Assets.Animations.playerWalking.getId(), new Animation<AtlasRegion>(0.05f, Assets.Animations.playerWalking.get(), PlayMode.LOOP)));
 		return animations;
 	}
 
@@ -570,13 +575,17 @@ public class Player extends BoxEntity implements Drawable {
 	 * See {@link Entity.EntityDefinition}
 	 */
 	public static class Definition extends Entity.EntityDefinition<Player> {
+		public String name;
 		/**
 		 * See {@link Player#Player(World, float, float)}
 		 */
-		public Definition(float x, float y) { super(x, y); }
+		public Definition(String name, float x, float y) { 
+			super(x, y);
+			this.name = name;
+		}
 
 		@Override
-		protected Player createEntity(World world) { return new Player(world, x, y); }
+		protected Player createEntity(World world) { return new Player(world, name, x, y); }
 
 	}
 

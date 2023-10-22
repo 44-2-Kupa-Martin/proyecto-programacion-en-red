@@ -1,16 +1,7 @@
 package com.mygdx.drop.game;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.InputProcessor;
+import java.util.HashMap;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
-import com.badlogic.gdx.maps.MapLayer;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
-import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
-import com.badlogic.gdx.maps.tiled.TiledMapTileSets;
-import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
-import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
@@ -23,8 +14,6 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Array.ArrayIterator;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Null;
-import com.badlogic.gdx.utils.Queue;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.EventManager;
@@ -44,16 +33,15 @@ import com.mygdx.drop.game.tiles.RainbowTile;
 /**
  * A wrapper for box2dworld. Handles the simulation and rendering of all {@link Entity entities} and {@link InputEvent input events}
  */
-public class World implements Disposable, InputProcessor, EventCapable {
+public class World implements Disposable, PlayerManager, EventCapable {
 	protected static Drop game;
 	
 	public final float worldWidth_mt;
 	public final int worldWidth_tl;
 	public final float worldHeight_mt;
 	public final int worldHeight_tl;
-	/** A quick hack for the singleplayer build. TODO when implementing multiplayer, this should be either removed or refectored */
-	public final Player player;
-
+	private final HashMap<String, PlayerSessionData> playerData;
+	
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
 	/** There is a 1 to 1 correspondence between bodies and entities. TODO consider whether it would be better to have an array on entities */
 	protected final Array<Body> bodies;
@@ -62,21 +50,11 @@ public class World implements Disposable, InputProcessor, EventCapable {
 	/** Entities here are destroyed the next {@link #step()} call TODO this should be a queue not an array */
 	protected final Array<Entity> toBeDestroyed;
 	private final Array<EventListener> eventHandlers;
-	private final Queue<Event> eventQueue;
-	private boolean firing;
 	
-	private final Debug debug = Constants.DEBUG ? new Debug() : null;
+	public final Debug debug = Constants.DEBUG ? new Debug() : null;
 	private final Vector2 tempCoords = new Vector2();
-
-	private final Viewport viewport;
 	
-	private final Entity[] pointerOverEntities = new Entity[20];
-	private final boolean[] pointerTouched = new boolean[20];
-	/** reference counted, each pointer increases the reference */
-	private final short[] buttonPressed = new short[5];
-	private final float[] pointerWorldX = new float[20], pointerWorldY = new float[20];
-	private float mouseWorldX, mouseWorldY;
-	private @Null Entity mouseOverEntity;
+	
 	
 	/**
 	 * Creates the world.
@@ -85,7 +63,7 @@ public class World implements Disposable, InputProcessor, EventCapable {
 	 * @param height_tl  World height in tiles
 	 * @param gravity Gravity vector in SIU units
 	 */
-	public World(int width_tl, int height_tl, Vector2 gravity, Viewport viewport) {
+	public World(int width_tl, int height_tl, Vector2 gravity) {
 		assert Drop.game != null : "World created before game instance!";
 		assert Drop.world == null : "Multiple worlds created at the same time!";
 		
@@ -93,14 +71,12 @@ public class World implements Disposable, InputProcessor, EventCapable {
 		
 		if (game == null)
 			game = Drop.game;
-		
-		
-		this.viewport = viewport;
+				
 		this.worldWidth_tl = width_tl;
 		this.worldHeight_tl = height_tl;
 		this.worldWidth_mt = Drop.tlToMt(width_tl);
 		this.worldHeight_mt = Drop.tlToMt(height_tl);
-
+		this.playerData = new HashMap<>();
 		this.box2dWorld = new com.badlogic.gdx.physics.box2d.World(gravity, false);
 		
 		// Pack and fire contact events. Note: it seems that box2d calls this listener from multiple threads, hence the need for ContactEvents to be semi-immutable
@@ -138,8 +114,6 @@ public class World implements Disposable, InputProcessor, EventCapable {
 		this.toBeDrawn = new Array<Drawable>();
 		this.toBeDestroyed = new Array<Entity>();
 		this.eventHandlers = new Array<EventListener>();
-		this.eventQueue = new Queue<Event>();
-		this.firing = false;
 
 		new WorldBorder(this, Cardinality.NORTH);
 		new WorldBorder(this, Cardinality.SOUTH);
@@ -153,14 +127,9 @@ public class World implements Disposable, InputProcessor, EventCapable {
 				createEntity(tileDefiniton);
 			}
 		}
-		this.player = createEntity(new Player.Definition(0,3));
 	}
 
-	public final void render(OrthographicCamera camera) {
-		if (Constants.DEBUG) {
-			debug.debugRenderer.render(box2dWorld, camera.combined);
-		}
-
+	public final void step() {
 		// Checking whether all bodies have an owner
 		if (Constants.DEBUG) {
 			box2dWorld.getBodies(bodies);
@@ -173,16 +142,6 @@ public class World implements Disposable, InputProcessor, EventCapable {
 			}
 		}
 		
-		game.batch.begin();
-		for (Drawable drawable : toBeDrawn) {
-			drawable.draw(viewport);
-		}
-		game.batch.end();
-		
-		
-	}
-
-	public final void step() {
 		for (ArrayIterator<Entity> iterator = toBeDestroyed.iterator(); iterator.hasNext();) {
 			Entity entity = iterator.next();
 			box2dWorld.destroyBody(entity.self);
@@ -198,24 +157,27 @@ public class World implements Disposable, InputProcessor, EventCapable {
 		box2dWorld.step(1 / 60f, 6, 2);
 		for (Body body : bodies) {			
 			Entity entity = (Entity) body.getUserData();
-			boolean dispose = entity.update(viewport);
+			boolean dispose = entity.update();
 			if (dispose) 
 				destroyEntity(entity);
 		}
 		
-		// Update over entities. Done in step() because entities may change position, which can fire enter/exit without an input event.
-		for (int pointer = 0, n = pointerOverEntities.length; pointer < n; pointer++) {
-			Entity overLast = pointerOverEntities[pointer];
-			if (pointerTouched[pointer]) {
-				// Update the over actor for the pointer.
-				pointerOverEntities[pointer] = fireEnterAndExit(overLast, pointerWorldX[pointer], pointerWorldY[pointer], pointer);
-			} else if (overLast != null) {
-				// The pointer is gone, exit the over actor for the pointer, if any.
-				pointerOverEntities[pointer] = null;
-				fireExit(overLast, pointerWorldX[pointer], pointerWorldY[pointer], pointer);
+		for (PlayerSessionData inputData : playerData.values()) {
+			// Update over entities. Done in step() because entities may change position, which can fire enter/exit without an input event.
+			for (int pointer = 0, n = inputData.pointerOverEntities.length; pointer < n; pointer++) {
+				Entity overLast = inputData.pointerOverEntities[pointer];
+				if (inputData.pointerTouched[pointer]) {
+					// Update the over actor for the pointer.
+					inputData.pointerOverEntities[pointer] = fireEnterAndExit(inputData.player, overLast, inputData.pointerWorldX[pointer], inputData.pointerWorldY[pointer], pointer);
+				} else if (overLast != null) {
+					// The pointer is gone, exit the over actor for the pointer, if any.
+					inputData.pointerOverEntities[pointer] = null;
+					fireExit(inputData.player, overLast, inputData.pointerWorldX[pointer], inputData.pointerWorldY[pointer], pointer);
+				}
 			}
+			inputData.mouseOverEntity = fireEnterAndExit(inputData.player, inputData.mouseOverEntity, inputData.mouseWorldX, inputData.mouseWorldY, -1);
 		}
-		mouseOverEntity = fireEnterAndExit(mouseOverEntity, mouseWorldX, mouseWorldY, -1);
+		
 	}
 	
 
@@ -223,6 +185,10 @@ public class World implements Disposable, InputProcessor, EventCapable {
 		T entity = entityDefinition.createEntity(this);
 		if (entity instanceof Drawable) 
 			toBeDrawn.add((Drawable)entity);
+		if (entity instanceof Player) {
+			Player player = (Player)entity;
+			playerData.put(player.name, new PlayerSessionData(player));
+		}
 		// Update bodies array
 		box2dWorld.getBodies(bodies);
 		return entity;
@@ -234,12 +200,14 @@ public class World implements Disposable, InputProcessor, EventCapable {
 			toBeDrawn.removeValue((Drawable)entity, true);
 	}
 
-	public final Vector2 getLastClickPosition() {
-		return tempCoords.set(pointerWorldX[0], pointerWorldY[0]);
+	public final Vector2 getLastClickPosition(Player player) {
+		PlayerSessionData sessionData = playerData.get(player.name);
+		return tempCoords.set(sessionData.pointerWorldX[0], sessionData.pointerWorldY[0]);
 	}
 	
-	public final boolean isButtonPressed(int button) {
-		return buttonPressed[button] > 0;
+	public final boolean isButtonPressed(Player player, int button) {
+		PlayerSessionData sessionData = playerData.get(player.name);
+		return sessionData.buttonPressed[button] > 0;
 	}
 	
 	public final Entity hit(float x, float y) {
@@ -254,6 +222,8 @@ public class World implements Disposable, InputProcessor, EventCapable {
 		}
 		return hit;
 	}
+	
+	
 	
 	// EventCapable
 	
@@ -272,13 +242,41 @@ public class World implements Disposable, InputProcessor, EventCapable {
 		box2dWorld.dispose();
 	}
 
-	// InputProcessor
-	//TODO: implement key events 
+	// PlayerManager
+	
 	@Override
-	public boolean keyDown(int keycode) {
-		if (player.isDisposed()) 
+	public Vector2 getPlayerPosition(String playerName) {
+		assert !Constants.MULTITHREADED : "Same vector each time";
+		return playerData.get(playerName).player.getPosition();
+	}
+	
+	@Override
+	public int getWorldHeight() { return worldHeight_tl; }
+	
+	@Override
+	public int getWorldWidth() { return worldWidth_tl; }
+	
+	@Override
+	public FrameComponent[] getFrameData() {
+		step();
+		
+		if (Constants.DEBUG) {
+			debug.debugRenderer.render(box2dWorld, debug.camera.combined);
+		}
+		
+		FrameComponent[] frameData = new FrameComponent[toBeDrawn.size];
+		for (int i = 0; i < toBeDrawn.size; i++) {
+			frameData[i] = toBeDrawn.get(i).getFrameComponent();
+		}
+		return frameData; 
+	}
+	
+	@Override
+	public boolean keyDown(String playerName, int keycode) {
+		PlayerSessionData sessionData = this.playerData.get(playerName);
+		if (sessionData.player.isDisposed()) 
 			return false;
-		InputEvent inputEvent = new InputEvent(this, this, player);
+		InputEvent inputEvent = new InputEvent(this, this, sessionData.player);
 		inputEvent.setType(Type.keyDown);
 		inputEvent.setKeyCode(keycode);
 		EventManager.fire(inputEvent);
@@ -286,10 +284,11 @@ public class World implements Disposable, InputProcessor, EventCapable {
 	}
 
 	@Override
-	public boolean keyUp(int keycode) { 
-		if (player.isDisposed()) 
+	public boolean keyUp(String playerName, int keycode) { 
+		PlayerSessionData sessionData = this.playerData.get(playerName);
+		if (sessionData.player.isDisposed()) 
 			return false;
-		InputEvent inputEvent = new InputEvent(this, this, player);
+		InputEvent inputEvent = new InputEvent(this, this, sessionData.player);
 		inputEvent.setType(Type.keyUp);
 		inputEvent.setKeyCode(keycode);
 		EventManager.fire(inputEvent);
@@ -297,38 +296,35 @@ public class World implements Disposable, InputProcessor, EventCapable {
 	}
 
 	@Override
-	public boolean keyTyped(char character) { return false; }
+	public boolean keyTyped(String playerName, char character) { return false; }
 
 	/** Applies a touch down event to the world and returns true if an entity {@link Event#handle() handled} the
 	 * event. */
 	@Override
-	public boolean touchDown (int screenX, int screenY, int pointer, int button) {
-		//TODO maybe implement?
-//		if (!isInsideViewport(screenX, screenY)) return false;
-//
-		pointerTouched[pointer] = true;
-		buttonPressed[button]++;
-		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
-		pointerWorldX[pointer] = worldCoordinates.x;
-		pointerWorldY[pointer] = worldCoordinates.y;
+	public boolean touchDown (String playerName, float worldX, float worldY, int pointer, int button) {
+		PlayerSessionData sessionData = this.playerData.get(playerName);
+		sessionData.pointerTouched[pointer] = true;
+		sessionData.buttonPressed[button]++;
+		sessionData.pointerWorldX[pointer] = worldX;
+		sessionData.pointerWorldY[pointer] = worldY;
 	
-		if (player.isDisposed()) 
+		if (sessionData.player.isDisposed()) 
 			return false;
 		
 		/** If no entity is hit, the event will be fired on the world */
 		EventCapable target = this;
 		for (Body body : bodies) {
 			Entity entity = (Entity)body.getUserData();
-			if (entity.hit(worldCoordinates.x, worldCoordinates.y)) {
+			if (entity.hit(worldX, worldY)) {
 				target = entity;
 				break;
 			}
 		}
 		
-		InputEvent event = new InputEvent(target, this, player);
+		InputEvent event = new InputEvent(target, this, sessionData.player);
 		event.setType(Type.touchDown);
-		event.setWorldX(worldCoordinates.x);
-		event.setWorldY(worldCoordinates.y);
+		event.setWorldX(worldX);
+		event.setWorldY(worldY);
 		event.setPointer(pointer);
 		event.setButton(button);
 		EventManager.fire(event);
@@ -338,14 +334,14 @@ public class World implements Disposable, InputProcessor, EventCapable {
 
 	/** Applies a touch up event to the stage and returns true if an actor in the scene {@link Event#handle() handled} the event.
 	 * Only {@link InputListener listeners} that returned true for touchDown will receive this event. */
-	public boolean touchUp (int screenX, int screenY, int pointer, int button) {
-		pointerTouched[pointer] = false;
-		buttonPressed[button]--;
-		Vector2 worldCoordinates = viewport.unproject(tempCoords.set(screenX, screenY));
-		pointerWorldX[pointer] = worldCoordinates.x;
-		pointerWorldY[pointer] = worldCoordinates.y;
+	public boolean touchUp (String playerName, float worldX, float worldY, int pointer, int button) {
+		PlayerSessionData sessionData = this.playerData.get(playerName);
+		sessionData.pointerTouched[pointer] = false;
+		sessionData.buttonPressed[button]--;
+		sessionData.pointerWorldX[pointer] = worldX;
+		sessionData.pointerWorldY[pointer] = worldY;
 
-		if (player.isDisposed()) 
+		if (sessionData.player.isDisposed()) 
 			return false;
 		
 		
@@ -359,10 +355,10 @@ public class World implements Disposable, InputProcessor, EventCapable {
 			}
 		}
 
-		InputEvent event = new InputEvent(target, this, player);
+		InputEvent event = new InputEvent(target, this, sessionData.player);
 		event.setType(Type.touchUp);
-		event.setWorldX(worldCoordinates.x);
-		event.setWorldY(worldCoordinates.y);
+		event.setWorldX(worldX);
+		event.setWorldY(worldY);
 		event.setPointer(pointer);
 		event.setButton(button);
 		EventManager.fire(event);
@@ -371,41 +367,41 @@ public class World implements Disposable, InputProcessor, EventCapable {
 	}
 
 	@Override
-	public boolean touchCancelled(int screenX, int screenY, int pointer, int button) { return false; }
+	public boolean touchCancelled(String playerName, float worldX, float worldY, int pointer, int button) { return false; }
 
 	@Override
-	public boolean touchDragged(int screenX, int screenY, int pointer) { 
-		Vector2 worldPosition = viewport.unproject(tempCoords.set(screenX, screenY));
-		pointerWorldX[pointer] = worldPosition.x;
-		pointerWorldY[pointer] = worldPosition.y;
-		mouseWorldX = worldPosition.x;
-		mouseWorldY = worldPosition.y;
-		if (player.isDisposed()) 
+	public boolean touchDragged(String playerName, float worldX, float worldY, int pointer) {
+		PlayerSessionData sessionData = this.playerData.get(playerName);
+		sessionData.pointerWorldX[pointer] = worldX;
+		sessionData.pointerWorldY[pointer] = worldY;
+		sessionData.mouseWorldX = worldX;
+		sessionData.mouseWorldY = worldY;
+		if (sessionData.player.isDisposed()) 
 			return false;
 		//TODO fire inputevent
 		return false; 
 	}
 
 	@Override
-	public boolean mouseMoved(int screenX, int screenY) {
-		Vector2 worldPosition = viewport.unproject(tempCoords.set(screenX, screenY));
-		mouseWorldX = worldPosition.x;
-		mouseWorldY = worldPosition.y;
-		if (player.isDisposed()) 
+	public boolean mouseMoved(String playerName, float worldX, float worldY) {
+		PlayerSessionData sessionData = this.playerData.get(playerName);
+		sessionData.mouseWorldX = worldX;
+		sessionData.mouseWorldY = worldY;
+		if (sessionData.player.isDisposed()) 
 			return false;
 		//TODO fire inputevent
 		return false; 
 	}
 
 	@Override
-	public boolean scrolled(float amountX, float amountY) {
+	public boolean scrolled(String playerName, float amountX, float amountY) {
 		//TODO fire inputevent		
 		return false; 
 	}
 	
-	private Entity fireEnterAndExit (Entity overLast, float worldX, float worldY, int pointer) {
-		//TODO think this through
-		if (player.isDisposed()) 
+	private Entity fireEnterAndExit (Player playerResponsable, Entity overLast, float worldX, float worldY, int pointer) {
+		//TODO dead players shouldnt be disposed, refactor this
+		if (playerResponsable.isDisposed()) 
 			return null;
 		// Find the actor under the point.		
 		Entity over = null;
@@ -421,7 +417,7 @@ public class World implements Disposable, InputProcessor, EventCapable {
 
 		// Exit overLast.
 		if (overLast != null) {
-			InputEvent event = new InputEvent(overLast, this, player);
+			InputEvent event = new InputEvent(overLast, this, playerResponsable);
 			event.setType(InputEvent.Type.exit);
 			event.setWorldX(worldX);
 			event.setWorldY(worldY);
@@ -432,7 +428,7 @@ public class World implements Disposable, InputProcessor, EventCapable {
 
 		// Enter over.
 		if (over != null) {
-			InputEvent event = new InputEvent(over, this, player);
+			InputEvent event = new InputEvent(over, this, playerResponsable);
 			event.setType(InputEvent.Type.enter);
 			event.setWorldX(worldX);
 			event.setWorldY(worldY);
@@ -443,10 +439,10 @@ public class World implements Disposable, InputProcessor, EventCapable {
 		return over;
 	}
 	
-	private void fireExit (Entity entity, float worldX, float worldY, int pointer) {
-		if (player.isDisposed()) 
+	private void fireExit (Player playerResponsable, Entity entity, float worldX, float worldY, int pointer) {
+		if (playerResponsable.isDisposed()) 
 			return;
-		InputEvent event = new InputEvent(entity, this, player);
+		InputEvent event = new InputEvent(entity, this, playerResponsable);
 		event.setType(InputEvent.Type.exit);
 		event.setWorldX(worldX);
 		event.setWorldY(worldY);
@@ -456,8 +452,23 @@ public class World implements Disposable, InputProcessor, EventCapable {
 	}
 	
 	// Classes
+	
+	private static final class PlayerSessionData {
+		private final Player player;
+		private final Entity[] pointerOverEntities = new Entity[20];
+		private final boolean[] pointerTouched = new boolean[20];
+		/** reference counted, each pointer increases the reference */
+		private final short[] buttonPressed = new short[5];
+		private final float[] pointerWorldX = new float[20], pointerWorldY = new float[20];
+		private float mouseWorldX, mouseWorldY;
+		private @Null Entity mouseOverEntity;
+		
+		public PlayerSessionData(Player player) { this.player = player; }
+	}
+	
 	public static final class Debug extends com.mygdx.drop.Debug {
 		public Box2DDebugRenderer debugRenderer;
+		public OrthographicCamera camera;
 		// This array is used to check whether all Box2D bodies have an owner. All bodies must hold a
 		// reference to their owner in their user data attribute
 		private static boolean constructed = false;

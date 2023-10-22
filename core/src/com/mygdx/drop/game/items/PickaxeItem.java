@@ -1,6 +1,5 @@
 package com.mygdx.drop.game.items;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Drop;
@@ -18,7 +17,7 @@ public class PickaxeItem implements Item {
 	}
 
 	@Override
-	public TextureRegion getTexture() { return Assets.Textures.GoofyItem_goofy.get(); }
+	public int getTextureId() { return Assets.Textures.GoofyItem_goofy.getId(); }
 
 	@Override
 	public float getLeftUseTime() { return useTime; }

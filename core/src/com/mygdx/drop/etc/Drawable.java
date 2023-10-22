@@ -1,13 +1,12 @@
 package com.mygdx.drop.etc;
 
-import com.badlogic.gdx.utils.viewport.Viewport;
+import com.mygdx.drop.game.PlayerManager.FrameComponent;
 
 public interface Drawable {
 	/**
-	 * Draws the object to the screen
 	 * 
-	 * @param viewport Needed for projecting/unprojecting
+	 * @return The information needed to draw the object to the screen
 	 */
-	public void draw(Viewport viewport);
+	public FrameComponent getFrameComponent();
 
 }

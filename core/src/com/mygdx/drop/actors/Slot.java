@@ -10,6 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.mygdx.drop.Assets;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
@@ -75,7 +76,7 @@ public class Slot<ControlledItemType extends Item> extends Container<Image> {
         
         setActor(new Image());
         ControlledItemType referencedItem = itemReference.get();
-        getActor().setDrawable(referencedItem == null ? transparentPlaceholder : new TextureRegionDrawable(referencedItem.getTexture()));
+        getActor().setDrawable(referencedItem == null ? transparentPlaceholder : new TextureRegionDrawable((Texture) Assets.getById(referencedItem.getTextureId()).get()));
         
         addListener(new ClickListener() {
         	@Override
@@ -118,7 +119,7 @@ public class Slot<ControlledItemType extends Item> extends Container<Image> {
 	@Override
 	public void draw(Batch batch, float parentAlpha) {
 		if (itemChanged) {
-			TextureRegionDrawable drawable = itemReference.get() == null ? transparentPlaceholder : new TextureRegionDrawable(itemReference.get().getTexture());
+			TextureRegionDrawable drawable = itemReference.get() == null ? transparentPlaceholder : new TextureRegionDrawable((Texture) Assets.getById(itemReference.get().getTextureId()).get());
 			getActor().setDrawable(drawable);
 		}
 		super.draw(batch, parentAlpha);

@@ -7,7 +7,6 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Queue;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.EventCapable;
 import com.mygdx.drop.etc.events.Event;
@@ -59,10 +58,9 @@ public abstract class Entity implements Disposable, EventCapable {
 	/**
 	 * Updates the entity's internal state.
 	 * 
-	 * @param viewport Needed for projecting/unprojecting
 	 * @return {@code true} if {@link Entity#dispose()} is to be called, {@code false} otherwise
 	 */
-	public boolean update(Viewport viewport) {
+	public boolean update() {
 		if (objectState == Lifetime.DISPOSED) 
 			throw new IllegalStateException("Calling method of disposed object");
 		return objectState == Lifetime.TO_BE_DISPOSED;

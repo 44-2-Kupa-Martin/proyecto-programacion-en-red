@@ -3,6 +3,7 @@ package com.mygdx.drop.game.dynamicentities;
 import java.util.function.Supplier;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
@@ -18,6 +19,7 @@ import com.mygdx.drop.game.BoxEntity;
 import com.mygdx.drop.game.Entity;
 import com.mygdx.drop.game.Item;
 import com.mygdx.drop.game.World;
+import com.mygdx.drop.game.PlayerManager.FrameComponent;
 import com.mygdx.drop.game.items.BowItem;
 
 public class DroppedItem extends BoxEntity implements Drawable {
@@ -57,8 +59,8 @@ public class DroppedItem extends BoxEntity implements Drawable {
 	public boolean canPickUp() { return this.pickupDelay <= 0; }
 
 	@Override
-	public boolean update(Viewport viewport) {
-		boolean toBeDisposed = super.update(viewport);;
+	public boolean update() {
+		boolean toBeDisposed = super.update();;
 		if (pickupDelay > 0) {
 			pickupDelay -= Gdx.graphics.getDeltaTime();
 		} else if (!eventFired) {
@@ -71,9 +73,9 @@ public class DroppedItem extends BoxEntity implements Drawable {
 	}
 	
 	@Override
-	public void draw(Viewport viewport) {
+	public FrameComponent getFrameComponent() { 
 		Vector2 coords = getDrawingCoordinates();
-		game.batch.draw(item.getTexture(), coords.x, coords.y, getWidth(), getHeight());
+		return new FrameComponent(item.getTextureId(), coords.x, coords.y, getWidth(), getHeight()); 
 	}
 
 	/**

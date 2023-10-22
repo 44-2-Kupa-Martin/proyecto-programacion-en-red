@@ -2,7 +2,6 @@ package com.mygdx.drop.game.items;
 
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.mygdx.drop.etc.events.InputEvent;
@@ -18,19 +17,17 @@ import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.dynamicentities.TestEnemy;
 
 public class BowItem implements Item {
-	public final AtlasRegion texture;
 	public final float useTime;
 	private long lastUsedTime;
 
 	public BowItem() {	
 		assert Drop.game != null;
-		this.texture = Assets.Textures.BowItem_bow.get();
 		this.useTime = 0.5f;
 		this.lastUsedTime = 0;
 	}
 
 	@Override
-	public TextureRegion getTexture() { return texture; }
+	public int getTextureId() { return Assets.Textures.BowItem_bow.getId(); }
 
 	@Override
 	public boolean leftUse(Player player, float x, float y) {

@@ -1,6 +1,5 @@
 package com.mygdx.drop.game.items;
 
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.game.EquippableItem;
@@ -9,7 +8,7 @@ import com.mygdx.drop.game.MutableStats;
 public class DiamondBoots implements EquippableItem {
 
 	@Override
-	public TextureRegion getTexture() { return Assets.Textures.DiamondSet_boots.get(); }
+	public int getTextureId() { return Assets.Textures.DiamondSet_boots.getId(); }
 
 	@Override
 	public float getLeftUseTime() { return 0; }

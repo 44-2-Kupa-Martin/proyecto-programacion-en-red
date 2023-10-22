@@ -142,16 +142,16 @@ public class GameMenu {
 		
 	}
 	
-	@Override
-	public void act(float delta) { 
-		super.act(delta);
-		if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
-			optionsTable.setVisible(!optionsTable.isVisible());
-
-		}
-		
-
-		
-	}
+//	@Override
+//	public void act(float delta) { 
+//		super.act(delta);
+//		if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
+//			optionsTable.setVisible(!optionsTable.isVisible());
+//
+//		}
+//		
+//
+//		
+//	}
 	
 }

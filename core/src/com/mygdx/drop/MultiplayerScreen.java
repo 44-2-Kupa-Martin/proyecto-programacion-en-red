@@ -57,7 +57,7 @@ public class MultiplayerScreen implements Screen {
 			//TODO possibly a memory leak, previous screen was not disposed
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-			game.setScreen(new GameScreen(game));
+//			game.setScreen(new GameScreen(game));
 			
 			}
 		});
