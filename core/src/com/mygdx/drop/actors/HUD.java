@@ -7,29 +7,29 @@ import com.badlogic.gdx.utils.Align;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
+import com.mygdx.drop.game.PlayerManager;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Player;
 
 public class HUD extends Table {
 	
 	private Label labelHP;
-	private Player player;
+	private PlayerManager playerManager;
+	private String playerName;
 	
-	public HUD(Player player, World world) {
+	public HUD(String playerName, PlayerManager playerManager) {
 		
 		
 		assert Drop.game != null : "Inventory created before game instance!";
-		
-		labelHP = new Label("HP:" + player.getStats().getHealth(), Assets.Skins.Glassy_glassy.get());
-		
-		this.player = player;
-		
+		this.playerManager = playerManager;
+		this.playerName = playerName;
+		labelHP = new Label("HP:" + playerManager.getStats(playerName).getHealth(), Assets.Skins.Glassy_glassy.get());		
 		//Health
 		
 		
 		
 		setFillParent(true);
-		add(new Inventory(player)).top().right();
+		add(new Inventory(playerManager, playerName)).top().right();
 
 		
 //		healthTable.top().left();
@@ -51,7 +51,7 @@ public class HUD extends Table {
 		
 		super.act(delta);
 		
-		labelHP.setText("HP:" + player.getStats().getHealth());
+		labelHP.setText("HP:" + playerManager.getStats(playerName).getHealth());
 		
 	}
 	

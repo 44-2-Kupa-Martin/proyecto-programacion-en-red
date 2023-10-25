@@ -50,7 +50,7 @@ public class UDPThread extends Thread {
 	
 	@Override
 	public void run() {
-		DatagramPacket packet = new DatagramPacket(new byte[1024], 1024);
+		DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
 		while (true) {
 			try {
 				socket.receive(packet);;

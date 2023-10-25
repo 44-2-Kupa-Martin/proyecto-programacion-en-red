@@ -6,6 +6,7 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
@@ -44,18 +45,13 @@ public class GameScreen implements Screen, InputProcessor {
 		multiplexer.addProcessor(hudStage);
 		multiplexer.addProcessor(this);
 		Gdx.input.setInputProcessor(multiplexer);
-//		world.createEntity(new DebugBox.Definition(0, 15, 5, 5));
-//		this.hud = new HUD(world.player, world);
+		this.hud = new HUD(playerName, playerManager);
+		hudStage.addActor(hud);
 //		Server server = new Server();
 //		this.networkThread = server;
 //		Client client = new Client();
 //		this.networkThread = client;
 //		client.sendString("hello from client");
-//		TestEnemy enemy = world.createEntity(new TestEnemy.Definition(-5, 1, world.player));
-//		TestEnemy enemy2 = world.createEntity(new TestEnemy.Definition(5, 3, world.player));
-//		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
-//		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
-//		world.createEntity(new DroppedItem.Definition(0, 5, new DebugItem()));
 //		hudStage.addActor(hud);
 		Assets.Music.rain.get().setLooping(true);
 		Assets.Music.rain.get().setVolume(game.masterVolume);
@@ -67,15 +63,16 @@ public class GameScreen implements Screen, InputProcessor {
 	public void show() { Assets.Music.rain.get().play(); }
 
 	@Override
-	public void render(float delta) {
+	public void render(float delta) {		
 		updateCameraPosition();
 		ScreenUtils.clear(0, 0, 0.2f, 1);
 		// All camera manipulations must be done before calling this method
 		gameViewport.apply();
 		game.batch.setProjectionMatrix(gameCamera.combined);
 		
-		game.batch.begin();
 		FrameComponent[] components = playerManager.getFrameData();
+		game.batch.begin();
+		drawHeldItem();
 		for (FrameComponent frameComponent : components) {
 			AtlasRegion texture = null;
 			Asset<?> asset = Assets.getById(frameComponent.assetId);
@@ -133,10 +130,10 @@ public class GameScreen implements Screen, InputProcessor {
 	}
 	
 	private final void drawHeldItem() {
-//		if (world.player.items.getCursorItem() == null) 
-//			return;
-//		int textureId = world.player.items.getCursorItem().getTextureId();
-//		game.batch.draw((Texture) Assets.getById(textureId).get(), Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
+		if (playerManager.getCursorItem(playerName) == null) 
+			return;
+		int textureId = playerManager.getCursorItem(playerName).getTextureId();
+		game.batch.draw((AtlasRegion) Assets.getById(textureId).get(), Gdx.input.getX() - 15, hudViewport.getScreenHeight() - Gdx.input.getY() - 15, 30, 30);
 	}
 
 	@Override

@@ -17,4 +17,7 @@ public class ArrowItem implements Item {
 	
 	@Override
 	public boolean consume() { return true; }
+
+	@Override
+	public Category getCategory() { return Item.Category.CONSUMABLE; }
 }

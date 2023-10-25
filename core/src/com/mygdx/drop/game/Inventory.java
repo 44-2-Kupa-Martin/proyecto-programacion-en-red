@@ -7,7 +7,7 @@ import com.mygdx.drop.etc.EventCapable;
 import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.events.listeners.EventListener;
 
-public class Inventory implements EventCapable {
+public class Inventory implements EventCapable, Iterable<Item> {
 	private final Array<EventListener> listeners;
 	protected final ObservableReference<Item>[] items;
 
@@ -61,4 +61,18 @@ public class Inventory implements EventCapable {
 
 	@Override
 	public Array<EventListener> getListeners() { return listeners; }
+
+	@Override
+	public Iterator<Item> iterator() { return new Iterator<Item>() {
+		int index = 0;
+		
+		@Override
+		public Item next() { return items[index++].get(); }
+		
+		@Override
+		public boolean hasNext() { return index < items.length; }
+		
+	}; }
+	
+	
 }

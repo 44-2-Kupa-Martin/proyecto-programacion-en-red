@@ -3,34 +3,37 @@ package com.mygdx.drop.actors;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Container;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.mygdx.drop.Assets;
+import com.mygdx.drop.Assets.Textures;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.events.PropertyChangeEvent;
 import com.mygdx.drop.etc.events.listeners.EventListener;
 import com.mygdx.drop.etc.events.listeners.PropertyChangeEventListener;
 import com.mygdx.drop.game.Item;
+import com.mygdx.drop.game.PlayerManager;
+import com.mygdx.drop.game.dynamicentities.Player;
 
 /**
  * An slot that displays an {@link Item} in the UI
  */
-public class Slot<ControlledItemType extends Item> extends Container<Image> {
+public class Slot extends Container<Image> {
 	public final static TextureRegionDrawable background;
 	public final static TextureRegionDrawable selectedBackground;
-	private TextureRegionDrawable transparentPlaceholder;
+	private final TextureRegionDrawable transparentPlaceholder;
+	private final String playerName;
 	/** The item to display */
-	private final ObservableReference<ControlledItemType> itemReference;
-	private final Class<ControlledItemType> controlledItemType;
-	private final ObservableReference<Item> cursorItemReference;
-	private boolean itemChanged;
-	
+	private final int itemIndex;
+	private final PlayerManager playerManager;
+	private int previousTextureId;
 	static {
 		// The background is common to all instances
 		Pixmap pixmap = new Pixmap(1, 1, Format.RGBA8888);
@@ -50,21 +53,11 @@ public class Slot<ControlledItemType extends Item> extends Container<Image> {
 	 * @param size The size of the actor in pixels
 	 * @param controlledItem A reference to an Item
 	 */
-	public Slot(int size, ObservableReference<ControlledItemType> controlledItem, Class<ControlledItemType> controlledItemType, ObservableReference<Item> cursorItem) {
-		assert controlledItem != null : "Cannot take a null reference";
-		this.itemReference = controlledItem;
-		this.controlledItemType = controlledItemType;
-		this.cursorItemReference = cursorItem;
-		this.itemChanged = false;
+	public Slot(int size, int itemIndex, PlayerManager playerManager, String playerName) {
+		this.itemIndex = itemIndex;
+		this.playerManager = playerManager;
+		this.playerName = playerName;
 		setBackground(background);
-		
-		itemReference.addListener(new PropertyChangeEventListener<Item>(Item.class) {
-			@Override
-			public boolean onChange(Object target, Item oldValue, Item newValue) {
-				Slot.this.itemChanged = true;
-				return false;
-			}
-		});
 		
 		// The placeholder background depends on the size, so it cannot be initialized statically
 		Pixmap pixmap = new Pixmap(size, size, Pixmap.Format.RGBA8888);
@@ -75,53 +68,31 @@ public class Slot<ControlledItemType extends Item> extends Container<Image> {
         
         
         setActor(new Image());
-        ControlledItemType referencedItem = itemReference.get();
-        getActor().setDrawable(referencedItem == null ? transparentPlaceholder : new TextureRegionDrawable((Texture) Assets.getById(referencedItem.getTextureId()).get()));
+        Item referencedItem = playerManager.getItem(playerName, itemIndex);
+        this.previousTextureId = referencedItem == null ? -1 : referencedItem.getTextureId();
+        getActor().setDrawable(referencedItem == null ? transparentPlaceholder : new TextureRegionDrawable((AtlasRegion) Assets.getById(referencedItem.getTextureId()).get()));
         
         addListener(new ClickListener() {
         	@Override
         	public void clicked(InputEvent event, float x, float y) { 
-        		boolean slotHasItem = itemReference.get() != null;
-        		boolean cursorHasItem = cursorItemReference.get() != null;
-        		if (!slotHasItem && !cursorHasItem)
-        			return;
-        		
-        		if (!slotHasItem && cursorHasItem) {     
-        			boolean canPlace = controlledItemType.isInstance(cursorItemReference.get());
-        			if (canPlace) {						
-        				itemReference.set((ControlledItemType) cursorItemReference.get());
-        				cursorItemReference.set(null);
-					}
-        		}
-        		
-        		if (slotHasItem && !cursorHasItem) {
-					cursorItemReference.set(itemReference.get());
-					itemReference.set(null);
-				}
-        		if (slotHasItem && cursorHasItem) {
-        			boolean canPlace = controlledItemType.isInstance(cursorItemReference.get());
-        			if (canPlace) {
-        				ControlledItemType temp = itemReference.get();
-        				itemReference.set((ControlledItemType) cursorItemReference.get());
-        				cursorItemReference.set(temp);						
-					}
-				}
+        		playerManager.swapItem(playerName, Player.PlayerInventory.CURSOR_ITEM, itemIndex);
         	}
         });
 	}
 	
 	@Override
-	public void act(float delta) { 
-		super.act(delta);
+	public void act(float delta) {
 		setBackground(background);
+		super.act(delta); 
 	}
 	
 	@Override
 	public void draw(Batch batch, float parentAlpha) {
-		if (itemChanged) {
-			TextureRegionDrawable drawable = itemReference.get() == null ? transparentPlaceholder : new TextureRegionDrawable((Texture) Assets.getById(itemReference.get().getTextureId()).get());
-			getActor().setDrawable(drawable);
-		}
+		Item item = playerManager.getItem(playerName, itemIndex);
+		int textureId = item == null ? -1 : item.getTextureId();
+		TextureRegionDrawable drawable = textureId == -1 ? transparentPlaceholder : new TextureRegionDrawable((AtlasRegion) Assets.getById(textureId).get());
+		getActor().setDrawable(drawable);
+
 		super.draw(batch, parentAlpha);
 	}
 }

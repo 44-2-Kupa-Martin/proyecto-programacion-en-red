@@ -19,6 +19,7 @@ import com.mygdx.drop.Drop;
 import com.mygdx.drop.EventManager;
 import com.mygdx.drop.etc.Drawable;
 import com.mygdx.drop.etc.EventCapable;
+import com.mygdx.drop.etc.ObservableReference;
 import com.mygdx.drop.etc.events.ContactEvent;
 import com.mygdx.drop.etc.events.Event;
 import com.mygdx.drop.etc.events.InputEvent;
@@ -40,7 +41,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	public final int worldWidth_tl;
 	public final float worldHeight_mt;
 	public final int worldHeight_tl;
-	private final HashMap<String, PlayerSessionData> playerData;
+	private final HashMap<String, PlayerInputData> playerData;
 	
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
 	/** There is a 1 to 1 correspondence between bodies and entities. TODO consider whether it would be better to have an array on entities */
@@ -129,7 +130,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		}
 	}
 
-	public final void step() {
+	public final void step(float deltaT) {
 		// Checking whether all bodies have an owner
 		if (Constants.DEBUG) {
 			box2dWorld.getBodies(bodies);
@@ -154,7 +155,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		//TODO find a better fix to the problem of creating bodies while iterating over getBodies
 		Array<Body> bodies = new Array<Body>(this.bodies);
 		//TODO: determine best values for box2dworld.step()
-		box2dWorld.step(1 / 60f, 6, 2);
+		box2dWorld.step(deltaT, 6, 2);
 		for (Body body : bodies) {			
 			Entity entity = (Entity) body.getUserData();
 			boolean dispose = entity.update();
@@ -162,7 +163,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 				destroyEntity(entity);
 		}
 		
-		for (PlayerSessionData inputData : playerData.values()) {
+		for (PlayerInputData inputData : playerData.values()) {
 			// Update over entities. Done in step() because entities may change position, which can fire enter/exit without an input event.
 			for (int pointer = 0, n = inputData.pointerOverEntities.length; pointer < n; pointer++) {
 				Entity overLast = inputData.pointerOverEntities[pointer];
@@ -177,7 +178,6 @@ public class World implements Disposable, PlayerManager, EventCapable {
 			}
 			inputData.mouseOverEntity = fireEnterAndExit(inputData.player, inputData.mouseOverEntity, inputData.mouseWorldX, inputData.mouseWorldY, -1);
 		}
-		
 	}
 	
 
@@ -187,7 +187,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 			toBeDrawn.add((Drawable)entity);
 		if (entity instanceof Player) {
 			Player player = (Player)entity;
-			playerData.put(player.name, new PlayerSessionData(player));
+			playerData.put(player.name, new PlayerInputData(player));
 		}
 		// Update bodies array
 		box2dWorld.getBodies(bodies);
@@ -201,12 +201,12 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	}
 
 	public final Vector2 getLastClickPosition(Player player) {
-		PlayerSessionData sessionData = playerData.get(player.name);
+		PlayerInputData sessionData = playerData.get(player.name);
 		return tempCoords.set(sessionData.pointerWorldX[0], sessionData.pointerWorldY[0]);
 	}
 	
 	public final boolean isButtonPressed(Player player, int button) {
-		PlayerSessionData sessionData = playerData.get(player.name);
+		PlayerInputData sessionData = playerData.get(player.name);
 		return sessionData.buttonPressed[button] > 0;
 	}
 	
@@ -257,9 +257,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	public int getWorldWidth() { return worldWidth_tl; }
 	
 	@Override
-	public FrameComponent[] getFrameData() {
-		step();
-		
+	public FrameComponent[] getFrameData() {		
 		if (Constants.DEBUG) {
 			debug.debugRenderer.render(box2dWorld, debug.camera.combined);
 		}
@@ -273,7 +271,10 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	
 	@Override
 	public boolean keyDown(String playerName, int keycode) {
-		PlayerSessionData sessionData = this.playerData.get(playerName);
+//		System.out.println("processing input");
+		PlayerInputData sessionData = this.playerData.get(playerName);
+		if (sessionData == null)
+			return false;
 		if (sessionData.player.isDisposed()) 
 			return false;
 		InputEvent inputEvent = new InputEvent(this, this, sessionData.player);
@@ -285,7 +286,11 @@ public class World implements Disposable, PlayerManager, EventCapable {
 
 	@Override
 	public boolean keyUp(String playerName, int keycode) { 
-		PlayerSessionData sessionData = this.playerData.get(playerName);
+//		System.out.println("processing input");
+
+		PlayerInputData sessionData = this.playerData.get(playerName);
+		if (sessionData == null)
+			return false;
 		if (sessionData.player.isDisposed()) 
 			return false;
 		InputEvent inputEvent = new InputEvent(this, this, sessionData.player);
@@ -302,7 +307,11 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	 * event. */
 	@Override
 	public boolean touchDown (String playerName, float worldX, float worldY, int pointer, int button) {
-		PlayerSessionData sessionData = this.playerData.get(playerName);
+//		System.out.println("processing input");
+
+		PlayerInputData sessionData = this.playerData.get(playerName);
+		if (sessionData == null)
+			return false;
 		sessionData.pointerTouched[pointer] = true;
 		sessionData.buttonPressed[button]++;
 		sessionData.pointerWorldX[pointer] = worldX;
@@ -335,7 +344,11 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	/** Applies a touch up event to the stage and returns true if an actor in the scene {@link Event#handle() handled} the event.
 	 * Only {@link InputListener listeners} that returned true for touchDown will receive this event. */
 	public boolean touchUp (String playerName, float worldX, float worldY, int pointer, int button) {
-		PlayerSessionData sessionData = this.playerData.get(playerName);
+//		System.out.println("processing input");
+
+		PlayerInputData sessionData = this.playerData.get(playerName);
+		if (sessionData == null)
+			return false;
 		sessionData.pointerTouched[pointer] = false;
 		sessionData.buttonPressed[button]--;
 		sessionData.pointerWorldX[pointer] = worldX;
@@ -371,7 +384,11 @@ public class World implements Disposable, PlayerManager, EventCapable {
 
 	@Override
 	public boolean touchDragged(String playerName, float worldX, float worldY, int pointer) {
-		PlayerSessionData sessionData = this.playerData.get(playerName);
+//		System.out.println("processing input");
+
+		PlayerInputData sessionData = this.playerData.get(playerName);
+		if (sessionData == null)
+			return false;
 		sessionData.pointerWorldX[pointer] = worldX;
 		sessionData.pointerWorldY[pointer] = worldY;
 		sessionData.mouseWorldX = worldX;
@@ -384,7 +401,11 @@ public class World implements Disposable, PlayerManager, EventCapable {
 
 	@Override
 	public boolean mouseMoved(String playerName, float worldX, float worldY) {
-		PlayerSessionData sessionData = this.playerData.get(playerName);
+//		System.out.println("processing input");
+
+		PlayerInputData sessionData = this.playerData.get(playerName);
+		if (sessionData == null)
+			return false;
 		sessionData.mouseWorldX = worldX;
 		sessionData.mouseWorldY = worldY;
 		if (sessionData.player.isDisposed()) 
@@ -453,7 +474,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	
 	// Classes
 	
-	private static final class PlayerSessionData {
+	private static final class PlayerInputData {
 		private final Player player;
 		private final Entity[] pointerOverEntities = new Entity[20];
 		private final boolean[] pointerTouched = new boolean[20];
@@ -463,7 +484,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		private float mouseWorldX, mouseWorldY;
 		private @Null Entity mouseOverEntity;
 		
-		public PlayerSessionData(Player player) { this.player = player; }
+		public PlayerInputData(Player player) { this.player = player; }
 	}
 	
 	public static final class Debug extends com.mygdx.drop.Debug {
@@ -480,4 +501,27 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		protected void setConstructed(boolean value) { constructed = value; }
 		
 	}
+
+	@Override
+	public Item getItem(String playerName, int index) { return playerData.get(playerName).player.items.items[index].get(); }
+
+	@Override
+	public Item getCursorItem(String playerName) { return playerData.get(playerName).player.items.getCursorItem(); }
+
+	@Override
+	public int getSelectedSlot(String playerName) { return playerData.get(playerName).player.items.getSelectedSlot(); }
+
+	@Override
+	public void swapItem(String playerName, int index1, int index2) {
+		System.out.println("swap");
+		Player player = playerData.get(playerName).player;
+		ObservableReference<Item> item1 = player.items.items[index1];
+		ObservableReference<Item> item2 = player.items.items[index2];
+		Item temp = item1.get();
+		item1.set(item2.get());
+		item2.set(temp);
+	}
+
+	@Override
+	public Stats getStats(String playerName) { return playerData.get(playerName).player.getStats(); }
 }

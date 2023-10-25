@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.mygdx.drop.game.ServerThread;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Player;
 
@@ -63,13 +64,16 @@ public class MainMenuScreen implements Screen {
 		singleplayerButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-            	World world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
-            	Player player = world.createEntity(new Player.Definition("kupitinchi", 0, 10));
-            	GameScreen gameScreen = new GameScreen(game, player.name, world);
-            	if (Constants.DEBUG) {
-					world.debug.camera = gameScreen.gameCamera;
-				}
-                game.setScreen(gameScreen);
+//            	World world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
+//            	Player player = world.createEntity(new Player.Definition("kupitinchi", 0, 10));
+//            	GameScreen gameScreen = new GameScreen(game, player.name, world);
+//            	if (Constants.DEBUG) {
+//					world.debug.camera = gameScreen.gameCamera;
+//				}
+//                game.setScreen(gameScreen);
+            	Client client = new Client("messi");
+            	while (client.notConnected);
+            	game.setScreen(new GameScreen(game, "messi", client));
             }
         });
 		
@@ -77,8 +81,11 @@ public class MainMenuScreen implements Screen {
 		multiplayerButton.addListener(new ClickListener(){
 	        @Override
 		    public void clicked(InputEvent event, float x, float y) {
-		        
-	        	game.setScreen(new MultiplayerScreen(game));
+		        game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f);
+		        game.serverThread.start();
+		        Client client = new Client("fullaccess");
+		        while (client.notConnected);
+	        	game.setScreen(new GameScreen(game, "fullaccess", client));
 	        	dispose();
 	        }
 		});

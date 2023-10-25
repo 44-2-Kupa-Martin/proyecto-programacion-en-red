@@ -7,6 +7,8 @@ import com.mygdx.drop.game.dynamicentities.Player;
 //TODO make items immutable and create a static object in some common registry
 public interface Item {
 
+	public Category getCategory();
+	
 	public int getTextureId();
 
 	/**
@@ -42,4 +44,17 @@ public interface Item {
 	 * @return The minimum time between calls to {@link #rightUse(InputEvent, Inventory) rightUse()} for it to perform an action
 	 */
 	public float getRightUseTime();
+	
+	public enum Category {
+		ARMOR,
+		WEAPON,
+		CONSUMABLE,
+		ACCESSORY;
+		
+		public final short value;
+		
+		private Category() {
+			this.value = (short) (1 << ordinal());
+		}
+	}
 }

@@ -51,4 +51,7 @@ public class PickaxeItem implements Item {
 	@Override
 	public float getRightUseTime() { return 0; }
 
+	@Override
+	public Category getCategory() { return Category.WEAPON; }
+
 }

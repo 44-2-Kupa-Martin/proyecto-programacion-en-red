@@ -282,6 +282,7 @@ public class Player extends BoxEntity implements Drawable {
 			public void clicked(InputEvent event, float x, float y) {
 				if (event.player.items.getCursorItem() != null)
 					event.player.dropItem();
+				System.out.println("Player clicked");
 			}
 		});
 
@@ -367,7 +368,7 @@ public class Player extends BoxEntity implements Drawable {
 
 				};
 				// TODO find an actual key
-				collisionState.put(droppedItem.hashCode(), state);
+				collisionState.put(Objects.hash(classifiedEvent.self, classifiedEvent.other), state);
 				if (droppedItem.canPickUp()) {
 					boolean pickedUp = player.items.pickupItem(droppedItem.item);
 					if (pickedUp) {
@@ -385,7 +386,7 @@ public class Player extends BoxEntity implements Drawable {
 			public boolean endContact(ContactEvent event, ClassifiedContactEvent<Player, DroppedItem> classifiedEvent) {
 				Player player = classifiedEvent.self;
 				DroppedItem droppedItem = classifiedEvent.other;
-				State state = collisionState.get(droppedItem.hashCode());
+				State state = collisionState.get(Objects.hash(classifiedEvent.self, classifiedEvent.other));
 				player.items.removeListener(state.onFreePlayerSlot);
 				droppedItem.removeListener(state.onPickupDelayEnd);
 				// TODO find an actual key
@@ -440,15 +441,15 @@ public class Player extends BoxEntity implements Drawable {
 		public static final int ACCESSORY_SLOTS = 4;
 		public static final int ARMOR_SLOTS = 4;
 
-		private static final int HOTBAR_START = 0;
-		private static final int HOTBAR_END = HOTBAR_START + HOTBAR_SLOTS;
-		private static final int INVENTORY_START = 0;
-		private static final int INVENTORY_END = INVENTORY_START + INVENTORY_SLOTS;
-		private static final int ACCESSORY_START = INVENTORY_END;
-		private static final int ACCESSORY_END = ACCESSORY_START + ACCESSORY_SLOTS;
-		private static final int ARMOR_START = ACCESSORY_END;
-		private static final int ARMOR_END = ARMOR_START + ARMOR_SLOTS;
-		private static final int CURSOR_ITEM = ARMOR_END;
+		public static final int CURSOR_ITEM = 0;
+		public static final int HOTBAR_START = 1;
+		public static final int HOTBAR_END = HOTBAR_START + HOTBAR_SLOTS;
+		public static final int INVENTORY_START = 1;
+		public static final int INVENTORY_END = INVENTORY_START + INVENTORY_SLOTS;
+		public static final int ACCESSORY_START = INVENTORY_END;
+		public static final int ACCESSORY_END = ACCESSORY_START + ACCESSORY_SLOTS;
+		public static final int ARMOR_START = ACCESSORY_END;
+		public static final int ARMOR_END = ARMOR_START + ARMOR_SLOTS;
 		/** The hotbar counts as part of the inventory, hence it is not included in the calculation */
 		public static final int N_ITEMS = INVENTORY_SLOTS + ACCESSORY_SLOTS + ARMOR_SLOTS + 1;
 
@@ -471,7 +472,7 @@ public class Player extends BoxEntity implements Drawable {
 			this.armor = (List<ObservableReference<EquippableItem>>)(List<?>)Arrays.asList(items).subList(ARMOR_START, ARMOR_END);
 			this.accessory = (List<ObservableReference<EquippableItem>>)(List<?>)Arrays.asList(items).subList(ACCESSORY_START, ACCESSORY_END);
 			this.itemOnHand = hotbar.get(0);
-			this.selectedSlot = 0;
+			this.selectedSlot = 1;
 			this.equippableListener = new PropertyChangeEventListener<Item>(Item.class) {
 				@Override
 				public boolean onChange(Object target, Item oldValue, Item newValue) {

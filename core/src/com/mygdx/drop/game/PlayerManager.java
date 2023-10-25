@@ -5,6 +5,7 @@ import java.io.Serializable;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Buttons;
 import com.badlogic.gdx.math.Vector2;
+import com.mygdx.drop.game.Item.Category;
 
 /**
  * Represents a class capable of managing what the player sees and does.
@@ -64,6 +65,15 @@ public interface PlayerManager {
 	 * @return whether the input was processed. */
 	public boolean scrolled (String playerName, float amountX, float amountY);
 	
+	public Item getItem(String playerName, int index);
+	
+	public Item getCursorItem(String playerName);
+	
+	public int getSelectedSlot(String playerName);
+	
+	public Stats getStats(String playerName);
+	
+	public void swapItem(String playerName, int index1, int index2);
 	
 	public Vector2 getPlayerPosition(String playerName);
 	
@@ -109,5 +119,21 @@ public interface PlayerManager {
 			this.assetId = assetId;
 			this.animationFrameIndex = animationFrameIndex;
 		}
+	}
+	
+	public static class ItemData implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -6332253545214934473L;
+		public final Category category;
+		public final int textureId;
+		public ItemData(Category category, int textureId) {
+			super();
+			this.category = category;
+			this.textureId = textureId;
+		}
+		
+		
 	}
 }

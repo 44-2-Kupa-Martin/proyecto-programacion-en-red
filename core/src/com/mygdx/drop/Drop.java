@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.physics.box2d.Box2D;
 import com.badlogic.gdx.utils.Null;
 import com.mygdx.drop.game.Item;
+import com.mygdx.drop.game.ServerThread;
 import com.mygdx.drop.game.World;
 import com.mygdx.drop.game.dynamicentities.Player;
 import com.mygdx.drop.game.items.GoofyItem;
@@ -20,7 +21,7 @@ public class Drop extends Game {
 	/** If a world exists, a reference will exist here. Is there a better way to do this? */
 	public static @Null World world;
 	private static boolean constructed = false;
-
+	public ServerThread serverThread;
 	public SpriteBatch batch;
 	public float masterVolume;
 	public float zoom = 1.0f;

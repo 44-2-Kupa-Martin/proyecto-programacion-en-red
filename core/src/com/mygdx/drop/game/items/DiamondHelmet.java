@@ -33,4 +33,7 @@ public class DiamondHelmet implements EquippableItem {
 	public void unequip(MutableStats stats) {
 		stats.setDefense(stats.getDefense() - 5);
 	}
+
+	@Override
+	public Category getCategory() { return Category.ARMOR; }
 }

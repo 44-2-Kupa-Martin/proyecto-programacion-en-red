@@ -26,4 +26,7 @@ public class DiamondBoots implements EquippableItem {
 		stats.setDefense(stats.getDefense() - 5);
 	}
 
+	@Override
+	public Category getCategory() { return Category.ARMOR; }
+
 }

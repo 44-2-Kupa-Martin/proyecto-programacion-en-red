@@ -1,9 +1,15 @@
 package com.mygdx.drop.game;
 
+import java.io.Serializable;
+
 /**
  * An immutable POD for storing stats
  */
-public class Stats {
+public class Stats implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7591744591288892868L;
 	protected float maxHealth;
 	protected float health;
 	/** value subtracted from incoming damage */
