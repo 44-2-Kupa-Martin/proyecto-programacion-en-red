@@ -41,21 +41,16 @@ public class Client implements Disposable, PlayerManager {
 	private static Vector2 temp = new Vector2();
 	
 	
-	public Client(String playerName) {
+	public Client(String playerName, InetAddress serverIP) {
 		this.playerName = playerName;
 		UDPThread udpThread = null;
-		try {
-			udpThread = new UDPThread(InetAddress.getByName("127.0.0.1"), 5669, this::recievedPacket);
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		udpThread = new UDPThread(serverIP, 5669, this::recievedPacket);
 		this.lastPlayerPosition = new Vector2();
 		this.lastestFrameData = new FrameComponent[0];
 		this.udpThread = udpThread;
 		udpThread.start();
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new SessionRequest(playerName)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new SessionRequest(playerName)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -64,7 +59,7 @@ public class Client implements Disposable, PlayerManager {
 	
 	private final void recievedPacket(DatagramPacket packet) {
 		ObjectInputStream input = null;
-		Serializable object = deserializeObjectFromPacket(packet);
+		Serializable object = UDPThread.deserializeObjectFromPacket(packet);
 		if (object == null) {
 			System.out.println("Couldnt deserialize");
 		} else if (object instanceof WorldUpdate) {
@@ -91,55 +86,7 @@ public class Client implements Disposable, PlayerManager {
 		}
 	}
 	
-	private final DatagramPacket serializeObjectToPacket(SocketAddress address, Serializable object) {
-		ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
-		ObjectOutputStream outputStream = null;
-		try {
-			outputStream = new ObjectOutputStream(byteArrayStream);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			outputStream.writeObject(object);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		byte[] payload = byteArrayStream.toByteArray();
-		try {
-			outputStream.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return new DatagramPacket(payload, payload.length, address);
-	}
 	
-	private final <ObjectType extends Serializable> ObjectType deserializeObjectFromPacket(DatagramPacket packet) {
-		ObjectInputStream input = null;
-		try {
-			input = new ObjectInputStream(new ByteArrayInputStream(packet.getData(), packet.getOffset(), packet.getLength()));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		ObjectType object = null;
-		try {
-			object = (ObjectType)input.readObject();
-		} catch (ClassNotFoundException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			input.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return object;
-	}
 
 	@Override
 	public void dispose() {
@@ -149,7 +96,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean keyDown(String playerName, int keycode) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.keyDown, keycode)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.keyDown, keycode)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -160,7 +107,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean keyUp(String playerName, int keycode) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.keyUp, keycode)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.keyUp, keycode)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -171,7 +118,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean keyTyped(String playerName, char character) { 
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.keyTyped, character)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.keyTyped, character)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -182,7 +129,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean touchDown(String playerName, float worldX, float worldY, int pointer, int button) { 
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchDown, worldX, worldY, pointer, button)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchDown, worldX, worldY, pointer, button)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -193,7 +140,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean touchUp(String playerName, float worldX, float worldY, int pointer, int button) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchUp, worldX, worldY, pointer, button)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchUp, worldX, worldY, pointer, button)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -204,7 +151,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean touchCancelled(String playerName, float worldX, float worldY, int pointer, int button) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchCancelled, worldX, worldY, pointer, button)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchCancelled, worldX, worldY, pointer, button)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -215,7 +162,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean touchDragged(String playerName, float worldX, float worldY, int pointer) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchDragged, worldX, worldY, pointer)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.touchDragged, worldX, worldY, pointer)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -226,7 +173,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean mouseMoved(String playerName, float worldX, float worldY) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.mouseMoved, worldX, worldY)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.mouseMoved, worldX, worldY)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -237,7 +184,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public boolean scrolled(String playerName, float amountX, float amountY) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.scrolled, 0, 0, amountX, amountX, 0, 0, 0, (char) 0)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InputReport(playerName, Type.scrolled, 0, 0, amountX, amountX, 0, 0, 0, (char) 0)));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -269,7 +216,7 @@ public class Client implements Disposable, PlayerManager {
 	@Override
 	public void swapItem(String playerName, int index1, int index2) {
 		try {
-			udpThread.socket.send(serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InventoryUpdate(playerName, InventoryUpdate.Type.ITEM_SWAP, index1, index2)));
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new InventoryUpdate(playerName, InventoryUpdate.Type.ITEM_SWAP, index1, index2)));
 		} catch (Exception e) {
 			// TODO: handle exception
 			e.printStackTrace();

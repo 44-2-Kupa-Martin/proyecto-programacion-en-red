@@ -1,6 +1,7 @@
 package com.mygdx.drop.game;
 
 import java.util.HashMap;
+
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
@@ -42,6 +43,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	public final float worldHeight_mt;
 	public final int worldHeight_tl;
 	private final HashMap<String, PlayerInputData> playerData;
+	public String worldName = "Planeta Vegetta";
 	
 	protected com.badlogic.gdx.physics.box2d.World box2dWorld;
 	/** There is a 1 to 1 correspondence between bodies and entities. TODO consider whether it would be better to have an array on entities */
