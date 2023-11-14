@@ -1,10 +1,8 @@
 package com.mygdx.drop.actors;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
@@ -12,30 +10,25 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.utils.Align;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
-import com.mygdx.drop.GameScreen;
 import com.mygdx.drop.MainMenuScreen;
 
-public class GameMenu {
+public class GameMenu extends Table{
 
 	private final Drop game;
-	private Table escapeTable;
-	private final TextButton resume;
-	private final TextButton options;
-	private final TextButton exit;
-	private final TextButton back;
+	private final TextButton resume, options, exit, back;
 	private Table optionsTable;
-	private final Slider volumeSlider;
-	private final Slider zoomSlider;
-	private final Label volumeLabel;
-	private final Label zoomLabel;
+	private final Slider volumeSlider, zoomSlider;
+	private final Label volumeLabel, zoomLabel;
 	private final Skin skin;
+	private final Stage stage;
+	private final HUD hud;	
 	
-	public GameMenu(Drop game) {
+	
+	public GameMenu(Drop game, Stage stage, HUD hud) {
 		
 		assert Drop.game != null : "Inventory created before game instance!";
 		this.game = Drop.game;
@@ -54,12 +47,22 @@ public class GameMenu {
 		this.zoomLabel = new Label("Zoom: " + (int)(game.zoom * 100) + "%", skin);
 		this.back= new TextButton("Back", skin, "small");
 		this.back.setTransform(true);
+		this.stage = stage;
+		this.hud = hud;
+		
+//		optionsTable.setVisible(false);
+//		optionsTable.setFillParent(true);
+//		optionsTable.setDebug(Constants.DEBUG);
+//		optionsTable.setTouchable(Touchable.enabled);
+		
+		
 		
 		resume.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
             	
-            	escapeTable.setVisible(!escapeTable.isVisible());
+            	stage.getActors().get(0).remove();
+				stage.addActor(hud);
             }
         });
 
@@ -67,8 +70,20 @@ public class GameMenu {
             @Override
             public void clicked(InputEvent event, float x, float y) {
             	
-            	optionsTable.setVisible(!optionsTable.isVisible());
-            	escapeTable.setVisible(!escapeTable.isVisible());
+//            	optionsTable.setVisible(!optionsTable.isVisible());
+//            	GameMenu.this.setVisible(!GameMenu.this.isVisible());
+            	
+            	GameMenu.this.clear();
+            	GameMenu.this.add(volumeSlider);
+            	GameMenu.this.row();
+            	GameMenu.this.add(volumeLabel).colspan(2).center();
+            	GameMenu.this.row();
+            	GameMenu.this.add(zoomSlider);
+            	GameMenu.this.row();
+            	GameMenu.this.add(zoomLabel);
+            	GameMenu.this.row();
+            	GameMenu.this.add(back).align(Align.left);
+            	GameMenu.this.row(); 
             }
         });
 		
@@ -84,8 +99,10 @@ public class GameMenu {
             @Override
             public void clicked(InputEvent event, float x, float y) {
             	
-            	optionsTable.setVisible(!optionsTable.isVisible());
-            	escapeTable.setVisible(!escapeTable.isVisible());
+            	GameMenu.this.clear();
+            	GameMenu.this.add(resume).center().row();
+        		GameMenu.this.add(options).center().row();
+        		GameMenu.this.add(exit).center().row();
             	
             }
         });
@@ -111,32 +128,17 @@ public class GameMenu {
 			
 		});
 		
-		this.escapeTable = new Table();
-		escapeTable.setDebug(Constants.DEBUG);
-		escapeTable.setVisible(false);
+		GameMenu.this.setDebug(Constants.DEBUG);
 		
-		escapeTable.add(resume).center().row();
-		escapeTable.add(options).center().row();
-		escapeTable.add(exit).center().row();
+		GameMenu.this.add(resume).center().row();
+		GameMenu.this.add(options).center().row();
+		GameMenu.this.add(exit).center().row();
+		GameMenu.this.setFillParent(true);
 		
 		
-		this.optionsTable = new Table();
-		optionsTable.setDebug(Constants.DEBUG);
-		optionsTable.setVisible(false);
-		optionsTable.setTouchable(Touchable.enabled);
 		
-		optionsTable.add(volumeSlider);
-		optionsTable.row();
-		optionsTable.add(volumeLabel).colspan(2).center();
-		optionsTable.row();
-		optionsTable.add(zoomSlider);
-		optionsTable.row();
-		optionsTable.add(zoomLabel);
-		optionsTable.row();
-		optionsTable.add(back).align(Align.left);
-		optionsTable.row();
 		
-		//stage.addActor(escapeTable);
+		//stage.addActor(GameMenu.this);
 		//stage.addActor(optionsTable);
 		
 		

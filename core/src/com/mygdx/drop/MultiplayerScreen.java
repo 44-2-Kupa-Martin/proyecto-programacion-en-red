@@ -33,8 +33,8 @@ public class MultiplayerScreen implements Screen {
 	private final Drop game;
 	private final Stage stage;
 	private final OrthographicCamera camera;
-	private Skin skin;
 	private final Viewport viewport;
+	private Skin skin;
 	private Label ipLabel, portLabel;
 	private TextButton backButton, connectButton, hostButton, saveButton;
 	private TextField ipField, portField, nameField;

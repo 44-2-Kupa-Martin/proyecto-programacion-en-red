@@ -1,15 +1,17 @@
 package com.mygdx.drop;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
@@ -17,6 +19,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.mygdx.drop.Assets.Animations;
 import com.mygdx.drop.Assets.Asset;
 import com.mygdx.drop.Assets.Textures;
+import com.mygdx.drop.actors.GameMenu;
 import com.mygdx.drop.actors.HUD;
 import com.mygdx.drop.game.PlayerManager;
 import com.mygdx.drop.game.PlayerManager.FrameComponent;
@@ -31,13 +34,13 @@ public class GameScreen implements Screen, InputProcessor {
 	private Stage hudStage;
 	private String playerName;
 	private PlayerManager playerManager;
+	private GameMenu gameMenu;
 //	private Disposable networkThread;
 	public GameScreen(Drop game, String playerName, PlayerManager playerManager) {
 		this.game = game;
 		this.playerManager = playerManager;
 		this.playerName = playerName;
 		this.gameCamera = new OrthographicCamera();
-		gameCamera.zoom = game.zoom;
 		this.gameViewport = new ExtendViewport(Drop.tlToMt(Constants.DEFAULT_FOV_WIDTH_tl), Drop.tlToMt(Constants.DEFAULT_FOV_HEIGHT_tl), gameCamera);
 		this.hudViewport = new ScreenViewport();
 		InputMultiplexer multiplexer = new InputMultiplexer();
@@ -46,7 +49,9 @@ public class GameScreen implements Screen, InputProcessor {
 		multiplexer.addProcessor(this);
 		Gdx.input.setInputProcessor(multiplexer);
 		this.hud = new HUD(playerName, playerManager);
+		this.gameMenu = new GameMenu(game, hudStage, hud);
 		hudStage.addActor(hud);
+		
 //		Server server = new Server();
 //		this.networkThread = server;
 //		Client client = new Client();
@@ -54,7 +59,7 @@ public class GameScreen implements Screen, InputProcessor {
 //		client.sendString("hello from client");
 //		hudStage.addActor(hud);
 		Assets.Music.rain.get().setLooping(true);
-		Assets.Music.rain.get().setVolume(game.masterVolume);
+		
 		System.out.println(game.ipAdress);
 		System.out.println(game.portAdress);
 	}
@@ -64,6 +69,9 @@ public class GameScreen implements Screen, InputProcessor {
 
 	@Override
 	public void render(float delta) {		
+		Assets.Music.rain.get().setVolume(game.masterVolume);
+		gameCamera.zoom = game.zoom;
+		
 		updateCameraPosition();
 		ScreenUtils.clear(0, 0, 0.2f, 1);
 		// All camera manipulations must be done before calling this method
@@ -85,7 +93,19 @@ public class GameScreen implements Screen, InputProcessor {
 			}
 			game.batch.draw(texture, frameComponent.x_mt, frameComponent.y_mt, 0, 0, frameComponent.width_mt, frameComponent.height_mt, 1, 1, frameComponent.rotation_deg);
 		}		
+		
 		game.batch.end();
+		
+		if(Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+			
+					System.out.println("hice escape");	
+						
+					hudStage.getActors().get(0).remove();
+					hudStage.addActor(gameMenu);
+							
+			}
+		
+		//Sacar el stage y hacer devuelta el swap
 		
 		hudViewport.apply();
 		game.batch.setProjectionMatrix(hudViewport.getCamera().combined);
@@ -117,6 +137,7 @@ public class GameScreen implements Screen, InputProcessor {
 		hudStage.dispose(); 
 //		networkThread.dispose(); 
 	}
+	
 
 	private final void updateCameraPosition() {
 		// Make camera follow player and prevent it from going out of bounds
