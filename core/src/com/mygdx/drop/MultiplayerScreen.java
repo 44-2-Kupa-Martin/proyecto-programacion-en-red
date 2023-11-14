@@ -36,13 +36,13 @@ public class MultiplayerScreen implements Screen {
 	private Skin skin;
 	private final Viewport viewport;
 	private Label ipLabel, portLabel;
-	private TextButton backButton, connectButton, hostButton;
-	private TextField ipField, portField;
+	private TextButton backButton, connectButton, hostButton, saveButton;
+	private TextField ipField, portField, nameField;
 	private UDPThread udpThread;
 	ArrayList<WorldDiscovery> servers = new ArrayList<WorldDiscovery>();
 	private String backTexts[] = {"Back to Main Menu", "Back"};
 	private Table serverTable;
-	
+	private String playerName;
 	
 	public MultiplayerScreen(Drop game){
 		
@@ -85,27 +85,48 @@ public class MultiplayerScreen implements Screen {
 		
 		connectButton = new TextButton("Connect to a server", skin, "small");
 		connectButton.setTransform(true);
+		connectButton.setVisible(false);
 		
-
+		saveButton = new TextButton("Save name", skin, "small");
+		saveButton.setTransform(true);
 		
 		hostButton = new TextButton("Host a server", skin, "small");
 		hostButton.setTransform(true);
+		hostButton.setVisible(false);
 		
 		backButton = new TextButton(backTexts[0], skin, "small");
 		backButton.setTransform(true);
 		
 		ipField = new TextField("", skin);
 		portField = new TextField("",skin);
+		nameField = new TextField("",skin);
 		
 		Table addressTable = new Table();
 		serverTable = new Table();
 		Table buttonsTable = new Table();
+		Table nameTable = new Table();
 		
 		addressTable.setVisible(false);
 		serverTable.setVisible(false);
 		
+		
 		serverTable.setFillParent(true);
 		serverTable.center();
+		
+		saveButton.addListener(new ClickListener() {
+			
+			public void clicked(InputEvent event, float x, float y) {
+				
+				nameField.setVisible(false);
+				saveButton.setVisible(false);
+				connectButton.setVisible(true);
+				hostButton.setVisible(true);
+				
+				playerName = nameField.getText();
+				
+			}
+			
+		});
 		
 		connectButton.addListener(new ClickListener() {
 
@@ -137,13 +158,13 @@ public class MultiplayerScreen implements Screen {
 		         Client client = null;
 		        
 				 try {
-					client = new Client("fullaccess", InetAddress.getByName("127.0.0.1"));
+					client = new Client(playerName, InetAddress.getByName("127.0.0.1"));
 				 } catch (UnknownHostException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				 }
 			      while (client.notConnected);
-		        	game.setScreen(new GameScreen(game, "fullaccess", client));
+		        	game.setScreen(new GameScreen(game, playerName, client));
 				  dispose();
 					
 					
@@ -180,9 +201,9 @@ public class MultiplayerScreen implements Screen {
 			@Override
 			public void keyTyped(TextField textField, char key) {
 				try {
-						int ipAdress;
-		                ipAdress = Integer.parseInt(textField.getText());
-		                game.ipAdress = ipAdress;
+						//int ipAddress;
+		                //ipAdress = Integer.parseInt(textField.getText());
+		                //game.ipAddress = ipAddress;
 				} catch (NumberFormatException e) {
 		                    //TODO This is bad, cry about it.
 		                }
@@ -201,6 +222,12 @@ public class MultiplayerScreen implements Screen {
 		                }
 		            }
 		        });
+		
+		nameTable.setFillParent(true);
+		nameTable.center();
+		
+		nameTable.add(nameField);
+		nameTable.add(saveButton);
 		
 		addressTable.setFillParent(true);
 		addressTable.center().top();
@@ -224,10 +251,11 @@ public class MultiplayerScreen implements Screen {
 		serverTable.center();
 		
 
-				
+		stage.addActor(nameTable);
 		stage.addActor(addressTable);
 		stage.addActor(buttonsTable);
 		stage.addActor(serverTable);
+		
 		
 	}
 
