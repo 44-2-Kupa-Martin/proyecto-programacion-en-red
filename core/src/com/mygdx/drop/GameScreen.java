@@ -74,6 +74,8 @@ public class GameScreen implements Screen, InputProcessor {
 		game.batch.begin();
 		drawHeldItem();
 		for (FrameComponent frameComponent : components) {
+			if (frameComponent == null) 
+				continue;
 			AtlasRegion texture = null;
 			Asset<?> asset = Assets.getById(frameComponent.assetId);
 			if (asset instanceof Animations) {

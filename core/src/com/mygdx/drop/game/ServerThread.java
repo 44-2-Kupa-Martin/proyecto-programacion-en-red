@@ -130,6 +130,9 @@ public class ServerThread extends Thread implements Disposable {
 
 		if (!sessions.containsKey(report.playerName))
 			return;
+		
+		if (sessions.get(report.playerName).player.getStats().isDead()) 
+			return;
 
 		switch (report.type) {
 			case keyDown:

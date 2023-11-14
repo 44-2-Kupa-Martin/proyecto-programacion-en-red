@@ -9,6 +9,7 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.Contact;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Assets.Textures;
@@ -30,7 +31,11 @@ public class Arrow extends BoxEntity implements Drawable {
 	private static boolean instantiated = false;
 	public final Textures texture;
 	public final float damage;
-	protected Arrow(World world, float x_mt, float y_mt, Vector2 directionVector) { 
+	private final long creationTime;
+	private final float lifespan = 10;
+	public final Player firedBy;
+	
+	protected Arrow(World world, float x_mt, float y_mt, Vector2 directionVector, Player firedBy) { 
 		super(world, Drop.tlToMt(3), Drop.tlToMt(1), 
 				((Supplier<BodyDef>) (() -> {
 					BodyDef body = new BodyDef();
@@ -56,11 +61,16 @@ public class Arrow extends BoxEntity implements Drawable {
 		self.setTransform(getPosition(), directionVector.angleRad());
 		self.applyLinearImpulse(directionVector.nor().scl(30), self.getWorldCenter(), false);
 		this.damage = 5;
+		this.firedBy = firedBy;
+		this.creationTime = TimeUtils.millis();
 	}
 	
 	@Override
 	public boolean update() {
 		self.setTransform(getPosition(), self.getLinearVelocity().angleRad());
+		if (TimeUtils.timeSinceMillis(creationTime) / 1000f > lifespan) 
+			this.dispose();
+		
 		return super.update(); 
 	}
 
@@ -89,14 +99,16 @@ public class Arrow extends BoxEntity implements Drawable {
 	 */
 	public static class Definition extends Entity.EntityDefinition<Arrow> {
 		public Vector2 directionVector;
+		public Player firedBy;
 
-		public Definition(float x_mt, float y_mt, Vector2 directionVector) {
+		public Definition(float x_mt, float y_mt, Vector2 directionVector, Player firedBy) {
 			super(x_mt, y_mt);
 			this.directionVector = directionVector;
+			this.firedBy = firedBy;
 		}
 
 		@Override
-		protected Arrow createEntity(World world) { return new Arrow(world, x, y, directionVector); }
+		protected Arrow createEntity(World world) { return new Arrow(world, x, y, directionVector, firedBy); }
 
 	}
 }

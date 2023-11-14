@@ -14,6 +14,7 @@ import com.mygdx.drop.game.dynamicentities.Player;
 public class HUD extends Table {
 	
 	private Label labelHP;
+	private Label labelPoints;
 	private PlayerManager playerManager;
 	private String playerName;
 	
@@ -24,6 +25,7 @@ public class HUD extends Table {
 		this.playerManager = playerManager;
 		this.playerName = playerName;
 		labelHP = new Label("HP:" + playerManager.getStats(playerName).getHealth(), Assets.Skins.Glassy_glassy.get());		
+		labelPoints = new Label("Points: " + playerManager.getStats(playerName).getPoints(), Assets.Skins.Glassy_glassy.get());		
 		//Health
 		
 		
@@ -35,6 +37,7 @@ public class HUD extends Table {
 //		healthTable.top().left();
 //		healthTable.padLeft(10f).padBottom(10f);
 		add(labelHP).top().left();
+		add(labelPoints).top().left();
 		
 		
 		align(Align.topLeft);
@@ -52,6 +55,7 @@ public class HUD extends Table {
 		super.act(delta);
 		
 		labelHP.setText("HP:" + playerManager.getStats(playerName).getHealth());
+		labelPoints.setText("Points: " + playerManager.getStats(playerName).getPoints());
 		
 	}
 	

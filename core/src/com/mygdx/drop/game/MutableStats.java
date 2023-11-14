@@ -2,12 +2,12 @@ package com.mygdx.drop.game;
 
 public final class MutableStats extends Stats {
 	
-	public MutableStats(float maxHealth, float health, float invincibilityDuration) {
-		super(maxHealth,health,0,0,invincibilityDuration);
+	public MutableStats(float maxHealth, float health, float invincibilityDuration, int points) {
+		super(maxHealth,health,0,0,invincibilityDuration, points);
 	}
 	
-	public MutableStats(float maxHealth, float health, int defense, int contactDamage, float invincibilityDuration) { 
-		super(maxHealth, health, defense, contactDamage, invincibilityDuration);
+	public MutableStats(float maxHealth, float health, int defense, int contactDamage, float invincibilityDuration, int points) { 
+		super(maxHealth, health, defense, contactDamage, invincibilityDuration, points);
 	 }
 	
 	public MutableStats(Stats other) {
@@ -23,4 +23,6 @@ public final class MutableStats extends Stats {
 	public void setContactDamage(int contactDamage) { this.contactDamage = contactDamage; }
 
 	public void setInvincibilityDuration(float invincibilityDuration) { this.invincibilityDuration = invincibilityDuration; }
+	
+	public void setPoints(int points) {this.points = points;}
 }

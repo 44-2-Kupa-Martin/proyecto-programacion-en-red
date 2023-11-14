@@ -38,7 +38,7 @@ public class BowItem implements Item {
 		assert !Constants.MULTITHREADED;
 		if (player.items.hasItem(ArrowItem.class)) {
 			Vector2 arrowDirection = player.getRelativeCoordinates(new Vector2(x, y));
-			world.createEntity(new Arrow.Definition(player.getX(), player.getY(), arrowDirection));
+			world.createEntity(new Arrow.Definition(player.getX(), player.getY(), arrowDirection, player));
 			player.items.consumeItem(ArrowItem.class);
 		}
 		return false; 

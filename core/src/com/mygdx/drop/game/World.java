@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Array.ArrayIterator;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.Null;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.mygdx.drop.Constants;
 import com.mygdx.drop.Drop;
 import com.mygdx.drop.EventManager;
@@ -29,6 +30,7 @@ import com.mygdx.drop.game.Entity.EntityDefinition;
 import com.mygdx.drop.game.Entity.Lifetime;
 import com.mygdx.drop.game.WorldBorder.Cardinality;
 import com.mygdx.drop.game.dynamicentities.Player;
+import com.mygdx.drop.game.dynamicentities.TestEnemy;
 import com.mygdx.drop.game.tiles.RainbowTile;
 
 /**
@@ -51,7 +53,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	/** Entities here are destroyed the next {@link #step()} call TODO this should be a queue not an array */
 	protected final Array<Entity> toBeDestroyed;
 	private final Array<EventListener> eventHandlers;
-	
+	private long lastEnemySpawn;
 	public final Debug debug = Constants.DEBUG ? new Debug() : null;
 	private final Vector2 tempCoords = new Vector2();
 	
@@ -77,6 +79,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		this.worldHeight_tl = height_tl;
 		this.worldWidth_mt = Drop.tlToMt(width_tl);
 		this.worldHeight_mt = Drop.tlToMt(height_tl);
+		this.lastEnemySpawn = 0;
 		this.playerData = new HashMap<>();
 		this.box2dWorld = new com.badlogic.gdx.physics.box2d.World(gravity, false);
 		
@@ -120,6 +123,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		new WorldBorder(this, Cardinality.SOUTH);
 		new WorldBorder(this, Cardinality.EAST);
 		new WorldBorder(this, Cardinality.WEST);
+		createEntity(new TestEnemy.Definition(0, 3));
 		RainbowTile.Definition tileDefiniton = new RainbowTile.Definition(0,0); 
 		for (int i = worldWidth_tl / 2 - 15; i < worldWidth_tl / 2 + 15; i++) {
 			for (int j = worldHeight_tl / 2 - 3; j < worldHeight_tl / 2; j++) {
@@ -131,6 +135,10 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	}
 
 	public final void step(float deltaT) {
+		if (TimeUtils.timeSinceMillis(lastEnemySpawn) / 1000f > 10) {
+			lastEnemySpawn = TimeUtils.millis();
+			createEntity(new TestEnemy.Definition(0, 10));
+		}
 		// Checking whether all bodies have an owner
 		if (Constants.DEBUG) {
 			box2dWorld.getBodies(bodies);

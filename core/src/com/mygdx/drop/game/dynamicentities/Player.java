@@ -25,6 +25,7 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.Assets;
 import com.mygdx.drop.Constants;
@@ -77,9 +78,13 @@ public class Player extends BoxEntity implements Drawable {
 	public final Stats baseStats;
 	private MutableStats stats;
 	private int groundContacts;
+	private long deathTime;
 	private final Fixture groundSensor;
 	private final Fixture hitRadius;
+	private final float respawnTimer;
 	private final Map<Integer, Runnable> keybinds;
+	private final Vector2 spawnPosition;
+	private boolean deathTimeSet;
 
 	/**
 	 * @param x Measured in meters
@@ -96,7 +101,7 @@ public class Player extends BoxEntity implements Drawable {
 			FixtureDef fixture = new FixtureDef();
 			fixture.density = 1;
 			fixture.filter.categoryBits = Constants.Category.PLAYER.value;
-			fixture.filter.maskBits = Constants.Category.PLAYER_COLLIDABLE.value;
+			fixture.filter.maskBits = (short) (Constants.Category.PLAYER_COLLIDABLE.value | Constants.Category.SENSOR.value);
 			return fixture;
 		})).get());
 		this.name = name;
@@ -128,10 +133,14 @@ public class Player extends BoxEntity implements Drawable {
 		
 		this.previousState = State.IDLE;
 		this.currentState = State.IDLE;
+		this.deathTimeSet = false;
+		this.deathTime = 0;
 		this.animationTimer = 0;
+		this.respawnTimer = 10;
 		this.invincibilityTimer = 0;
+		this.spawnPosition = new Vector2(x, Drop.tlToMt(3) / 2 + y);
 		this.animations = initAnimationsMap();
-		this.baseStats = new Stats(100, 0, 0, 0.25f/*s*/);
+		this.baseStats = new Stats(100, 0, 0, 0.25f/*s*/, 0);
 		this.stats = new MutableStats(baseStats);
 		this.groundContacts = 0;
 		this.items = new PlayerInventory();
@@ -170,7 +179,7 @@ public class Player extends BoxEntity implements Drawable {
 	}
 
 	public final Stats getStats() { return stats; }
-
+	
 	public final void applyDamage(float lostHp) {
 		assert lostHp >= 0;
 		if (invincibilityTimer > 0)
@@ -183,6 +192,25 @@ public class Player extends BoxEntity implements Drawable {
 	@Override
 	public final boolean update() {
 		boolean toBeDisposed = super.update();
+		if (stats.isDead()) {
+			if (!deathTimeSet) {
+				deathTime = TimeUtils.millis();
+				deathTimeSet = true;
+				return toBeDisposed;
+			}
+			
+			if (TimeUtils.timeSinceMillis(deathTime) / 1000f > respawnTimer) {
+				stats.setHealth(baseStats.getMaxHealth());
+				self.setTransform(spawnPosition, 0);
+				self.setLinearVelocity(0,0);
+				self.setAngularVelocity(0);
+				tasks.clear();
+				stats.setPoints(0);
+				deathTimeSet = false;
+			}
+			return toBeDisposed;
+		}
+		
 		if (this.invincibilityTimer > 0)
 			invincibilityTimer -= Gdx.graphics.getDeltaTime();
 
@@ -201,30 +229,22 @@ public class Player extends BoxEntity implements Drawable {
 		
 		for (Runnable task : tasks)
 			task.run();
-
-		if (stats.getHealth() <= 0)
-			return true;
-
-		// TODO change this to a click listener
 		
-		if (Gdx.input.isKeyJustPressed(Keys.Q)) {
-			dropItem();
-		}
-		
-		for (int key : new int[]{Keys.NUM_1, Keys.NUM_2, Keys.NUM_3, Keys.NUM_4, Keys.NUM_5, Keys.NUM_6, Keys.NUM_7, Keys.NUM_8, Keys.NUM_9}) {
-			if (Gdx.input.isKeyJustPressed(key)) {
-				items.changeItemOnHand(key - Keys.NUM_1);
-			}
-		}
-
 		if (currentState != previousState)
 			animationTimer = 0;
 
 		return toBeDisposed;
 	}
 	
+	public final void addPoints(int points) {
+		stats.setPoints(stats.getPoints() + points);
+	}
+	
 	@Override
 	public FrameComponent getFrameComponent() { 
+		if (stats.isDead()) 
+			return null;
+		
 		animationTimer += Gdx.graphics.getDeltaTime();
 		Vector2 coords = getDrawingCoordinates();
 		SimpleImmutableEntry<Integer, Animation<AtlasRegion>> currentAnimationIdPair = animations.get(currentState);
@@ -292,6 +312,14 @@ public class Player extends BoxEntity implements Drawable {
 				Runnable task = event.player.keybinds.get(keycode);
 				if (task != null)
 					event.player.addTask(task);
+				for (int key : new int[]{Keys.NUM_1, Keys.NUM_2, Keys.NUM_3, Keys.NUM_4, Keys.NUM_5, Keys.NUM_6, Keys.NUM_7, Keys.NUM_8, Keys.NUM_9}) {
+					if (keycode == key) {
+						event.player.items.changeItemOnHand(key - Keys.NUM_1);
+					}
+				}
+				if (keycode == Keys.Q) {
+					event.player.dropItem();
+				}
 				return true;
 			}
 
@@ -405,12 +433,14 @@ public class Player extends BoxEntity implements Drawable {
 			
 			@Override
 			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<Player, TestEnemy> classfiedEvent) {
-				State state = new State();
-				state.task = () -> {
-					classfiedEvent.self.applyDamage(classfiedEvent.other.damage);
-				};
-				classfiedEvent.self.addTask(state.task);
-				collisionState.put(Objects.hash(classfiedEvent.self, classfiedEvent.other), state);
+				if (classfiedEvent.otherFixture == classfiedEvent.other.getFixtures().get(0)) {
+					State state = new State();
+					state.task = () -> {
+						classfiedEvent.self.applyDamage(classfiedEvent.other.damage);
+					};
+					classfiedEvent.self.addTask(state.task);
+					collisionState.put(Objects.hash(classfiedEvent.self, classfiedEvent.other), state);					
+				}
 				return event.isHandled();
 			}
 
@@ -472,7 +502,7 @@ public class Player extends BoxEntity implements Drawable {
 			this.armor = (List<ObservableReference<EquippableItem>>)(List<?>)Arrays.asList(items).subList(ARMOR_START, ARMOR_END);
 			this.accessory = (List<ObservableReference<EquippableItem>>)(List<?>)Arrays.asList(items).subList(ACCESSORY_START, ACCESSORY_END);
 			this.itemOnHand = hotbar.get(0);
-			this.selectedSlot = 1;
+			this.selectedSlot = 0;
 			this.equippableListener = new PropertyChangeEventListener<Item>(Item.class) {
 				@Override
 				public boolean onChange(Object target, Item oldValue, Item newValue) {

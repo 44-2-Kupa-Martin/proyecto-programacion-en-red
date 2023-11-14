@@ -6,7 +6,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.BodyDef;
+import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.Contact;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.BodyDef.BodyType;
 import com.badlogic.gdx.utils.Null;
@@ -36,8 +38,9 @@ public class TestEnemy extends BoxEntity implements Drawable {
 	private float health;
 	private float invincibilityTimer;
 	private @Null Player trackedPlayer;
+	private final Fixture playerSensor;
 
-	protected TestEnemy(World world, float x_mt, float y_mt, Player player /* TODO: REMOVE!! */) {
+	protected TestEnemy(World world, float x_mt, float y_mt) {
 		super(world, Drop.tlToMt(2), Drop.tlToMt(3), ((Supplier<BodyDef>) (() -> {
 			BodyDef body = new BodyDef();
 			body.position.set(x_mt, Drop.tlToMt(3) / 2 + y_mt);
@@ -51,12 +54,20 @@ public class TestEnemy extends BoxEntity implements Drawable {
 			return fixture;
 		})).get());
 
-		
+		FixtureDef sensor = new FixtureDef();
+		sensor.isSensor = true;
+		sensor.filter.maskBits = Constants.Category.PLAYER.value;
+		sensor.filter.categoryBits = Constants.Category.SENSOR.value;
+		CircleShape trackingRange = new CircleShape();
+		trackingRange.setRadius(5f);
+		sensor.shape = trackingRange;
 		
 		if (!instantiated)
 			initializeClassListeners(world);
-
-		this.trackedPlayer = player;
+		
+		this.playerSensor = self.createFixture(sensor);
+		trackingRange.dispose();
+		this.trackedPlayer = null;
 		this.damage = 15;
 		this.maxHealth = 15;
 		this.health = maxHealth;
@@ -68,7 +79,7 @@ public class TestEnemy extends BoxEntity implements Drawable {
 	public boolean update() {
 		boolean toBeDisposed = super.update();
 		assert !Constants.MULTITHREADED;
-		if (trackedPlayer != null && !trackedPlayer.isDisposed()) 
+		if (trackedPlayer != null && !trackedPlayer.isDisposed() && !trackedPlayer.getStats().isDead()) 
 			self.setLinearVelocity(trackedPlayer.getPosition().sub(getPosition()).nor().scl(1.5f));			
 		
 		if (this.invincibilityTimer > 0)
@@ -115,7 +126,28 @@ public class TestEnemy extends BoxEntity implements Drawable {
 			@Override
 			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<TestEnemy, Arrow> classfiedEvent) {
 				classfiedEvent.self.applyDamage(classfiedEvent.other.damage);
+				if (classfiedEvent.self.health <= 0) 
+					classfiedEvent.other.firedBy.addPoints(100);;
+				
 				return event.isHandled();
+			}
+		});
+		
+		world.addListener(new ContactEventFilter<TestEnemy, Player>(TestEnemy.class, Player.class) {
+			@Override
+			public boolean beginContact(ContactEvent event, ClassifiedContactEvent<TestEnemy, Player> participants) {
+				if ((participants.selfFixture == participants.self.playerSensor) && (participants.self.trackedPlayer == null)) {
+					participants.self.trackedPlayer = participants.other;
+				}
+				return false;
+			}
+			
+			@Override
+			public boolean endContact(ContactEvent event, ClassifiedContactEvent<TestEnemy, Player> participants) { 
+				if ((participants.selfFixture == participants.self.playerSensor) && (participants.self.trackedPlayer == participants.other)) {
+					participants.self.trackedPlayer = null;
+				}
+				return false;
 			}
 		});
 	}
@@ -124,16 +156,13 @@ public class TestEnemy extends BoxEntity implements Drawable {
 	 * @see Entity.EntityDefinition
 	 */
 	public static class Definition extends Entity.EntityDefinition<TestEnemy> {
-		// TODO REMOVE
-		public Player player;
 
-		public Definition(float x_mt, float y_mt, Player player) {
+		public Definition(float x_mt, float y_mt) {
 			super(x_mt, y_mt);
-			this.player = player;
 		}
 
 		@Override
-		protected TestEnemy createEntity(World world) { return new TestEnemy(world, x, y, player); }
+		protected TestEnemy createEntity(World world) { return new TestEnemy(world, x, y); }
 
 	}
 
