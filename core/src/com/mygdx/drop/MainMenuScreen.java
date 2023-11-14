@@ -30,7 +30,7 @@ public class MainMenuScreen implements Screen {
 	public MainMenuScreen(Drop game) {
 		this.game = game;
 	    this.camera = new OrthographicCamera();
-	    this.stage = new Stage(new ExtendViewport(800, 480, camera)); // Use ExtendViewport
+	    this.stage = new Stage(new ExtendViewport(800, 480, camera)); 
 		
 	}
 
@@ -71,9 +71,9 @@ public class MainMenuScreen implements Screen {
 //					world.debug.camera = gameScreen.gameCamera;
 //				}
 //                game.setScreen(gameScreen);
-            	Client client = new Client("messi");
-            	while (client.notConnected);
-            	game.setScreen(new GameScreen(game, "messi", client));
+//            	Client client = new Client("messi");
+//            	while (client.notConnected);
+//            	game.setScreen(new GameScreen(game, "messi", client));
             }
         });
 		
@@ -81,12 +81,14 @@ public class MainMenuScreen implements Screen {
 		multiplayerButton.addListener(new ClickListener(){
 	        @Override
 		    public void clicked(InputEvent event, float x, float y) {
-		        game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f);
-		        game.serverThread.start();
-		        Client client = new Client("fullaccess");
-		        while (client.notConnected);
-	        	game.setScreen(new GameScreen(game, "fullaccess", client));
-	        	dispose();
+//		        game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f);
+//		        game.serverThread.start();
+//		        Client client = new Client("fullaccess");
+//		        while (client.notConnected);
+//	        	game.setScreen(new GameScreen(game, "fullaccess", client));
+//	        	dispose();
+	        	
+	        	game.setScreen(new MultiplayerScreen(game));
 	        }
 		});
 		

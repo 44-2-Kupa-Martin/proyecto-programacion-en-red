@@ -1,10 +1,6 @@
 package com.mygdx.drop.game;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
@@ -13,15 +9,15 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.TimeUtils;
 import com.mygdx.drop.UDPThread;
-import com.mygdx.drop.game.Entity.EntityDefinition;
+import com.mygdx.drop.WorldDiscovery;
 import com.mygdx.drop.game.PlayerManager.FrameComponent;
 import com.mygdx.drop.game.PlayerManager.ItemData;
 import com.mygdx.drop.game.dynamicentities.Player;
+import com.mygdx.drop.game.protocol.DiscoverWorld;
 import com.mygdx.drop.game.protocol.InputReport;
 import com.mygdx.drop.game.protocol.InventoryUpdate;
 import com.mygdx.drop.game.protocol.SessionRequest;
@@ -37,16 +33,13 @@ public class ServerThread extends Thread implements Disposable {
 	private final HashMap<Class<? extends Serializable>, MessageProccesor> knownObjects;
 	private final HashMap<String, PlayerSessionData> sessions;
 	private final ConcurrentLinkedQueue<Message> messageQueue;
-
+	
+	//Agregar un mapeo a DiscoverWorld
+	
 	public ServerThread(int worldWidth_tl, int worldHeight_tl, Vector2 gravity, float deltaT) {
 		UDPThread udpThread = null;
-		try {
-			udpThread = new UDPThread(5669, InetAddress.getByName("127.0.0.1"), this::recievedPacket);
-			System.out.println("server thread created");
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		udpThread = new UDPThread(5669, this::recievedPacket);
+		System.out.println("server thread created");
 		this.udpThread = udpThread;
 		this.sessions = new HashMap<>();
 		this.knownObjects = new HashMap<>();
@@ -54,6 +47,7 @@ public class ServerThread extends Thread implements Disposable {
 		knownObjects.put(SessionRequest.class, this::handleSessionRequest);
 		knownObjects.put(InputReport.class, this::handleInputReport);
 		knownObjects.put(InventoryUpdate.class, this::handleInventoryUpdate);
+		knownObjects.put(DiscoverWorld.class, this::handleDiscoverWorld);
 		this.world = new World(worldWidth_tl, worldHeight_tl, gravity);
 		this.deltaT = deltaT;
 		this.lastUpdate = 0;
@@ -80,7 +74,7 @@ public class ServerThread extends Thread implements Disposable {
 					}
 					WorldUpdate worldUpdate = new WorldUpdate(frameData, itemData, world.getSelectedSlot(session.name), playerPos.x, playerPos.y, session.player.getStats());
 					try {
-						DatagramPacket packet = serializeObjectToPacket(session.address, worldUpdate);
+						DatagramPacket packet = UDPThread.serializeObjectToPacket(session.address, worldUpdate);
 						udpThread.socket.send(packet);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
@@ -94,7 +88,7 @@ public class ServerThread extends Thread implements Disposable {
 	}
 
 	private final void recievedPacket(DatagramPacket packet) {
-		Serializable object = deserializeObjectFromPacket(packet);
+		Serializable object = UDPThread.deserializeObjectFromPacket(packet);
 		if (object == null)
 			return;
 		if (!knownObjects.containsKey(object.getClass()))
@@ -107,7 +101,7 @@ public class ServerThread extends Thread implements Disposable {
 
 		if (sessions.containsKey(request.playerName)) {
 			try {
-				udpThread.socket.send(serializeObjectToPacket(packet.getSocketAddress(), new SessionResponse(false, 0, 0)));
+				udpThread.socket.send(UDPThread.serializeObjectToPacket(packet.getSocketAddress(), new SessionResponse(false, 0, 0)));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -116,7 +110,7 @@ public class ServerThread extends Thread implements Disposable {
 			Player player = world.createEntity(new Player.Definition(request.playerName, 0, 10));
 			sessions.put(request.playerName, new PlayerSessionData(request.playerName, packet.getSocketAddress(), player));
 			try {
-				udpThread.socket.send(serializeObjectToPacket(packet.getSocketAddress(),
+				udpThread.socket.send(UDPThread.serializeObjectToPacket(packet.getSocketAddress(),
 						new SessionResponse(true, world.worldWidth_tl, world.worldHeight_tl)));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -176,56 +170,28 @@ public class ServerThread extends Thread implements Disposable {
 		throw new RuntimeException("unreachable");
 
 	}
-
-	private final DatagramPacket serializeObjectToPacket(SocketAddress address, Serializable object) {
-		ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
-		ObjectOutputStream outputStream = null;
+	
+	private final void handleDiscoverWorld(DatagramPacket packet, Serializable message) {
+		
 		try {
-			outputStream = new ObjectOutputStream(byteArrayStream);
-		} catch (IOException e) {
+			System.out.println("Llego en el handle");
+			System.out.println(packet.getSocketAddress().toString());
+			WorldDiscovery worldDiscovery = new WorldDiscovery(world.worldName, InetAddress.getLocalHost());
+			try {
+				udpThread.socket.send(UDPThread.serializeObjectToPacket(packet.getSocketAddress(), worldDiscovery));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		try {
-			outputStream.writeObject(object);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		byte[] payload = byteArrayStream.toByteArray();
-		try {
-			outputStream.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return new DatagramPacket(payload, payload.length, address);
+		
+		
+		
 	}
 
-	private final <ObjectType extends Serializable> ObjectType deserializeObjectFromPacket(DatagramPacket packet) {
-		ObjectInputStream input = null;
-		try {
-			input = new ObjectInputStream(new ByteArrayInputStream(packet.getData(), packet.getOffset(), packet.getLength()));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		ObjectType object = null;
-		try {
-			object = (ObjectType) input.readObject();
-		} catch (ClassNotFoundException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			input.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return object;
-	}
 
 	@Override
 	public void dispose() { udpThread.interrupt(); }
