@@ -1,6 +1,5 @@
 package com.mygdx.drop;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -23,6 +22,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.mygdx.drop.game.ServerThread;
@@ -43,8 +43,12 @@ public class MultiplayerScreen implements Screen {
 	private String backTexts[] = {"Back to Main Menu", "Back"};
 	private Table serverTable;
 	private String playerName;
+	private long startTime = TimeUtils.millis();
+	private boolean filledTable = false;
+	
 	
 	public MultiplayerScreen(Drop game){
+		
 		
 		
 		UDPThread udpThread = null;
@@ -84,18 +88,18 @@ public class MultiplayerScreen implements Screen {
 		
 		
 		connectButton = new TextButton("Connect to a server", skin, "small");
-		connectButton.setTransform(true);
+//		connectButton.setTransform(true);
 		connectButton.setVisible(false);
 		
 		saveButton = new TextButton("Save name", skin, "small");
-		saveButton.setTransform(true);
+//		saveButton.setTransform(true);
 		
 		hostButton = new TextButton("Host a server", skin, "small");
-		hostButton.setTransform(true);
+//		hostButton.setTransform(true);
 		hostButton.setVisible(false);
 		
 		backButton = new TextButton(backTexts[0], skin, "small");
-		backButton.setTransform(true);
+//		backButton.setTransform(true);
 		
 		ipField = new TextField("", skin);
 		portField = new TextField("",skin);
@@ -117,8 +121,9 @@ public class MultiplayerScreen implements Screen {
 			
 			public void clicked(InputEvent event, float x, float y) {
 				
-				nameField.setVisible(false);
-				saveButton.setVisible(false);
+
+				nameTable.clear();
+				
 				connectButton.setVisible(true);
 				hostButton.setVisible(true);
 				
@@ -144,7 +149,6 @@ public class MultiplayerScreen implements Screen {
 					buttonsTable.center().bottom();
 					
 					
-					
 				}
 			});
 		
@@ -153,19 +157,17 @@ public class MultiplayerScreen implements Screen {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				
-				 game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f);
-			     game.serverThread.start();
-		         Client client = null;
-		        
-				 try {
-					client = new Client(playerName, InetAddress.getByName("127.0.0.1"));
-				 } catch (UnknownHostException e) {
+				game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f);
+			    game.serverThread.start();
+	 
+				try {
+					
+					game.setScreen(new LoadingScreen(InetAddress.getByName("127.0.0.1"), playerName, game));
+				} catch (UnknownHostException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				 }
-			      while (client.notConnected);
-		        	game.setScreen(new GameScreen(game, playerName, client));
-				  dispose();
+				}
+				
 					
 					
 				}
@@ -245,9 +247,7 @@ public class MultiplayerScreen implements Screen {
 		buttonsTable.add(hostButton).row();
 		buttonsTable.add(backButton);
 		
-		serverTable.debug();
 		
-		serverTable.setFillParent(true);
 		serverTable.center();
 		
 
@@ -256,34 +256,60 @@ public class MultiplayerScreen implements Screen {
 		stage.addActor(buttonsTable);
 		stage.addActor(serverTable);
 		
+			
+		
+		Gdx.input.setInputProcessor(stage);
 		
 	}
 
 
 	@Override
 	public void show() {
-		Gdx.input.setInputProcessor(stage);
+		
 				
 	}
 
 	@Override
 	public void render(float delta) {
 			Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-			stage.act(delta);
-			stage.draw();
 			
-			for (int i = 0; i < servers.size(); i++) {
+			
+			if(TimeUtils.timeSinceMillis(startTime) / 1000f > 5 && !filledTable) {
 				
-				serverTable.clear();
-				
-			    WorldDiscovery server = servers.get(i);
+				for (int i = 0; i < servers.size(); i++) {
+					
+					
+				    WorldDiscovery server = servers.get(i);
 
-			    Label worldLabel = new Label(server.worldName, skin);
-			    TextButton joinButton = new TextButton("Join", skin, "small");
+				    Label worldLabel = new Label(server.worldName, skin);
+				    TextButton joinButton = new TextButton("Join", skin, "small");
+				    
+				    joinButton.setTouchable(null);
+			
 
-			    serverTable.add(worldLabel).left();
-			    serverTable.add(joinButton).right().row();
+				    serverTable.add(worldLabel).left();
+				    serverTable.add(joinButton).right().row();
+				    
+				    
+				    joinButton.addListener(new ClickListener() {
+				    	
+				    	@Override
+						public void clicked(InputEvent event, float x, float y) {
+							
+				    			System.out.println("asdasdsa");
+				    			
+				    			game.setScreen(new LoadingScreen(server, playerName, game));
+								
+							}
+						});
+				}
+				filledTable = true;
 			}
+			
+			
+			
+			stage.act();
+			stage.draw();
 			
 		}
 	
@@ -313,6 +339,7 @@ public class MultiplayerScreen implements Screen {
 			stage.dispose();
 			
 		}
+	
 	
 	
 	private void recievedPacket(DatagramPacket packet) {

@@ -36,7 +36,7 @@ public class Client implements Disposable, PlayerManager {
 	private Stats playerStats;
 	private int lastSelectedSlot;
 	private Vector2 lastPlayerPosition;
-	public volatile boolean notConnected = true;
+	public volatile boolean connected = false;
 	private int worldWidth_tl, worldHeight_tl;
 	private static Vector2 temp = new Vector2();
 	
@@ -73,7 +73,7 @@ public class Client implements Disposable, PlayerManager {
 				ItemData data = update.itemData[i];
 				latestItemData[i] = data != null ? new PhonyItem(data.category, data.textureId) : null;
 			}
-			this.notConnected = false;
+			this.connected = true;
 		} else if (object instanceof SessionResponse) {
 			SessionResponse response = (SessionResponse)object;
 			System.out.println("Received session response. Request " + (response.accepted ? "succeeded" : "failed"));
