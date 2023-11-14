@@ -171,8 +171,15 @@ public class ServerThread extends Thread implements Disposable {
 	private final void handleDiscoverWorld(DatagramPacket packet, Serializable message) {
 		
 		try {
+			System.out.println("Llego en el handle");
+			System.out.println(packet.getSocketAddress().toString());
 			WorldDiscovery worldDiscovery = new WorldDiscovery(world.worldName, InetAddress.getLocalHost());
-			UDPThread.serializeObjectToPacket(packet.getSocketAddress(), worldDiscovery);
+			try {
+				udpThread.socket.send(UDPThread.serializeObjectToPacket(packet.getSocketAddress(), worldDiscovery));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

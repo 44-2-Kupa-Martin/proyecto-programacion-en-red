@@ -56,12 +56,17 @@ public class UDPThread extends Thread {
 		
 	}
 	
+	public UDPThread(Consumer<DatagramPacket> onReceive) {
+		this(-1, null, onReceive);
+		
+	}
+	
 	@Override
 	public void run() {
 		DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
 		while (true) {
 			try {
-				socket.receive(packet);;
+				socket.receive(packet);
 				if (onRecieve != null) 
 					onRecieve.accept(packet);
 			} catch (SocketTimeoutException e) {
@@ -98,6 +103,31 @@ public class UDPThread extends Thread {
 			e.printStackTrace();
 		}
 		return new DatagramPacket(payload, payload.length, address);
+	}
+	
+	public static final DatagramPacket serializeObjectToPacket(InetAddress address, int port, Serializable object) {
+		ByteArrayOutputStream byteArrayStream = new ByteArrayOutputStream();
+		ObjectOutputStream outputStream = null;
+		try {
+			outputStream = new ObjectOutputStream(byteArrayStream);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			outputStream.writeObject(object);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		byte[] payload = byteArrayStream.toByteArray();
+		try {
+			outputStream.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new DatagramPacket(payload, payload.length, address, port);
 	}
 	
 	public static final <ObjectType extends Serializable> ObjectType deserializeObjectFromPacket(DatagramPacket packet) {

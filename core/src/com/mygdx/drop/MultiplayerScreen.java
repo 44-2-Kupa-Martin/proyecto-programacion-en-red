@@ -46,13 +46,9 @@ public class MultiplayerScreen implements Screen {
 	
 	public MultiplayerScreen(Drop game){
 		
+		
 		UDPThread udpThread = null;
-		try {
-			udpThread = new UDPThread(InetAddress.getByName("192.168.1.255"), 5669, this::recievedPacket);
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		udpThread = new UDPThread( this::recievedPacket);
 		
 		
 		this.game = game;
@@ -71,7 +67,8 @@ public class MultiplayerScreen implements Screen {
 		}
 		
 		try {
-			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new DiscoverWorld()));
+			System.out.println("probando");
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(InetAddress.getByName("255.255.255.255"),5669, new DiscoverWorld()));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -303,6 +300,8 @@ public class MultiplayerScreen implements Screen {
 			servers.add(update);
 			
 			System.out.println("hola");
+		} else {
+			System.out.println("Ya no quiero");
 		}
 		
 	}
