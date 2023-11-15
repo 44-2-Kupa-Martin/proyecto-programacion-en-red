@@ -52,7 +52,7 @@ public class MultiplayerScreen implements Screen {
 		
 		
 		UDPThread udpThread = null;
-		udpThread = new UDPThread( this::recievedPacket);
+		udpThread = new UDPThread( this::recievedPacket, ()->{});
 		
 		
 		this.game = game;
@@ -157,12 +157,13 @@ public class MultiplayerScreen implements Screen {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				
-				game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f);
+				game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f, playerName);
 			    game.serverThread.start();
 	 
 				try {
 					
 					game.setScreen(new LoadingScreen(InetAddress.getByName("127.0.0.1"), playerName, game));
+					dispose();
 				} catch (UnknownHostException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -299,7 +300,7 @@ public class MultiplayerScreen implements Screen {
 				    			System.out.println("asdasdsa");
 				    			
 				    			game.setScreen(new LoadingScreen(server, playerName, game));
-								
+								dispose();
 							}
 						});
 				}
@@ -337,6 +338,7 @@ public class MultiplayerScreen implements Screen {
 	public void dispose() {
 			
 			stage.dispose();
+			udpThread.interrupt();
 			
 		}
 	

@@ -79,5 +79,8 @@ public class Drop extends Game {
 		super.screen.dispose();
 		Assets.dispose();
 		batch.dispose();
+		if(serverThread != null) {
+			serverThread.dispose();
+		}
 	}
 }

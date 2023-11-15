@@ -22,6 +22,7 @@ import com.mygdx.drop.game.protocol.InputReport;
 import com.mygdx.drop.game.protocol.InventoryUpdate;
 import com.mygdx.drop.game.protocol.SessionRequest;
 import com.mygdx.drop.game.protocol.SessionResponse;
+import com.mygdx.drop.game.protocol.TerminateSession;
 import com.mygdx.drop.game.protocol.WorldUpdate;
 
 public class ServerThread extends Thread implements Disposable {
@@ -33,12 +34,13 @@ public class ServerThread extends Thread implements Disposable {
 	private final HashMap<Class<? extends Serializable>, MessageProccesor> knownObjects;
 	private final HashMap<String, PlayerSessionData> sessions;
 	private final ConcurrentLinkedQueue<Message> messageQueue;
+	private final String playerHost;
 	
 	//Agregar un mapeo a DiscoverWorld
 	
-	public ServerThread(int worldWidth_tl, int worldHeight_tl, Vector2 gravity, float deltaT) {
+	public ServerThread(int worldWidth_tl, int worldHeight_tl, Vector2 gravity, float deltaT, String playerHost) {
 		UDPThread udpThread = null;
-		udpThread = new UDPThread(5669, this::recievedPacket);
+		udpThread = new UDPThread(5669, this::recievedPacket, ()->{});
 		System.out.println("server thread created");
 		this.udpThread = udpThread;
 		this.sessions = new HashMap<>();
@@ -48,16 +50,18 @@ public class ServerThread extends Thread implements Disposable {
 		knownObjects.put(InputReport.class, this::handleInputReport);
 		knownObjects.put(InventoryUpdate.class, this::handleInventoryUpdate);
 		knownObjects.put(DiscoverWorld.class, this::handleDiscoverWorld);
+		knownObjects.put(TerminateSession.class, this::handleTerminateSession);
 		this.world = new World(worldWidth_tl, worldHeight_tl, gravity);
 		this.deltaT = deltaT;
 		this.lastUpdate = 0;
+		this.playerHost = playerHost;
 		udpThread.start();
 		System.out.println("server thread started");
 	}
 
 	@Override
 	public void run() {
-		while (true) {
+		while (!ServerThread.interrupted()) {
 			while (!messageQueue.isEmpty()) {
 				Message message = messageQueue.remove();
 				knownObjects.get(message.deserializedObject.getClass()).process(message.sourceDatagram, message.deserializedObject);
@@ -85,6 +89,7 @@ public class ServerThread extends Thread implements Disposable {
 				this.lastUpdate = TimeUtils.millis();
 			}
 		}
+			
 	}
 
 	private final void recievedPacket(DatagramPacket packet) {
@@ -125,9 +130,9 @@ public class ServerThread extends Thread implements Disposable {
 		if (!sessions.containsKey(report.playerName))
 			return;
 		
-		if (sessions.get(report.playerName).player.getStats().isDead()) 
+		if (sessions.get(report.playerName).player.getStats().isDead()) {
 			return;
-
+		}
 		switch (report.type) {
 			case keyDown:
 				world.keyDown(report.playerName, report.keyCode);
@@ -191,10 +196,29 @@ public class ServerThread extends Thread implements Disposable {
 		
 		
 	}
+	
+	private final void handleTerminateSession(DatagramPacket packet, Serializable message) {
+		
+		TerminateSession terminateSession = (TerminateSession) message;
+		
+		sessions.remove(terminateSession.playerName).player.dispose();;
+		
+		if(terminateSession.playerName == playerHost) {
+	
+			dispose();
+		}
+		
+	}
 
 
 	@Override
-	public void dispose() { udpThread.interrupt(); }
+	public void dispose() { 
+		
+		
+		udpThread.interrupt();
+		this.interrupt();
+	
+	}
 
 	private class Message {
 		public final DatagramPacket sourceDatagram;

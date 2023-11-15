@@ -105,8 +105,10 @@ public class Player extends BoxEntity implements Drawable {
 			return fixture;
 		})).get());
 		this.name = name;
-		if (!instantiated)
+		if (!world.entityFlags.containsKey(Player.class)) {
 			initializeClassListeners(world);
+			world.entityFlags.put(Player.class, true);
+		}
 
 		FixtureDef sensor = new FixtureDef();
 		sensor.isSensor = true;
@@ -191,8 +193,12 @@ public class Player extends BoxEntity implements Drawable {
 
 	@Override
 	public final boolean update() {
+		
+		
 		boolean toBeDisposed = super.update();
 		if (stats.isDead()) {
+			self.setLinearVelocity(0,0);
+			self.setAngularVelocity(0);
 			if (!deathTimeSet) {
 				deathTime = TimeUtils.millis();
 				deathTimeSet = true;
@@ -202,8 +208,6 @@ public class Player extends BoxEntity implements Drawable {
 			if (TimeUtils.timeSinceMillis(deathTime) / 1000f > respawnTimer) {
 				stats.setHealth(baseStats.getMaxHealth());
 				self.setTransform(spawnPosition, 0);
-				self.setLinearVelocity(0,0);
-				self.setAngularVelocity(0);
 				tasks.clear();
 				stats.setPoints(0);
 				deathTimeSet = false;

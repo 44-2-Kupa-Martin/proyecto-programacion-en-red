@@ -53,8 +53,9 @@ public class Arrow extends BoxEntity implements Drawable {
 				})).get()
 		);
 		
-		if (!instantiated) {
+		if (!world.entityFlags.containsKey(Arrow.class)) {
 			initializeClassListeners(world);
+			world.entityFlags.put(Arrow.class, true);
 		}
 		
 		this.texture = Assets.Textures.Arrow_arrow;

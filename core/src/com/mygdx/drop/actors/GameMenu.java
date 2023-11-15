@@ -91,10 +91,11 @@ public class GameMenu extends Table{
             @Override
             public void clicked(InputEvent event, float x, float y) {
             	
+            	game.getScreen().dispose();
                 game.setScreen(new MainMenuScreen(game));
             }
         });
-		
+	
 		back.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {

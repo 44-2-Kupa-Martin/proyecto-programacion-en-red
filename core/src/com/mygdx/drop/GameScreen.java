@@ -72,6 +72,8 @@ public class GameScreen implements Screen, InputProcessor {
 		Assets.Music.rain.get().setVolume(game.masterVolume);
 		gameCamera.zoom = game.zoom;
 		
+		playerManager.step(delta);
+		
 		updateCameraPosition();
 		ScreenUtils.clear(0, 0, 0.2f, 1);
 		// All camera manipulations must be done before calling this method
@@ -112,6 +114,11 @@ public class GameScreen implements Screen, InputProcessor {
 		hudStage.act();
 		hudStage.draw();
 		
+		if (!playerManager.isConnected()) {
+			game.setScreen(new MainMenuScreen(game));
+			dispose();
+		}
+		
 //		game.batch.begin();
 //		drawHeldItem();
 //		game.batch.end();		
@@ -135,6 +142,8 @@ public class GameScreen implements Screen, InputProcessor {
 	@Override
 	public void dispose() { 
 		hudStage.dispose(); 
+		playerManager.closeSession();
+		Assets.Music.rain.get().stop();
 //		networkThread.dispose(); 
 	}
 	

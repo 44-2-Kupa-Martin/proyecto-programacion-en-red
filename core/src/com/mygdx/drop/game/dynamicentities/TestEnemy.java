@@ -62,8 +62,10 @@ public class TestEnemy extends BoxEntity implements Drawable {
 		trackingRange.setRadius(5f);
 		sensor.shape = trackingRange;
 		
-		if (!instantiated)
+		if (!world.entityFlags.containsKey(TestEnemy.class)) {
 			initializeClassListeners(world);
+			world.entityFlags.put(TestEnemy.class, true);
+		}
 		
 		this.playerSensor = self.createFixture(sensor);
 		trackingRange.dispose();

@@ -1,22 +1,13 @@
 package com.mygdx.drop;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.DatagramPacket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
 
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
-import com.mygdx.drop.etc.EventCapable;
-import com.mygdx.drop.etc.events.listeners.EventListener;
 import com.mygdx.drop.game.Item;
 import com.mygdx.drop.game.PlayerManager;
 import com.mygdx.drop.game.Stats;
@@ -26,6 +17,7 @@ import com.mygdx.drop.game.protocol.InputReport.Type;
 import com.mygdx.drop.game.protocol.InventoryUpdate;
 import com.mygdx.drop.game.protocol.SessionRequest;
 import com.mygdx.drop.game.protocol.SessionResponse;
+import com.mygdx.drop.game.protocol.TerminateSession;
 import com.mygdx.drop.game.protocol.WorldUpdate;
 
 public class Client implements Disposable, PlayerManager {
@@ -39,12 +31,13 @@ public class Client implements Disposable, PlayerManager {
 	public volatile boolean connected = false;
 	private int worldWidth_tl, worldHeight_tl;
 	private static Vector2 temp = new Vector2();
+	private boolean isConnected;
 	
 	
 	public Client(String playerName, InetAddress serverIP) {
 		this.playerName = playerName;
 		UDPThread udpThread = null;
-		udpThread = new UDPThread(serverIP, 5669, this::recievedPacket);
+		udpThread = new UDPThread(serverIP, 5669, this::recievedPacket, ()->{isConnected = false;});
 		this.lastPlayerPosition = new Vector2();
 		this.lastestFrameData = new FrameComponent[0];
 		this.udpThread = udpThread;
@@ -78,6 +71,7 @@ public class Client implements Disposable, PlayerManager {
 			SessionResponse response = (SessionResponse)object;
 			System.out.println("Received session response. Request " + (response.accepted ? "succeeded" : "failed"));
 			if (response.accepted) {
+				isConnected = true;
 				this.worldHeight_tl = response.worldHeight_tl;
 				this.worldWidth_tl = response.worldWidth_tl;
 			}
@@ -225,5 +219,33 @@ public class Client implements Disposable, PlayerManager {
 
 	@Override
 	public Stats getStats(String playerName) { return playerStats; }
+
+	@Override
+	public boolean isConnected() {
+		// TODO Auto-generated method stub
+		return isConnected;
+	}
+
+	@Override
+	public void closeSession() {
+		// TODO Auto-generated method stub
+		
+		try {
+			udpThread.socket.send(UDPThread.serializeObjectToPacket(udpThread.socket.getRemoteSocketAddress(), new TerminateSession(playerName)));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		udpThread.interrupt();
+		
+		
+	}
+
+
+	@Override
+	public void step(float ola) {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

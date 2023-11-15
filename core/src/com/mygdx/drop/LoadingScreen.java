@@ -57,6 +57,7 @@ public class LoadingScreen implements Screen{
 		// TODO Auto-generated method stub
 		
 		if (client.connected) {
+			
 	    	  game.setScreen(new GameScreen(game, playerName, client));
 		  dispose();
 	      } 
@@ -90,6 +91,8 @@ public class LoadingScreen implements Screen{
 	@Override
 	public void dispose() {
 		// TODO Auto-generated method stub
+		
+		stage.dispose();
 		
 	}
 	

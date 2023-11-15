@@ -20,10 +20,13 @@ public class UDPThread extends Thread {
 	public final DatagramSocket socket;
 	private final InetAddress serverIP;
 	private final Consumer<DatagramPacket> onRecieve;
+	private final Runnable onTimeout;
 	
-	public UDPThread(int runningPort, InetAddress serverIP, Consumer<DatagramPacket> onReceive) {
+	public UDPThread(int runningPort, InetAddress serverIP, Consumer<DatagramPacket> onReceive, Runnable onTimeout) {
 		this.serverIP = serverIP;
 		DatagramSocket socket = null;
+		
+		
 		try {
 			socket = runningPort == -1 ? new DatagramSocket() : new DatagramSocket(runningPort);
 		} catch (SocketException e) {
@@ -38,46 +41,57 @@ public class UDPThread extends Thread {
 			e.printStackTrace();
 		}
 		this.onRecieve = onReceive;
+		this.onTimeout = onTimeout;
+		
+		try {
+			socket.setSoTimeout(5000);
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	
-	public UDPThread(InetAddress serverIP, int serverPort, Consumer<DatagramPacket> onReceive) {
-		this(-1, serverIP, onReceive);
+	public UDPThread(InetAddress serverIP, int serverPort, Consumer<DatagramPacket> onReceive, Runnable onTimeout) {
+		this(-1, serverIP, onReceive, onTimeout);
 		socket.connect(serverIP, serverPort);
 	}	
 	
-	public UDPThread(int runningPort, InetAddress serverIP, int serverPort, Consumer<DatagramPacket> onReceive) {
-		this(runningPort, serverIP, onReceive);
+	public UDPThread(int runningPort, InetAddress serverIP, int serverPort, Consumer<DatagramPacket> onReceive, Runnable onTimeout) {
+		this(runningPort, serverIP, onReceive, onTimeout);
 		socket.connect(serverIP, serverPort);
 	}
 	
-	public UDPThread(int runningPort, Consumer<DatagramPacket> onReceive) {
-		this(runningPort, null, onReceive);
+	public UDPThread(int runningPort, Consumer<DatagramPacket> onReceive, Runnable onTimeout) {
+		this(runningPort, null, onReceive, onTimeout);
 		
 	}
 	
-	public UDPThread(Consumer<DatagramPacket> onReceive) {
-		this(-1, null, onReceive);
+	public UDPThread(Consumer<DatagramPacket> onReceive, Runnable onTimeout) {
+		this(-1, null, onReceive, onTimeout);
 		
 	}
 	
 	@Override
 	public void run() {
 		DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
-		while (true) {
+		while (!Thread.interrupted()) {
 			try {
 				socket.receive(packet);
 				if (onRecieve != null) 
 					onRecieve.accept(packet);
 			} catch (SocketTimeoutException e) {
-				if (isInterrupted())
-					break;
+				
+				onTimeout.run();
+				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 				
 		}
+		
+		socket.close();
 	}
 	
 	public static final DatagramPacket serializeObjectToPacket(SocketAddress address, Serializable object) {
@@ -154,5 +168,7 @@ public class UDPThread extends Thread {
 		}
 		return object;
 	}
+	
+	
 	
 }

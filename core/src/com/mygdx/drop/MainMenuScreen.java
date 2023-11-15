@@ -32,6 +32,10 @@ public class MainMenuScreen implements Screen {
 	    this.camera = new OrthographicCamera();
 	    this.stage = new Stage(new ExtendViewport(800, 480, camera)); 
 		
+	    if(game.serverThread != null) {
+	    	game.serverThread.dispose();
+	    }
+	    
 	}
 
 	@Override
@@ -64,16 +68,13 @@ public class MainMenuScreen implements Screen {
 		singleplayerButton.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-//            	World world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
-//            	Player player = world.createEntity(new Player.Definition("kupitinchi", 0, 10));
-//            	GameScreen gameScreen = new GameScreen(game, player.name, world);
-//            	if (Constants.DEBUG) {
-//					world.debug.camera = gameScreen.gameCamera;
-//				}
-//                game.setScreen(gameScreen);
-//            	Client client = new Client("messi");
-//            	while (client.notConnected);
-//            	game.setScreen(new GameScreen(game, "messi", client));
+            	
+            	World world = new World(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10) /* m/s^2 */);
+            	Player player = world.createEntity(new Player.Definition("kupitinchi", 0, 10));
+            	GameScreen gameScreen = new GameScreen(game, player.name, world);
+                game.setScreen(gameScreen);
+                dispose();
+  
             }
         });
 		
@@ -81,14 +82,9 @@ public class MainMenuScreen implements Screen {
 		multiplayerButton.addListener(new ClickListener(){
 	        @Override
 		    public void clicked(InputEvent event, float x, float y) {
-//		        game.serverThread = new ServerThread(Constants.WORLD_WIDTH_tl, Constants.WORLD_HEIGHT_tl, new Vector2(0, -10), 1/60f);
-//		        game.serverThread.start();
-//		        Client client = new Client("fullaccess");
-//		        while (client.notConnected);
-//	        	game.setScreen(new GameScreen(game, "fullaccess", client));
-//	        	dispose();
 	        	
 	        	game.setScreen(new MultiplayerScreen(game));
+	        	dispose();
 	        }
 		});
 		

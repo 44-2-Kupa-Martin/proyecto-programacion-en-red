@@ -91,6 +91,13 @@ public interface PlayerManager {
 	/**
 	 * A component/part of a frame  
 	 */
+	
+	public boolean isConnected();
+	
+	public void closeSession();
+	
+	public void step(float ola);
+	
 	public static class FrameComponent implements Serializable {
 		private static final long serialVersionUID = 3776117174371190594L;
 		public final float x_mt;
@@ -119,6 +126,8 @@ public interface PlayerManager {
 			this.assetId = assetId;
 			this.animationFrameIndex = animationFrameIndex;
 		}
+		
+		
 	}
 	
 	public static class ItemData implements Serializable {
@@ -136,4 +145,6 @@ public interface PlayerManager {
 		
 		
 	}
+	
+	
 }

@@ -58,7 +58,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	private long lastEnemySpawn;
 	public final Debug debug = Constants.DEBUG ? new Debug() : null;
 	private final Vector2 tempCoords = new Vector2();
-	
+	public final HashMap<Class <? extends Entity>, Boolean> entityFlags;
 	
 	
 	/**
@@ -83,6 +83,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		this.worldHeight_mt = Drop.tlToMt(height_tl);
 		this.lastEnemySpawn = 0;
 		this.playerData = new HashMap<>();
+		this.entityFlags = new HashMap<>();
 		this.box2dWorld = new com.badlogic.gdx.physics.box2d.World(gravity, false);
 		
 		// Pack and fire contact events. Note: it seems that box2d calls this listener from multiple threads, hence the need for ContactEvents to be semi-immutable
@@ -512,6 +513,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 		
 	}
 
+	
 	@Override
 	public Item getItem(String playerName, int index) { return playerData.get(playerName).player.items.items[index].get(); }
 
@@ -534,4 +536,16 @@ public class World implements Disposable, PlayerManager, EventCapable {
 
 	@Override
 	public Stats getStats(String playerName) { return playerData.get(playerName).player.getStats(); }
+
+	@Override
+	public boolean isConnected() {
+		
+		return true;
+	}
+
+	@Override
+	public void closeSession() {
+		dispose();
+		
+	}
 }
