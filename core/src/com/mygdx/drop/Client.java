@@ -28,7 +28,6 @@ public class Client implements Disposable, PlayerManager {
 	private Stats playerStats;
 	private int lastSelectedSlot;
 	private Vector2 lastPlayerPosition;
-	public volatile boolean connected = false;
 	private int worldWidth_tl, worldHeight_tl;
 	private static Vector2 temp = new Vector2();
 	private boolean isConnected;
@@ -56,6 +55,7 @@ public class Client implements Disposable, PlayerManager {
 		if (object == null) {
 			System.out.println("Couldnt deserialize");
 		} else if (object instanceof WorldUpdate) {
+			//Cuando recibe un objeto de WorldUpdate guarda el ultimo frame del player en el cliente
 			WorldUpdate update = (WorldUpdate) object;
 			this.lastestFrameData = update.frameData;
 			this.playerStats = update.playerStats; 
@@ -66,7 +66,7 @@ public class Client implements Disposable, PlayerManager {
 				ItemData data = update.itemData[i];
 				latestItemData[i] = data != null ? new PhonyItem(data.category, data.textureId) : null;
 			}
-			this.connected = true;
+			
 		} else if (object instanceof SessionResponse) {
 			SessionResponse response = (SessionResponse)object;
 			System.out.println("Received session response. Request " + (response.accepted ? "succeeded" : "failed"));
@@ -74,6 +74,7 @@ public class Client implements Disposable, PlayerManager {
 				isConnected = true;
 				this.worldHeight_tl = response.worldHeight_tl;
 				this.worldWidth_tl = response.worldWidth_tl;
+				this.playerStats = response.playerStats; 
 			}
 		} else {
 			System.out.println("dont know what the fuck I got");

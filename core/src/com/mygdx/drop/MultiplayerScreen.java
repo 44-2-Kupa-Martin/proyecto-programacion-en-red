@@ -36,8 +36,8 @@ public class MultiplayerScreen implements Screen {
 	private final Viewport viewport;
 	private Skin skin;
 	private Label ipLabel, portLabel;
-	private TextButton backButton, connectButton, hostButton, saveButton;
-	private TextField ipField, portField, nameField;
+	private TextButton backButton, hostButton, connectButton, saveButton;
+	private TextField nameField;
 	private UDPThread udpThread;
 	ArrayList<WorldDiscovery> servers = new ArrayList<WorldDiscovery>();
 	private String backTexts[] = {"Back to Main Menu", "Back"};
@@ -79,38 +79,24 @@ public class MultiplayerScreen implements Screen {
 		}
 		
 		skin = Assets.Skins.Glassy_glassy.get();
+	
 		
-		ipLabel = new Label("Server IP:", skin);
-		ipLabel.setVisible(false);
-		
-		portLabel = new Label("Server Port:", skin);
-		portLabel.setVisible(false);
-		
-		
-		connectButton = new TextButton("Connect to a server", skin, "small");
-//		connectButton.setTransform(true);
+		connectButton = new TextButton ("Connect to a server", skin, "small");
 		connectButton.setVisible(false);
 		
 		saveButton = new TextButton("Save name", skin, "small");
-//		saveButton.setTransform(true);
 		
 		hostButton = new TextButton("Host a server", skin, "small");
-//		hostButton.setTransform(true);
 		hostButton.setVisible(false);
 		
 		backButton = new TextButton(backTexts[0], skin, "small");
-//		backButton.setTransform(true);
 		
-		ipField = new TextField("", skin);
-		portField = new TextField("",skin);
 		nameField = new TextField("",skin);
 		
-		Table addressTable = new Table();
 		serverTable = new Table();
 		Table buttonsTable = new Table();
 		Table nameTable = new Table();
 		
-		addressTable.setVisible(false);
 		serverTable.setVisible(false);
 		
 		
@@ -124,8 +110,8 @@ public class MultiplayerScreen implements Screen {
 
 				nameTable.clear();
 				
-				connectButton.setVisible(true);
 				hostButton.setVisible(true);
+				connectButton.setVisible(true);
 				
 				playerName = nameField.getText();
 				
@@ -138,11 +124,10 @@ public class MultiplayerScreen implements Screen {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				
-					ipLabel.setVisible(true);
-					portLabel.setVisible(true);
+					
 					hostButton.setVisible(false);
-					addressTable.setVisible(true);
 					serverTable.setVisible(true);
+					connectButton.setVisible(false);
 					
 					backButton.setText(backTexts[1]);
 					
@@ -185,10 +170,9 @@ public class MultiplayerScreen implements Screen {
 				    game.setScreen(new MainMenuScreen(game)); 
 				    dispose();
 				} else if (backButton.getText().toString().equals(backTexts[1])) {
-				    ipLabel.setVisible(false);
-				    portLabel.setVisible(false);
+				    
 				    hostButton.setVisible(true);
-				    addressTable.setVisible(false);
+				    connectButton.setVisible(true);
 				    serverTable.setVisible(false);
 				    
 				    backButton.setText(backTexts[0]);
@@ -200,47 +184,13 @@ public class MultiplayerScreen implements Screen {
 					}
 				});
 				
-		ipField.setTextFieldListener(new TextField.TextFieldListener() {
-			@Override
-			public void keyTyped(TextField textField, char key) {
-				try {
-						//int ipAddress;
-		                //ipAdress = Integer.parseInt(textField.getText());
-		                //game.ipAddress = ipAddress;
-				} catch (NumberFormatException e) {
-		                    //TODO This is bad, cry about it.
-		                }
-		            }
-		        });
 				
-		portField.setTextFieldListener(new TextField.TextFieldListener() {
-		    @Override
-			public void keyTyped(TextField textField, char key) {
-					try {
-		                	int portAdress;
-		                	portAdress = Integer.parseInt(textField.getText());
-		                    game.portAdress = portAdress;
-		            } catch (NumberFormatException e) {
-		                    //TODO This is bad, cry about it.
-		                }
-		            }
-		        });
 		
 		nameTable.setFillParent(true);
 		nameTable.center();
 		
 		nameTable.add(nameField);
-		nameTable.add(saveButton);
-		
-		addressTable.setFillParent(true);
-		addressTable.center().top();
-				
-		addressTable.add(ipLabel);
-		addressTable.add(ipField).row();
-				
-		addressTable.add(portLabel);
-		addressTable.add(portField).row();
-				
+		nameTable.add(saveButton);		
 				
 		buttonsTable.setFillParent(true);
 				
@@ -253,7 +203,6 @@ public class MultiplayerScreen implements Screen {
 		
 
 		stage.addActor(nameTable);
-		stage.addActor(addressTable);
 		stage.addActor(buttonsTable);
 		stage.addActor(serverTable);
 		
@@ -279,7 +228,6 @@ public class MultiplayerScreen implements Screen {
 				
 				for (int i = 0; i < servers.size(); i++) {
 					
-					
 				    WorldDiscovery server = servers.get(i);
 
 				    Label worldLabel = new Label(server.worldName, skin);
@@ -297,7 +245,6 @@ public class MultiplayerScreen implements Screen {
 				    	@Override
 						public void clicked(InputEvent event, float x, float y) {
 							
-				    			System.out.println("asdasdsa");
 				    			
 				    			game.setScreen(new LoadingScreen(server, playerName, game));
 								dispose();
@@ -356,9 +303,9 @@ public class MultiplayerScreen implements Screen {
 			
 			servers.add(update);
 			
-			System.out.println("hola");
+			
 		} else {
-			System.out.println("Ya no quiero");
+			
 		}
 		
 	}

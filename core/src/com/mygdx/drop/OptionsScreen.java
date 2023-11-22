@@ -85,30 +85,14 @@ public class OptionsScreen implements Screen {
 		table.setSkin(skin);
 		table.setFillParent(true);
 		table.setTouchable(Touchable.enabled);
-		table.add(volumeSlider).width(200);
-		table.row();
-		table.add(volumeLabel).colspan(2).center();
-		table.row();
-		table.add(zoomSlider).width(200);
-		table.row();
-		table.add(zoomLabel).width(200);
-		table.row();
-		table.add(backButton).align(Align.left);
-		table.row();
+		table.add(volumeSlider).width(200).row();
+		table.add(volumeLabel).colspan(2).center().row();
+		table.add(zoomSlider).width(200).row();
+		table.add(zoomLabel).width(200).row();
+		table.add(backButton).align(Align.left).row();
 
 		stage.addActor(table);
 
-//		Table backButtonTable = new Table();
-//
-//		backButtonTable.setDebug(true);
-//
-//		backButtonTable.left().bottom();
-//
-//		backButtonTable.padLeft(10f).padBottom(10f);
-//
-//		backButtonTable.add(backButton).width(200).height(100);
-//
-//		stage.addActor(backButtonTable);
 	}
 
 	@Override
@@ -116,7 +100,6 @@ public class OptionsScreen implements Screen {
 
 	@Override
 	public void render(float delta) {
-//		Gdx.gl.glClearColor(.1f, .12f, .16f, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		stage.act(delta);
 		stage.draw();
@@ -125,8 +108,6 @@ public class OptionsScreen implements Screen {
 	@Override
 	public void resize(int width, int height) {
 		stage.getViewport().update(width, height, true);
-//		camera.position.set(camera.viewportWidth / 2, camera.viewportHeight / 2, 0);
-//		camera.update();
 	}
 
 	@Override

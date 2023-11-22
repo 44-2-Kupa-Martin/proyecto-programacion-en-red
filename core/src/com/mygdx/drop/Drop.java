@@ -18,16 +18,12 @@ import com.mygdx.drop.game.items.GoofyItem;
  */
 public class Drop extends Game {
 	public static Drop game;
-	/** If a world exists, a reference will exist here. Is there a better way to do this? */
-	public static @Null World world;
 	private static boolean constructed = false;
 	public ServerThread serverThread;
 	public SpriteBatch batch;
 	public float masterVolume;
 	public float zoom = 1.0f;
-	//TODO Change this to work with an actual server
-	public int ipAdress;
-	public int portAdress;
+	
 
 	/** Initialization done in {@link Drop#create()} */
 	public Drop() {
@@ -64,9 +60,6 @@ public class Drop extends Game {
 		this.masterVolume = 1.0f;
 		this.zoom = 1.0f;
 		
-		//TODO change this to work with an actual server
-		this.ipAdress = 0;
-		this.portAdress = 0;
 		
 		this.setScreen(new MainMenuScreen(this));
 	}

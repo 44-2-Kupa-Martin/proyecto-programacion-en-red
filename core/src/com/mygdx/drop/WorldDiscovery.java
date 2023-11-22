@@ -12,9 +12,9 @@ public class WorldDiscovery implements Serializable {
 	public final String worldName;
     public final InetAddress IP;
 
-    public WorldDiscovery(String worldName, InetAddress iP) {
+    public WorldDiscovery(String worldName, InetAddress IP) {
         this.worldName = worldName;
-        this.IP = iP;
+        this.IP = IP;
     }
 
 }

@@ -50,10 +50,6 @@ public class GameMenu extends Table{
 		this.stage = stage;
 		this.hud = hud;
 		
-//		optionsTable.setVisible(false);
-//		optionsTable.setFillParent(true);
-//		optionsTable.setDebug(Constants.DEBUG);
-//		optionsTable.setTouchable(Touchable.enabled);
 		
 		
 		
@@ -69,21 +65,13 @@ public class GameMenu extends Table{
 		options.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-            	
-//            	optionsTable.setVisible(!optionsTable.isVisible());
-//            	GameMenu.this.setVisible(!GameMenu.this.isVisible());
-            	
+            	            	
             	GameMenu.this.clear();
-            	GameMenu.this.add(volumeSlider);
-            	GameMenu.this.row();
-            	GameMenu.this.add(volumeLabel).colspan(2).center();
-            	GameMenu.this.row();
-            	GameMenu.this.add(zoomSlider);
-            	GameMenu.this.row();
-            	GameMenu.this.add(zoomLabel);
-            	GameMenu.this.row();
-            	GameMenu.this.add(back).align(Align.left);
-            	GameMenu.this.row(); 
+            	GameMenu.this.add(volumeSlider).row();
+            	GameMenu.this.add(volumeLabel).colspan(2).center().row();
+            	GameMenu.this.add(zoomSlider).row();
+            	GameMenu.this.add(zoomLabel).row();
+            	GameMenu.this.add(back).align(Align.left).row();
             }
         });
 		
@@ -91,7 +79,7 @@ public class GameMenu extends Table{
             @Override
             public void clicked(InputEvent event, float x, float y) {
             	
-            	game.getScreen().dispose();
+                game.getScreen().dispose();
                 game.setScreen(new MainMenuScreen(game));
             }
         });
@@ -138,23 +126,7 @@ public class GameMenu extends Table{
 		
 		
 		
-		
-		//stage.addActor(GameMenu.this);
-		//stage.addActor(optionsTable);
-		
-		
 	}
 	
-//	@Override
-//	public void act(float delta) { 
-//		super.act(delta);
-//		if (Gdx.input.isKeyJustPressed(Keys.ESCAPE)) {
-//			optionsTable.setVisible(!optionsTable.isVisible());
-//
-//		}
-//		
-//
-//		
-//	}
 	
 }

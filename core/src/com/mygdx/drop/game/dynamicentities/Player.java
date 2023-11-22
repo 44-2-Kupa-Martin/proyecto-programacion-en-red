@@ -187,7 +187,7 @@ public class Player extends BoxEntity implements Drawable {
 		if (invincibilityTimer > 0)
 			return;
 		invincibilityTimer = 1;
-		Assets.Sounds.playerHurt.get().play(game.masterVolume);
+//		Assets.Sounds.playerHurt.get().play(game.masterVolume);
 		stats.setHealth(stats.getHealth() - (lostHp - stats.getDefense()));
 	}
 

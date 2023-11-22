@@ -56,7 +56,7 @@ public class LoadingScreen implements Screen{
 	public void render(float delta) {
 		// TODO Auto-generated method stub
 		
-		if (client.connected) {
+		if (client.isConnected()) {
 			
 	    	  game.setScreen(new GameScreen(game, playerName, client));
 		  dispose();

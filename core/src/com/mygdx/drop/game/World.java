@@ -70,9 +70,7 @@ public class World implements Disposable, PlayerManager, EventCapable {
 	 */
 	public World(int width_tl, int height_tl, Vector2 gravity) {
 		assert Drop.game != null : "World created before game instance!";
-		assert Drop.world == null : "Multiple worlds created at the same time!";
 		
-		Drop.world = this;
 		
 		if (game == null)
 			game = Drop.game;

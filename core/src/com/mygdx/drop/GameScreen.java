@@ -35,7 +35,7 @@ public class GameScreen implements Screen, InputProcessor {
 	private String playerName;
 	private PlayerManager playerManager;
 	private GameMenu gameMenu;
-//	private Disposable networkThread;
+
 	public GameScreen(Drop game, String playerName, PlayerManager playerManager) {
 		this.game = game;
 		this.playerManager = playerManager;
@@ -52,16 +52,8 @@ public class GameScreen implements Screen, InputProcessor {
 		this.gameMenu = new GameMenu(game, hudStage, hud);
 		hudStage.addActor(hud);
 		
-//		Server server = new Server();
-//		this.networkThread = server;
-//		Client client = new Client();
-//		this.networkThread = client;
-//		client.sendString("hello from client");
-//		hudStage.addActor(hud);
 		Assets.Music.rain.get().setLooping(true);
 		
-		System.out.println(game.ipAdress);
-		System.out.println(game.portAdress);
 	}
 
 	@Override
@@ -80,6 +72,8 @@ public class GameScreen implements Screen, InputProcessor {
 		gameViewport.apply();
 		game.batch.setProjectionMatrix(gameCamera.combined);
 		
+		
+		//Le mandamos el asset y la posicion en la que se tiene q dibujar
 		FrameComponent[] components = playerManager.getFrameData();
 		game.batch.begin();
 		drawHeldItem();
@@ -99,8 +93,6 @@ public class GameScreen implements Screen, InputProcessor {
 		game.batch.end();
 		
 		if(Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-			
-					System.out.println("hice escape");	
 						
 					hudStage.getActors().get(0).remove();
 					hudStage.addActor(gameMenu);
@@ -118,10 +110,7 @@ public class GameScreen implements Screen, InputProcessor {
 			game.setScreen(new MainMenuScreen(game));
 			dispose();
 		}
-		
-//		game.batch.begin();
-//		drawHeldItem();
-//		game.batch.end();		
+				
 	}
 
 	@Override
@@ -161,6 +150,8 @@ public class GameScreen implements Screen, InputProcessor {
 		camera.position.set(cameraX, cameraY, 0);
 	}
 	
+	
+	//TODO no funca
 	private final void drawHeldItem() {
 		if (playerManager.getCursorItem(playerName) == null) 
 			return;

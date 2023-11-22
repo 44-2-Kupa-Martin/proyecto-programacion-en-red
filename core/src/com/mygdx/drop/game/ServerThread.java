@@ -106,7 +106,7 @@ public class ServerThread extends Thread implements Disposable {
 
 		if (sessions.containsKey(request.playerName)) {
 			try {
-				udpThread.socket.send(UDPThread.serializeObjectToPacket(packet.getSocketAddress(), new SessionResponse(false, 0, 0)));
+				udpThread.socket.send(UDPThread.serializeObjectToPacket(packet.getSocketAddress(), new SessionResponse(false, 0, 0, null)));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -116,7 +116,7 @@ public class ServerThread extends Thread implements Disposable {
 			sessions.put(request.playerName, new PlayerSessionData(request.playerName, packet.getSocketAddress(), player));
 			try {
 				udpThread.socket.send(UDPThread.serializeObjectToPacket(packet.getSocketAddress(),
-						new SessionResponse(true, world.worldWidth_tl, world.worldHeight_tl)));
+						new SessionResponse(true, world.worldWidth_tl, world.worldHeight_tl, player.getStats())));
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

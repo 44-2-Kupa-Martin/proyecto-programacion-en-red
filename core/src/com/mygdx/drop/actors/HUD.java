@@ -26,7 +26,6 @@ public class HUD extends Table {
 		this.playerName = playerName;
 		labelHP = new Label("HP:" + playerManager.getStats(playerName).getHealth(), Assets.Skins.Glassy_glassy.get());		
 		labelPoints = new Label("Points: " + playerManager.getStats(playerName).getPoints(), Assets.Skins.Glassy_glassy.get());		
-		//Health
 		
 		
 		
@@ -34,15 +33,12 @@ public class HUD extends Table {
 		add(new Inventory(playerManager, playerName)).top().right();
 
 		
-//		healthTable.top().left();
-//		healthTable.padLeft(10f).padBottom(10f);
 		add(labelHP).top().left();
 		add(labelPoints).top().left();
 		
 		
 		align(Align.topLeft);
 		setFillParent(true);
-//
 		
 		
 		setDebug(Constants.DEBUG);

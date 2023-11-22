@@ -90,6 +90,7 @@ public abstract class Assets {
 	public static final Asset<?> getById(int assetId) {
 		AssetType type;
 		Asset<?> asset;
+		//El primer byte es el tipo de asset, y los últimos 3 bytes son el id.
 		int typeIndex = (assetId & AssetType.TYPE_ID_MASK) >> AssetType.TYPE_ID_OFFSET;
 		int assetIndex = assetId & ~AssetType.TYPE_ID_MASK;
 		try {

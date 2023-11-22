@@ -23,6 +23,7 @@ public class UDPThread extends Thread {
 	private final Runnable onTimeout;
 	
 	public UDPThread(int runningPort, InetAddress serverIP, Consumer<DatagramPacket> onReceive, Runnable onTimeout) {
+		
 		this.serverIP = serverIP;
 		DatagramSocket socket = null;
 		
